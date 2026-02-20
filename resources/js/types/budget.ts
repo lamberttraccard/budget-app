@@ -23,6 +23,12 @@ export type TransactionItem = {
     categoryId: number;
 };
 
+export type CategoryOption = {
+    id: number;
+    name: string;
+    color: string;
+};
+
 export type SubcategoryTotal = {
     id: number;
     name: string;
@@ -48,6 +54,7 @@ export type CategoryShowProps = {
     transactionCount: number;
     currentMonth: string;
     currentAccount: string;
+    allCategories: CategoryOption[];
 };
 
 export type DashboardProps = {

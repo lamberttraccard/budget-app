@@ -42,6 +42,15 @@ class CategoryController extends Controller
             'transactionCount' => $data['transactionCount'],
             'currentMonth'     => $monthParam,
             'currentAccount'   => $accountParam,
+            'allCategories'    => Category::whereNull('parent_id')
+                ->orderBy('name')
+                ->get(['id', 'name', 'color'])
+                ->map(fn ($c) => [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'color' => $c->color,
+                ])
+                ->toArray(),
         ]);
     }
 }

@@ -1,9 +1,10 @@
 import { Head, router } from '@inertiajs/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import ColorHeader from '@/components/ColorHeader';
 import SubcategoryRow from '@/components/SubcategoryRow';
 import TransactionRow from '@/components/TransactionRow';
+import CategoryPicker from '@/components/CategoryPicker';
 import type { CategoryShowProps, TransactionItem } from '@/types';
 
 export default function CategoryShow({
@@ -14,8 +15,13 @@ export default function CategoryShow({
     transactionCount,
     currentMonth,
     currentAccount,
+    allCategories,
 }: CategoryShowProps) {
     const [activeSubcategoryId, setActiveSubcategoryId] = useState<number | null>(null);
+    const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
+    const [selectedTransactionCategoryId, setSelectedTransactionCategoryId] = useState<number | null>(null);
+    const [isPatching, setIsPatching] = useState(false);
+    const pickerTriggerRef = useRef<HTMLSpanElement>(null);
 
     const handleBack = () => {
         // Use history.back() for scroll preservation when navigating from Dashboard;
@@ -36,6 +42,37 @@ export default function CategoryShow({
             activeSubcategoryId === subcategoryId ? null : subcategoryId,
         );
     };
+
+    const handleTransactionTap = useCallback((transactionId: number, categoryId: number, element: HTMLElement) => {
+        if (isPatching) return;
+        setSelectedTransactionId(transactionId);
+        setSelectedTransactionCategoryId(categoryId);
+
+        // Position the desktop dropdown anchor at the clicked row
+        if (pickerTriggerRef.current) {
+            const rect = element.getBoundingClientRect();
+            Object.assign(pickerTriggerRef.current.style, {
+                top: `${rect.bottom}px`,
+                left: `${rect.left}px`,
+                width: `${rect.width}px`,
+            });
+        }
+    }, [isPatching]);
+
+    const handleCategorySelect = useCallback((categoryId: number) => {
+        if (selectedTransactionId === null || isPatching) return;
+        setIsPatching(true);
+        router.patch(`/transactions/${selectedTransactionId}`, {
+            category_id: categoryId,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setSelectedTransactionId(null);
+                setSelectedTransactionCategoryId(null);
+            },
+            onFinish: () => setIsPatching(false),
+        });
+    }, [selectedTransactionId, isPatching]);
 
     const visibleTransactions: TransactionItem[] = activeSubcategoryId
         ? transactions.filter((t) => t.categoryId === activeSubcategoryId)
@@ -81,9 +118,12 @@ export default function CategoryShow({
                                     <div className="mx-4 border-t border-white/5" />
                                 )}
                                 <TransactionRow
+                                    id={t.id}
                                     date={t.date}
                                     description={t.description}
                                     amountCents={t.amountCents}
+                                    categoryId={t.categoryId}
+                                    onTap={handleTransactionTap}
                                 />
                             </div>
                         ))}
@@ -96,6 +136,18 @@ export default function CategoryShow({
                     </div>
                 )}
             </div>
+
+            <CategoryPicker
+                categories={allCategories}
+                currentCategoryId={selectedTransactionCategoryId ?? 0}
+                isOpen={selectedTransactionId !== null}
+                onClose={() => {
+                    setSelectedTransactionId(null);
+                    setSelectedTransactionCategoryId(null);
+                }}
+                onSelect={handleCategorySelect}
+                triggerRef={pickerTriggerRef}
+            />
         </AppLayout>
     );
 }

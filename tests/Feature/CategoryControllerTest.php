@@ -272,4 +272,33 @@ class CategoryControllerTest extends TestCase
                 ->where('transactionCount', 2)
             );
     }
+
+    public function test_show_includes_all_categories_for_picker(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $category = Category::where('slug', 'food')->first();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id'  => $account->id,
+            'import_id'   => $import->id,
+            'date'        => now(),
+            'amount_cents' => -5000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('categories.show', ['category' => $category->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('allCategories', 14)
+                ->has('allCategories.0', fn (Assert $cat) => $cat
+                    ->has('id')
+                    ->has('name')
+                    ->has('color')
+                )
+            );
+    }
 }

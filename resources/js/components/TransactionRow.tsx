@@ -2,14 +2,22 @@ import { formatAbsAmount } from '@/lib/formatAmount';
 import { formatDate } from '@/lib/formatDate';
 
 type Props = {
+    id: number;
     date: string;
     description: string;
     amountCents: number;
+    categoryId: number;
+    onTap?: (transactionId: number, categoryId: number, element: HTMLElement) => void;
 };
 
-export default function TransactionRow({ date, description, amountCents }: Props) {
+export default function TransactionRow({ id, date, description, amountCents, categoryId, onTap }: Props) {
     return (
-        <div className="flex items-center gap-3 px-4 py-2.5 min-h-[44px]">
+        <button
+            type="button"
+            onClick={(e) => onTap?.(id, categoryId, e.currentTarget)}
+            className="flex w-full items-center gap-3 px-4 py-2.5 min-h-[44px] text-left
+                       hover:bg-surface-elevated rounded-lg transition-colors cursor-pointer"
+        >
             <span className="w-12 flex-shrink-0 text-xs text-text-tertiary">
                 {formatDate(date)}
             </span>
@@ -19,6 +27,6 @@ export default function TransactionRow({ date, description, amountCents }: Props
             <span className="text-sm font-semibold tabular-nums text-white ml-auto">
                 {formatAbsAmount(amountCents)}
             </span>
-        </div>
+        </button>
     );
 }
