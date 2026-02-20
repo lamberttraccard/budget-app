@@ -20,9 +20,14 @@ class CategoryController extends Controller
             $monthParam = now()->format('Y-m');
         }
 
+        $accountParam = $request->query('account', 'personal');
+        if (! in_array($accountParam, ['personal', 'professional'], true)) {
+            $accountParam = 'personal';
+        }
+
         [$year, $month] = array_map('intval', explode('-', $monthParam));
 
-        $data = $this->budgetQueryService->getCategoryDetail($category->id, $year, $month);
+        $data = $this->budgetQueryService->getCategoryDetail($category->id, $year, $month, $accountParam);
 
         return Inertia::render('categories/show', [
             'category' => [
@@ -36,6 +41,7 @@ class CategoryController extends Controller
             'totalAmountCents' => $data['totalAmountCents'],
             'transactionCount' => $data['transactionCount'],
             'currentMonth'     => $monthParam,
+            'currentAccount'   => $accountParam,
         ]);
     }
 }

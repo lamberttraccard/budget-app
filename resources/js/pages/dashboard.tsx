@@ -36,6 +36,7 @@ export default function Dashboard({
     incomeCents,
     expensesCents,
     currentMonth,
+    currentAccount,
     availableMonths,
     importPreview,
 }: DashboardProps) {
@@ -45,17 +46,26 @@ export default function Dashboard({
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [importAccountType, setImportAccountType] = useState<string>('personal');
 
     const hasAnyData = availableMonths.length > 0;
     const isEmptyMonth = hasAnyData && categoryTotals.length === 0;
 
     const handleMonthChange = useCallback((month: string) => {
-        router.get('/dashboard', { month }, {
+        router.get('/dashboard', { month, account: currentAccount }, {
             preserveState: true,
             preserveScroll: true,
             only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth'],
         });
-    }, []);
+    }, [currentAccount]);
+
+    const handleAccountChange = useCallback((account: string) => {
+        router.get('/dashboard', { month: currentMonth, account }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'currentAccount', 'availableMonths'],
+        });
+    }, [currentMonth]);
 
     // Show confirmation dialog when importPreview arrives from server
     useEffect(() => {
@@ -96,23 +106,26 @@ export default function Dashboard({
         if (!file) return;
         setIsUploading(true);
 
-        router.post('/imports', { csv_file: file }, {
+        router.post('/imports', { csv_file: file, account_type: importAccountType }, {
             onSuccess: () => {
                 setFile(null);
                 setShowConfirmation(false);
                 setIsUploading(false);
+                setImportAccountType('personal');
             },
             onError: () => {
                 setShowConfirmation(false);
                 setIsUploading(false);
                 setFile(null);
+                setImportAccountType('personal');
             },
         });
-    }, [file]);
+    }, [file, importAccountType]);
 
     const handleCancelImport = useCallback(() => {
         setShowConfirmation(false);
         setFile(null);
+        setImportAccountType('personal');
     }, []);
 
     // --- Drag-and-drop handlers (desktop) ---
@@ -147,7 +160,7 @@ export default function Dashboard({
     }, [handleFileSelect]);
 
     return (
-        <AppLayout>
+        <AppLayout currentAccount={currentAccount} onAccountChange={handleAccountChange}>
             <Head title="Budget" />
 
             {/* Hidden file input */}
@@ -204,6 +217,7 @@ export default function Dashboard({
                                     amountCents={cat.amountCents}
                                     transactionCount={cat.transactionCount}
                                     currentMonth={currentMonth}
+                                    currentAccount={currentAccount}
                                 />
                             ))}
                         </div>
@@ -252,6 +266,33 @@ export default function Dashboard({
                                 <span className="font-medium text-white">
                                     {formatDateRange(importPreview.dateFrom, importPreview.dateTo)}
                                 </span>
+                            </div>
+                            <div className="flex justify-between text-sm items-center">
+                                <span className="text-text-secondary">Account</span>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setImportAccountType('personal')}
+                                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                            importAccountType === 'personal'
+                                                ? 'bg-surface-elevated text-white'
+                                                : 'text-text-secondary hover:text-white'
+                                        }`}
+                                    >
+                                        Personal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setImportAccountType('professional')}
+                                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                            importAccountType === 'professional'
+                                                ? 'bg-surface-elevated text-white'
+                                                : 'text-text-secondary hover:text-white'
+                                        }`}
+                                    >
+                                        Professional
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}

@@ -30,6 +30,11 @@ export type SubcategoryTotal = {
     transactionCount: number;
 };
 
+export type AccountContext = {
+    value: string;
+    label: string;
+};
+
 export type CategoryShowProps = {
     category: {
         id: number;
@@ -42,6 +47,7 @@ export type CategoryShowProps = {
     totalAmountCents: number;
     transactionCount: number;
     currentMonth: string;
+    currentAccount: string;
 };
 
 export type DashboardProps = {
@@ -49,6 +55,7 @@ export type DashboardProps = {
     incomeCents: number;
     expensesCents: number;
     currentMonth: string;
+    currentAccount: string;
     availableMonths: string[];
     importPreview?: ImportPreview | null;
 };

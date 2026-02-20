@@ -8,12 +8,13 @@ type Props = {
     amountCents: number;
     transactionCount: number;
     currentMonth: string;
+    currentAccount: string;
 };
 
-export default function CategoryCard({ id, name, color, amountCents, transactionCount, currentMonth }: Props) {
+export default function CategoryCard({ id, name, color, amountCents, transactionCount, currentMonth, currentAccount }: Props) {
     return (
         <Link
-            href={`/categories/${id}?month=${currentMonth}`}
+            href={`/categories/${id}?month=${currentMonth}&account=${currentAccount}`}
             className="flex items-center gap-4 bg-surface rounded-xl p-4 transition-colors hover:bg-surface-elevated"
         >
             <div

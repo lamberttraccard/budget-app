@@ -56,10 +56,10 @@ development_status:
   2-6-import-user-interface-and-confirmation: done
   epic-2-retrospective: optional
 
-  epic-3: in-progress
+  epic-3: done
   3-1-category-drill-down-with-color-takeover: done
   3-2-month-navigation: done
-  3-3-account-management-and-switching: backlog
+  3-3-account-management-and-switching: done
   epic-3-retrospective: optional
 
   epic-4: backlog

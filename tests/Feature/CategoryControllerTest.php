@@ -200,6 +200,44 @@ class CategoryControllerTest extends TestCase
             );
     }
 
+    public function test_show_filters_by_account_type(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $category = Category::where('slug', 'food')->first();
+
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id'  => $personalAccount->id,
+            'import_id'   => $import->id,
+            'date'        => '2026-02-10',
+            'amount_cents' => -5000,
+            'description'  => 'Personal food',
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id'  => $professionalAccount->id,
+            'import_id'   => $import->id,
+            'date'        => '2026-02-15',
+            'amount_cents' => -9000,
+            'description'  => 'Professional food',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('categories.show', ['category' => $category->id, 'month' => '2026-02', 'account' => 'personal']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('categories/show')
+                ->where('currentAccount', 'personal')
+                ->has('transactions', 1)
+                ->where('transactions.0.description', 'Personal food')
+            );
+    }
+
     public function test_show_returns_correct_total_amount(): void
     {
         $this->seed(CategorySeeder::class);

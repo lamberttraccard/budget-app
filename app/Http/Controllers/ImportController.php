@@ -51,7 +51,10 @@ class ImportController extends Controller
     {
         $request->validate([
             'csv_file' => ['required', 'file', 'max:5120'],
+            'account_type' => ['sometimes', 'in:personal,professional'],
         ]);
+
+        $accountType = $request->input('account_type', 'personal');
 
         $file = $request->file('csv_file');
         $content = $file->get();
@@ -64,8 +67,8 @@ class ImportController extends Controller
         }
 
         $account = Account::firstOrCreate(
-            ['bank' => $parser->bankName(), 'type' => 'personal'],
-            ['name' => $parser->bankName().' Personal'],
+            ['bank' => $parser->bankName(), 'type' => $accountType],
+            ['name' => $parser->bankName().' '.ucfirst($accountType)],
         );
 
         try {

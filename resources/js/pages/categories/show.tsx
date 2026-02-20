@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import ColorHeader from '@/components/ColorHeader';
 import SubcategoryRow from '@/components/SubcategoryRow';
@@ -13,6 +13,7 @@ export default function CategoryShow({
     totalAmountCents,
     transactionCount,
     currentMonth,
+    currentAccount,
 }: CategoryShowProps) {
     const [activeSubcategoryId, setActiveSubcategoryId] = useState<number | null>(null);
 
@@ -26,6 +27,10 @@ export default function CategoryShow({
         }
     };
 
+    const handleAccountChange = useCallback((account: string) => {
+        router.get('/dashboard', { account });
+    }, []);
+
     const handleSubcategoryClick = (subcategoryId: number) => {
         setActiveSubcategoryId(
             activeSubcategoryId === subcategoryId ? null : subcategoryId,
@@ -37,7 +42,7 @@ export default function CategoryShow({
         : transactions;
 
     return (
-        <AppLayout>
+        <AppLayout currentAccount={currentAccount} onAccountChange={handleAccountChange}>
             <Head title={category.name} />
 
             <ColorHeader

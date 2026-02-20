@@ -185,6 +185,57 @@ class ImportControllerTest extends TestCase
         Event::assertDispatched(ImportCompleted::class);
     }
 
+    public function test_store_with_professional_account_type(): void
+    {
+        $this->seed(CategorySeeder::class);
+        Event::fake([ImportCompleted::class]);
+        $user = User::factory()->create();
+        $file = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
+
+        $this->actingAs($user)
+            ->post(route('imports.store'), [
+                'csv_file' => $file,
+                'account_type' => 'professional',
+            ]);
+
+        $this->assertDatabaseHas('accounts', [
+            'bank' => 'Banque Populaire',
+            'type' => 'professional',
+            'name' => 'Banque Populaire Professional',
+        ]);
+    }
+
+    public function test_store_without_account_type_defaults_to_personal(): void
+    {
+        $this->seed(CategorySeeder::class);
+        Event::fake([ImportCompleted::class]);
+        $user = User::factory()->create();
+        $file = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
+
+        $this->actingAs($user)
+            ->post(route('imports.store'), ['csv_file' => $file]);
+
+        $this->assertDatabaseHas('accounts', [
+            'bank' => 'Banque Populaire',
+            'type' => 'personal',
+        ]);
+    }
+
+    public function test_store_with_invalid_account_type_returns_validation_error(): void
+    {
+        $user = User::factory()->create();
+        $file = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
+
+        $response = $this->actingAs($user)
+            ->post(route('imports.store'), [
+                'csv_file' => $file,
+                'account_type' => 'invalid',
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors(['account_type']);
+    }
+
     public function test_store_with_duplicate_csv_imports_zero_new_transactions(): void
     {
         $this->seed(CategorySeeder::class);

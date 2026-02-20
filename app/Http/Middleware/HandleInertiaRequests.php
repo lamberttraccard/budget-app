@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Account;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,6 +43,20 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // Shared across all pages for the header AccountPicker (trivial query: select distinct type)
+            'accountContexts' => $request->user()
+                ? Account::query()
+                    ->select('type')
+                    ->distinct()
+                    ->orderBy('type')
+                    ->get()
+                    ->map(fn ($a) => [
+                        'value' => $a->type,
+                        'label' => ucfirst($a->type),
+                    ])
+                    ->values()
+                    ->toArray()
+                : [],
         ];
     }
 }

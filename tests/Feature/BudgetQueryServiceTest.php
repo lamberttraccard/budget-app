@@ -189,6 +189,110 @@ class BudgetQueryServiceTest extends TestCase
         $this->assertEquals('food', $result['categoryTotals'][2]['slug']);
     }
 
+    public function test_get_monthly_data_filters_by_account_type()
+    {
+        $this->seed(CategorySeeder::class);
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        Transaction::factory()->create([
+            'amount_cents' => -5000,
+            'date' => '2026-02-10',
+            'category_id' => $food->id,
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -9000,
+            'date' => '2026-02-15',
+            'category_id' => $food->id,
+            'account_id' => $professionalAccount->id,
+            'import_id' => $import->id,
+        ]);
+
+        $personalResult = $this->service->getMonthlyData(2026, 2, 'personal');
+        $this->assertCount(1, $personalResult['categoryTotals']);
+        $this->assertEquals(-5000, $personalResult['categoryTotals'][0]['amountCents']);
+
+        $professionalResult = $this->service->getMonthlyData(2026, 2, 'professional');
+        $this->assertCount(1, $professionalResult['categoryTotals']);
+        $this->assertEquals(-9000, $professionalResult['categoryTotals'][0]['amountCents']);
+    }
+
+    public function test_get_available_months_filters_by_account_type()
+    {
+        $this->seed(CategorySeeder::class);
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-01-15',
+            'amount_cents' => -5000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $professionalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-15',
+            'amount_cents' => -9000,
+        ]);
+
+        $personalMonths = $this->service->getAvailableMonths('personal');
+        $this->assertCount(1, $personalMonths);
+        $this->assertEquals('2026-01', $personalMonths[0]);
+
+        $professionalMonths = $this->service->getAvailableMonths('professional');
+        $this->assertCount(1, $professionalMonths);
+        $this->assertEquals('2026-02', $professionalMonths[0]);
+
+        // No filter returns both
+        $allMonths = $this->service->getAvailableMonths();
+        $this->assertCount(2, $allMonths);
+    }
+
+    public function test_get_category_detail_filters_by_account_type()
+    {
+        $this->seed(CategorySeeder::class);
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-10',
+            'amount_cents' => -5000,
+            'description' => 'Personal food',
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $professionalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-15',
+            'amount_cents' => -9000,
+            'description' => 'Professional food',
+        ]);
+
+        $personalResult = $this->service->getCategoryDetail($food->id, 2026, 2, 'personal');
+        $this->assertCount(1, $personalResult['transactions']);
+        $this->assertEquals('Personal food', $personalResult['transactions'][0]['description']);
+        $this->assertEquals(-5000, $personalResult['totalAmountCents']);
+
+        $professionalResult = $this->service->getCategoryDetail($food->id, 2026, 2, 'professional');
+        $this->assertCount(1, $professionalResult['transactions']);
+        $this->assertEquals('Professional food', $professionalResult['transactions'][0]['description']);
+        $this->assertEquals(-9000, $professionalResult['totalAmountCents']);
+    }
+
     public function test_month_filtering_only_includes_specified_month()
     {
         $this->seed(CategorySeeder::class);

@@ -43,6 +43,7 @@ class DashboardTest extends TestCase
                      ->has('incomeCents')
                      ->has('expensesCents')
                      ->has('currentMonth')
+                     ->has('currentAccount')
                      ->has('availableMonths')
             );
     }
@@ -341,6 +342,214 @@ class DashboardTest extends TestCase
                      ->has('availableMonths', 2)
                      ->where('availableMonths.0', '2026-01')
                      ->where('availableMonths.1', '2026-03')
+            );
+    }
+
+    public function test_dashboard_defaults_to_personal_account()
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $now = now()->format('Y-m');
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+            'date' => "{$now}-10",
+            'amount_cents' => -5000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $professionalAccount->id,
+            'import_id' => $import->id,
+            'date' => "{$now}-15",
+            'amount_cents' => -9000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->where('currentAccount', 'personal')
+                     ->has('categoryTotals', 1)
+                     ->where('categoryTotals.0.amountCents', -5000)
+            );
+    }
+
+    public function test_dashboard_professional_filter_excludes_personal()
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $now = now()->format('Y-m');
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+            'date' => "{$now}-10",
+            'amount_cents' => -5000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $professionalAccount->id,
+            'import_id' => $import->id,
+            'date' => "{$now}-15",
+            'amount_cents' => -9000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['account' => 'professional']))
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->where('currentAccount', 'professional')
+                     ->has('categoryTotals', 1)
+                     ->where('categoryTotals.0.amountCents', -9000)
+            );
+    }
+
+    public function test_dashboard_personal_filter_excludes_professional()
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $now = now()->format('Y-m');
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+            'date' => "{$now}-10",
+            'amount_cents' => -5000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $professionalAccount->id,
+            'import_id' => $import->id,
+            'date' => "{$now}-15",
+            'amount_cents' => -9000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['account' => 'personal']))
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->has('categoryTotals', 1)
+                     ->where('categoryTotals.0.amountCents', -5000)
+            );
+    }
+
+    public function test_dashboard_invalid_account_defaults_to_personal()
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['account' => 'invalid']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->where('currentAccount', 'personal')
+            );
+    }
+
+    public function test_dashboard_account_and_month_filters_combine()
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-01-15',
+            'amount_cents' => -5000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $professionalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-01-20',
+            'amount_cents' => -9000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-15',
+            'amount_cents' => -3000,
+        ]);
+
+        // January + Professional = only the 9000 transaction
+        $this->actingAs($user)
+            ->get(route('dashboard', ['month' => '2026-01', 'account' => 'professional']))
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->where('currentMonth', '2026-01')
+                     ->where('currentAccount', 'professional')
+                     ->has('categoryTotals', 1)
+                     ->where('categoryTotals.0.amountCents', -9000)
+            );
+    }
+
+    public function test_available_months_scoped_to_account()
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-01-15',
+            'amount_cents' => -5000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $professionalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-15',
+            'amount_cents' => -9000,
+        ]);
+
+        // Personal view should only see January
+        $this->actingAs($user)
+            ->get(route('dashboard', ['account' => 'personal']))
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->has('availableMonths', 1)
+                     ->where('availableMonths.0', '2026-01')
+            );
+    }
+
+    public function test_shared_props_include_account_contexts()
+    {
+        $user = User::factory()->create();
+        Account::factory()->personal()->create();
+        Account::factory()->professional()->create();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->has('accountContexts', 2)
             );
     }
 

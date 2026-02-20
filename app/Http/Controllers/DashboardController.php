@@ -19,16 +19,22 @@ class DashboardController extends Controller
             $monthParam = now()->format('Y-m');
         }
 
+        $accountParam = $request->query('account', 'personal');
+        if (!in_array($accountParam, ['personal', 'professional'], true)) {
+            $accountParam = 'personal';
+        }
+
         [$year, $month] = array_map('intval', explode('-', $monthParam));
 
-        $data = $this->budgetQueryService->getMonthlyData($year, $month);
+        $data = $this->budgetQueryService->getMonthlyData($year, $month, $accountParam);
 
         return Inertia::render('dashboard', [
             'categoryTotals'  => $data['categoryTotals'],
             'incomeCents'     => $data['incomeCents'],
             'expensesCents'   => $data['expensesCents'],
             'currentMonth'    => $monthParam,
-            'availableMonths' => $this->budgetQueryService->getAvailableMonths(),
+            'currentAccount'  => $accountParam,
+            'availableMonths' => $this->budgetQueryService->getAvailableMonths($accountParam),
             'importPreview'   => session('importPreview'),
         ]);
     }
