@@ -43,7 +43,7 @@ development_status:
   epic-1: in-progress
   1-1-project-initialization-with-authentication: done
   1-2-domain-data-model-and-category-seed: done
-  1-3-visual-foundation-and-app-layout: backlog
+  1-3-visual-foundation-and-app-layout: done
   1-4-production-deployment-with-https-and-monitoring: backlog
   epic-1-retrospective: optional
 

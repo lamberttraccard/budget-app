@@ -8,17 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
-import type { BreadcrumbItem } from '@/types';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Profile settings',
-        href: edit().url,
-    },
-];
 
 export default function Profile({
     mustVerifyEmail,
@@ -30,7 +22,7 @@ export default function Profile({
     const { auth } = usePage().props;
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout>
             <Head title="Profile settings" />
 
             <h1 className="sr-only">Profile Settings</h1>

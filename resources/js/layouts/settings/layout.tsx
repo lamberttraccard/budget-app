@@ -6,7 +6,6 @@ import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import type { NavItem } from '@/types';
-import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
@@ -25,11 +24,6 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Two-Factor Auth',
         href: show(),
-        icon: null,
-    },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
         icon: null,
     },
 ];
