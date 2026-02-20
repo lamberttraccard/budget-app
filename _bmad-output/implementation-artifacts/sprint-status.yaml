@@ -68,8 +68,8 @@ development_status:
   4-3-import-deletion: done
   epic-4-retrospective: optional
 
-  epic-5: backlog
-  5-1-mcp-server-setup-with-sanctum-authentication: backlog
+  epic-5: in-progress
+  5-1-mcp-server-setup-with-sanctum-authentication: done
   5-2-transaction-and-category-query-tools: backlog
   5-3-aggregation-and-comparison-tools: backlog
   epic-5-retrospective: optional
