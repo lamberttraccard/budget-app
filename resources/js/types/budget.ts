@@ -15,6 +15,35 @@ export type ImportPreview = {
     fileName: string;
 };
 
+export type TransactionItem = {
+    id: number;
+    date: string;
+    description: string;
+    amountCents: number;
+    categoryId: number;
+};
+
+export type SubcategoryTotal = {
+    id: number;
+    name: string;
+    amountCents: number;
+    transactionCount: number;
+};
+
+export type CategoryShowProps = {
+    category: {
+        id: number;
+        name: string;
+        color: string;
+        slug: string;
+    };
+    subcategories: SubcategoryTotal[];
+    transactions: TransactionItem[];
+    totalAmountCents: number;
+    transactionCount: number;
+    currentMonth: string;
+};
+
 export type DashboardProps = {
     categoryTotals: CategoryTotal[];
     incomeCents: number;

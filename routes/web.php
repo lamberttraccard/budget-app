@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use Illuminate\Support\Facades\Route;
@@ -23,5 +24,9 @@ Route::post('imports/preview', [ImportController::class, 'preview'])
 Route::post('imports', [ImportController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('imports.store');
+
+Route::get('categories/{category}', [CategoryController::class, 'show'])
+    ->middleware(['auth', 'verified'])
+    ->name('categories.show');
 
 require __DIR__.'/settings.php';

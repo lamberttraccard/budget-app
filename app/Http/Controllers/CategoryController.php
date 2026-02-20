@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Category;
+use App\Services\BudgetQueryService;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class CategoryController extends Controller
+{
+    public function __construct(private readonly BudgetQueryService $budgetQueryService) {}
+
+    public function show(Category $category, Request $request): Response
+    {
+        $monthParam = $request->query('month', now()->format('Y-m'));
+
+        if (! preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $monthParam)) {
+            $monthParam = now()->format('Y-m');
+        }
+
+        [$year, $month] = array_map('intval', explode('-', $monthParam));
+
+        $data = $this->budgetQueryService->getCategoryDetail($category->id, $year, $month);
+
+        return Inertia::render('categories/show', [
+            'category' => [
+                'id'    => $category->id,
+                'name'  => $category->name,
+                'color' => $category->color,
+                'slug'  => $category->slug,
+            ],
+            'subcategories'    => $data['subcategories'],
+            'transactions'     => $data['transactions'],
+            'totalAmountCents' => $data['totalAmountCents'],
+            'transactionCount' => $data['transactionCount'],
+            'currentMonth'     => $monthParam,
+        ]);
+    }
+}

@@ -171,10 +171,12 @@ export default function Dashboard({
                             {categoryTotals.map((cat: CategoryTotal) => (
                                 <CategoryCard
                                     key={cat.id}
+                                    id={cat.id}
                                     name={cat.name}
                                     color={cat.color}
                                     amountCents={cat.amountCents}
                                     transactionCount={cat.transactionCount}
+                                    currentMonth={currentMonth}
                                 />
                             ))}
                         </div>

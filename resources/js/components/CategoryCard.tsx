@@ -1,15 +1,21 @@
+import { Link } from '@inertiajs/react';
 import { formatAbsAmount } from '@/lib/formatAmount';
 
 type Props = {
+    id: number;
     name: string;
     color: string;
     amountCents: number;
     transactionCount: number;
+    currentMonth: string;
 };
 
-export default function CategoryCard({ name, color, amountCents, transactionCount }: Props) {
+export default function CategoryCard({ id, name, color, amountCents, transactionCount, currentMonth }: Props) {
     return (
-        <div className="flex items-center gap-4 bg-surface rounded-xl p-4">
+        <Link
+            href={`/categories/${id}?month=${currentMonth}`}
+            className="flex items-center gap-4 bg-surface rounded-xl p-4 transition-colors hover:bg-surface-elevated"
+        >
             <div
                 className="w-12 h-12 rounded-xl flex-shrink-0"
                 style={{ backgroundColor: color }}
@@ -27,6 +33,6 @@ export default function CategoryCard({ name, color, amountCents, transactionCoun
             >
                 {formatAbsAmount(amountCents)}
             </p>
-        </div>
+        </Link>
     );
 }
