@@ -28,6 +28,11 @@ class RevolutParser implements CsvParserInterface
         'Amount',
     ];
 
+    public function bankName(): string
+    {
+        return 'Revolut';
+    }
+
     public function canParse(string $content, string $filename): bool
     {
         $firstLine = explode("\n", str_replace("\r\n", "\n", $content), 2)[0];

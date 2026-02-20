@@ -10,13 +10,15 @@ class Import extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['file_name', 'bank', 'status', 'transaction_count', 'imported_at'];
+    protected $fillable = ['file_name', 'bank', 'status', 'transaction_count', 'date_from', 'date_to', 'imported_at'];
 
     protected function casts(): array
     {
         return [
             'imported_at' => 'datetime',
             'transaction_count' => 'integer',
+            'date_from' => 'date',
+            'date_to' => 'date',
         ];
     }
 

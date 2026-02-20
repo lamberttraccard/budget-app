@@ -18,6 +18,11 @@ class BanquePopulaireParser implements CsvParserInterface
         'Montant',
     ];
 
+    public function bankName(): string
+    {
+        return 'Banque Populaire';
+    }
+
     public function canParse(string $content, string $filename): bool
     {
         $utf8 = $this->convertEncoding($content);

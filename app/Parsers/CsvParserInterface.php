@@ -10,4 +10,6 @@ interface CsvParserInterface
 
     /** @return Collection<int, TransactionData> */
     public function parse(string $content): Collection;
+
+    public function bankName(): string;
 }
