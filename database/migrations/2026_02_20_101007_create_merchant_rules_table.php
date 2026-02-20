@@ -1,0 +1,25 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('merchant_rules', function (Blueprint $table) {
+            $table->id();
+            $table->string('merchant_pattern')->unique();
+            $table->foreignId('category_id')->constrained()->cascadeOnDelete();
+            $table->timestamps();
+
+            $table->index('category_id');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('merchant_rules');
+    }
+};
