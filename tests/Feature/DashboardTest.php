@@ -43,6 +43,7 @@ class DashboardTest extends TestCase
                      ->has('incomeCents')
                      ->has('expensesCents')
                      ->has('currentMonth')
+                     ->has('availableMonths')
             );
     }
 
@@ -261,6 +262,115 @@ class DashboardTest extends TestCase
                      ->where('categoryTotals', [])
                      ->where('incomeCents', 0)
                      ->where('expensesCents', 0)
+            );
+    }
+
+    public function test_dashboard_returns_available_months_prop()
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-01-15',
+            'amount_cents' => -5000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-10',
+            'amount_cents' => -3000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->has('availableMonths', 2)
+                     ->where('availableMonths.0', '2026-01')
+                     ->where('availableMonths.1', '2026-02')
+            );
+    }
+
+    public function test_dashboard_returns_empty_available_months_when_no_transactions()
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->has('availableMonths', 0)
+            );
+    }
+
+    public function test_dashboard_available_months_ordered_ascending()
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        // Create in reverse order to verify ordering
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-03-10',
+            'amount_cents' => -1000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-01-15',
+            'amount_cents' => -2000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->has('availableMonths', 2)
+                     ->where('availableMonths.0', '2026-01')
+                     ->where('availableMonths.1', '2026-03')
+            );
+    }
+
+    public function test_dashboard_empty_month_returns_zero_totals_with_available_months()
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-01-15',
+            'amount_cents' => -5000,
+        ]);
+
+        // Request March (no data)
+        $this->actingAs($user)
+            ->get(route('dashboard', ['month' => '2026-03']))
+            ->assertInertia(fn (Assert $page) =>
+                $page->component('dashboard')
+                     ->where('currentMonth', '2026-03')
+                     ->has('categoryTotals', 0)
+                     ->where('incomeCents', 0)
+                     ->where('expensesCents', 0)
+                     ->has('availableMonths', 1)
+                     ->where('availableMonths.0', '2026-01')
             );
     }
 }

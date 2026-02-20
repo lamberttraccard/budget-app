@@ -49,5 +49,6 @@ export type DashboardProps = {
     incomeCents: number;
     expensesCents: number;
     currentMonth: string;
+    availableMonths: string[];
     importPreview?: ImportPreview | null;
 };

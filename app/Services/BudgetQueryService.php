@@ -52,6 +52,20 @@ class BudgetQueryService
         return compact('categoryTotals', 'incomeCents', 'expensesCents');
     }
 
+    /**
+     * Get distinct months that have transaction data, ordered ascending.
+     *
+     * @return string[] Array of "YYYY-MM" strings
+     */
+    public function getAvailableMonths(): array
+    {
+        return Transaction::query()
+            ->select(DB::raw("DISTINCT TO_CHAR(date, 'YYYY-MM') as month"))
+            ->orderBy('month')
+            ->pluck('month')
+            ->toArray();
+    }
+
     public function getCategoryDetail(int $categoryId, int $year, int $month): array
     {
         $subcategoryIds = Category::where('parent_id', $categoryId)->pluck('id');

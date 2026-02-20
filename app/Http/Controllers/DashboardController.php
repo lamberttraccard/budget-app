@@ -24,11 +24,12 @@ class DashboardController extends Controller
         $data = $this->budgetQueryService->getMonthlyData($year, $month);
 
         return Inertia::render('dashboard', [
-            'categoryTotals' => $data['categoryTotals'],
-            'incomeCents'    => $data['incomeCents'],
-            'expensesCents'  => $data['expensesCents'],
-            'currentMonth'   => $monthParam,
-            'importPreview'  => session('importPreview'),
+            'categoryTotals'  => $data['categoryTotals'],
+            'incomeCents'     => $data['incomeCents'],
+            'expensesCents'   => $data['expensesCents'],
+            'currentMonth'    => $monthParam,
+            'availableMonths' => $this->budgetQueryService->getAvailableMonths(),
+            'importPreview'   => session('importPreview'),
         ]);
     }
 }

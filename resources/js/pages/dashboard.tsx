@@ -6,6 +6,7 @@ import SummaryWidget from '@/components/SummaryWidget';
 import CategoryCard from '@/components/CategoryCard';
 import EmptyState from '@/components/EmptyState';
 import ImportDropZone from '@/components/ImportDropZone';
+import MonthStrip from '@/components/MonthStrip';
 import {
     Dialog,
     DialogContent,
@@ -35,6 +36,7 @@ export default function Dashboard({
     incomeCents,
     expensesCents,
     currentMonth,
+    availableMonths,
     importPreview,
 }: DashboardProps) {
     const { errors } = usePage().props as { errors: Record<string, string> };
@@ -43,6 +45,17 @@ export default function Dashboard({
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
+
+    const hasAnyData = availableMonths.length > 0;
+    const isEmptyMonth = hasAnyData && categoryTotals.length === 0;
+
+    const handleMonthChange = useCallback((month: string) => {
+        router.get('/dashboard', { month }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth'],
+        });
+    }, []);
 
     // Show confirmation dialog when importPreview arrives from server
     useEffect(() => {
@@ -161,9 +174,23 @@ export default function Dashboard({
                     </div>
                 )}
 
-                <SummaryWidget incomeCents={incomeCents} expensesCents={expensesCents} />
+                {hasAnyData && (
+                    <MonthStrip
+                        currentMonth={currentMonth}
+                        availableMonths={availableMonths}
+                        onMonthChange={handleMonthChange}
+                    />
+                )}
 
-                {categoryTotals.length === 0 ? (
+                <SummaryWidget incomeCents={incomeCents} expensesCents={expensesCents} showDashes={isEmptyMonth} />
+
+                {isEmptyMonth ? (
+                    <div className="py-12 text-center">
+                        <p className="text-sm text-text-tertiary">
+                            No transactions for {formatMonthLabel(currentMonth)}
+                        </p>
+                    </div>
+                ) : categoryTotals.length === 0 ? (
                     <EmptyState onImportClick={triggerFileInput} disabled={isUploading} />
                 ) : (
                     <>
