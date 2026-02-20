@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Events\CategoryCorrected;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Import;
@@ -9,6 +10,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class TransactionControllerTest extends TestCase
@@ -163,5 +165,53 @@ class TransactionControllerTest extends TestCase
             ->patch("/transactions/{$transaction->id}", []);
 
         $response->assertSessionHasErrors('category_id');
+    }
+
+    public function test_category_corrected_event_dispatches_on_update(): void
+    {
+        Event::fake([CategoryCorrected::class]);
+
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $food = Category::where('slug', 'food')->first();
+        $restaurants = Category::where('slug', 'restaurants')->first();
+
+        $transaction = Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'description' => 'CARREFOUR CITY PARIS',
+        ]);
+
+        $this->actingAs($user)
+            ->patch("/transactions/{$transaction->id}", [
+                'category_id' => $restaurants->id,
+            ]);
+
+        Event::assertDispatched(CategoryCorrected::class, function ($event) use ($transaction, $food, $restaurants) {
+            return $event->transaction->id === $transaction->id
+                && $event->oldCategoryId === $food->id
+                && $event->newCategoryId === $restaurants->id;
+        });
+    }
+
+    public function test_category_corrected_event_not_dispatched_when_same_category(): void
+    {
+        Event::fake([CategoryCorrected::class]);
+
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        $transaction = Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+        ]);
+
+        $this->actingAs($user)
+            ->patch("/transactions/{$transaction->id}", [
+                'category_id' => $food->id,
+            ]);
+
+        Event::assertNotDispatched(CategoryCorrected::class);
     }
 }

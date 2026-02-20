@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { Toaster } from 'sonner';
 import AccountPicker from '@/components/AccountPicker';
 import type { AccountContext, AppLayoutProps } from '@/types';
 
@@ -27,6 +28,12 @@ export default function AppLayout({ children, currentAccount, onAccountChange }:
                     {children}
                 </div>
             </main>
+
+            <Toaster
+                theme="dark"
+                position="bottom-center"
+                duration={2000}
+            />
         </div>
     );
 }

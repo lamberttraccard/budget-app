@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import AppLayout from '@/layouts/app-layout';
 import ColorHeader from '@/components/ColorHeader';
 import SubcategoryRow from '@/components/SubcategoryRow';
@@ -69,6 +70,7 @@ export default function CategoryShow({
             onSuccess: () => {
                 setSelectedTransactionId(null);
                 setSelectedTransactionCategoryId(null);
+                toast("Got it, I'll remember");
             },
             onFinish: () => setIsPatching(false),
         });
