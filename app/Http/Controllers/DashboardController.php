@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Import;
 use App\Services\BudgetQueryService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,6 +29,19 @@ class DashboardController extends Controller
 
         $data = $this->budgetQueryService->getMonthlyData($year, $month, $accountParam);
 
+        $imports = Import::where('status', 'completed')
+            ->orderByDesc('imported_at')
+            ->get()
+            ->map(fn (Import $import) => [
+                'id' => $import->id,
+                'fileName' => $import->file_name,
+                'bank' => $import->bank,
+                'transactionCount' => $import->transaction_count,
+                'dateFrom' => $import->date_from?->toDateString(),
+                'dateTo' => $import->date_to?->toDateString(),
+                'importedAt' => $import->imported_at?->toDateString(),
+            ]);
+
         return Inertia::render('dashboard', [
             'categoryTotals'  => $data['categoryTotals'],
             'incomeCents'     => $data['incomeCents'],
@@ -36,6 +50,7 @@ class DashboardController extends Controller
             'currentAccount'  => $accountParam,
             'availableMonths' => $this->budgetQueryService->getAvailableMonths($accountParam),
             'importPreview'   => session('importPreview'),
+            'imports'         => $imports,
         ]);
     }
 }

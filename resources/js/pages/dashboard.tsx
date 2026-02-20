@@ -6,6 +6,7 @@ import SummaryWidget from '@/components/SummaryWidget';
 import CategoryCard from '@/components/CategoryCard';
 import EmptyState from '@/components/EmptyState';
 import ImportDropZone from '@/components/ImportDropZone';
+import ImportHistory from '@/components/ImportHistory';
 import MonthStrip from '@/components/MonthStrip';
 import {
     Dialog,
@@ -16,7 +17,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { CategoryTotal, DashboardProps } from '@/types';
+import type { CategoryTotal, DashboardProps, ImportRecord } from '@/types';
 
 function formatMonthLabel(month: string): string {
     const [year, m] = month.split('-');
@@ -39,6 +40,7 @@ export default function Dashboard({
     currentAccount,
     availableMonths,
     importPreview,
+    imports,
 }: DashboardProps) {
     const { errors } = usePage().props as { errors: Record<string, string> };
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -232,7 +234,12 @@ export default function Dashboard({
                             <UploadIcon className="size-4" />
                             {isUploading ? 'Uploading...' : 'Import CSV'}
                         </button>
+
                     </>
+                )}
+
+                {imports.length > 0 && (
+                    <ImportHistory imports={imports} />
                 )}
             </div>
 

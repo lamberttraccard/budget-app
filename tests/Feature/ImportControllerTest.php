@@ -4,11 +4,16 @@ namespace Tests\Feature;
 
 use App\Events\ImportCompleted;
 use App\Models\Account;
+use App\Models\Category;
+use App\Models\Import;
+use App\Models\MerchantRule;
+use App\Models\Transaction;
 use App\Models\User;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ImportControllerTest extends TestCase
@@ -279,5 +284,163 @@ class ImportControllerTest extends TestCase
             ->where('importPreview.bank', 'Banque Populaire')
             ->where('importPreview.transactionCount', 3)
         );
+    }
+
+    public function test_authenticated_user_can_delete_import(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        Transaction::factory()->count(5)->create([
+            'import_id' => $import->id,
+            'account_id' => $account->id,
+        ]);
+
+        $this->actingAs($user)
+            ->delete("/imports/{$import->id}")
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('imports', ['id' => $import->id]);
+        $this->assertDatabaseCount('transactions', 0);
+    }
+
+    public function test_cascade_deletes_all_linked_transactions(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $otherImport = Import::factory()->completed()->create();
+
+        Transaction::factory()->count(3)->create([
+            'import_id' => $import->id,
+            'account_id' => $account->id,
+        ]);
+        Transaction::factory()->count(2)->create([
+            'import_id' => $otherImport->id,
+            'account_id' => $account->id,
+        ]);
+
+        $this->actingAs($user)
+            ->delete("/imports/{$import->id}");
+
+        $this->assertDatabaseCount('transactions', 2);
+        $this->assertDatabaseHas('imports', ['id' => $otherImport->id]);
+    }
+
+    public function test_merchant_rules_preserved_after_import_deletion(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        MerchantRule::create([
+            'merchant_pattern' => 'CARREFOUR CITY',
+            'category_id' => $food->id,
+        ]);
+
+        $import = Import::factory()->completed()->create();
+        Transaction::factory()->create([
+            'import_id' => $import->id,
+            'account_id' => $account->id,
+            'description' => 'CARREFOUR CITY',
+            'category_id' => $food->id,
+        ]);
+
+        $this->actingAs($user)
+            ->delete("/imports/{$import->id}");
+
+        $this->assertDatabaseHas('merchant_rules', [
+            'merchant_pattern' => 'CARREFOUR CITY',
+            'category_id' => $food->id,
+        ]);
+    }
+
+    public function test_unauthenticated_user_cannot_delete_import(): void
+    {
+        $import = Import::factory()->completed()->create();
+
+        $this->delete("/imports/{$import->id}")
+            ->assertRedirect(route('login'));
+
+        $this->assertDatabaseHas('imports', ['id' => $import->id]);
+    }
+
+    public function test_dashboard_includes_imports_in_props(): void
+    {
+        $user = User::factory()->create();
+        Import::factory()->completed()->create([
+            'bank' => 'Banque Populaire',
+            'transaction_count' => 42,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('dashboard')
+                ->has('imports', 1)
+                ->where('imports.0.bank', 'Banque Populaire')
+                ->where('imports.0.transactionCount', 42)
+            );
+    }
+
+    public function test_deleting_import_updates_available_months(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        $import = Import::factory()->completed()->create();
+        Transaction::factory()->create([
+            'import_id' => $import->id,
+            'account_id' => $account->id,
+            'category_id' => $food->id,
+            'date' => '2026-01-15',
+            'amount_cents' => -5000,
+        ]);
+
+        // January should be in available months
+        $this->actingAs($user)
+            ->get(route('dashboard', ['month' => '2026-01']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('availableMonths', 1)
+                ->where('availableMonths.0', '2026-01')
+            );
+
+        // Delete import
+        $this->actingAs($user)
+            ->delete("/imports/{$import->id}");
+
+        // January should no longer be available
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('availableMonths', 0)
+            );
+    }
+
+    public function test_deleting_nonexistent_import_returns_404(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->delete('/imports/99999')
+            ->assertNotFound();
+    }
+
+    public function test_dashboard_excludes_pending_imports_from_props(): void
+    {
+        $user = User::factory()->create();
+        Import::factory()->completed()->create(['bank' => 'Banque Populaire']);
+        Import::factory()->pending()->create(['bank' => 'Revolut']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('dashboard')
+                ->has('imports', 1)
+                ->where('imports.0.bank', 'Banque Populaire')
+            );
     }
 }

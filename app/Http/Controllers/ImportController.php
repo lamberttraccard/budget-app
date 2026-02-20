@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\CsvParseException;
 use App\Exceptions\UnrecognizedCsvFormatException;
 use App\Models\Account;
+use App\Models\Import;
 use App\Parsers\CsvParserFactory;
 use App\Services\CsvImportService;
 use Illuminate\Http\RedirectResponse;
@@ -78,5 +79,12 @@ class ImportController extends Controller
         }
 
         return redirect()->route('dashboard');
+    }
+
+    public function destroy(Import $import): RedirectResponse
+    {
+        $import->delete();
+
+        return back();
     }
 }

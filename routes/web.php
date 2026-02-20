@@ -26,6 +26,10 @@ Route::post('imports', [ImportController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('imports.store');
 
+Route::delete('imports/{import}', [ImportController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('imports.destroy');
+
 Route::get('categories/{category}', [CategoryController::class, 'show'])
     ->middleware(['auth', 'verified'])
     ->name('categories.show');

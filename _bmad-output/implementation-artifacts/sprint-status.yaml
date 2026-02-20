@@ -65,7 +65,7 @@ development_status:
   epic-4: in-progress
   4-1-single-tap-category-correction: done
   4-2-ai-learning-from-corrections: done
-  4-3-import-deletion: backlog
+  4-3-import-deletion: done
   epic-4-retrospective: optional
 
   epic-5: backlog

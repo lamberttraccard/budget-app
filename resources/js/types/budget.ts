@@ -36,6 +36,16 @@ export type SubcategoryTotal = {
     transactionCount: number;
 };
 
+export type ImportRecord = {
+    id: number;
+    fileName: string;
+    bank: string;
+    transactionCount: number;
+    dateFrom: string | null;
+    dateTo: string | null;
+    importedAt: string | null;
+};
+
 export type AccountContext = {
     value: string;
     label: string;
@@ -65,4 +75,5 @@ export type DashboardProps = {
     currentAccount: string;
     availableMonths: string[];
     importPreview?: ImportPreview | null;
+    imports: ImportRecord[];
 };
