@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Parsers\BanquePopulaireParser;
 use App\Parsers\CsvParserFactory;
+use App\Parsers\RevolutParser;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(CsvParserFactory::class, fn () => new CsvParserFactory([
             BanquePopulaireParser::class,
+            RevolutParser::class,
         ]));
     }
 
