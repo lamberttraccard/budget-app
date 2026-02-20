@@ -47,8 +47,8 @@ development_status:
   1-4-production-deployment-with-https-and-monitoring: review
   epic-1-retrospective: optional
 
-  epic-2: backlog
-  2-1-csv-parser-framework-and-banque-populaire-support: backlog
+  epic-2: in-progress
+  2-1-csv-parser-framework-and-banque-populaire-support: done
   2-2-revolut-csv-parser: backlog
   2-3-import-pipeline-with-deduplication: backlog
   2-4-ai-auto-categorization-engine: backlog
