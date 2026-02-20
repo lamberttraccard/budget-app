@@ -1,7 +1,20 @@
-import { Head } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { UploadIcon } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import SummaryWidget from '@/components/SummaryWidget';
 import CategoryCard from '@/components/CategoryCard';
+import EmptyState from '@/components/EmptyState';
+import ImportDropZone from '@/components/ImportDropZone';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import type { CategoryTotal, DashboardProps } from '@/types';
 
 function formatMonthLabel(month: string): string {
@@ -10,34 +23,220 @@ function formatMonthLabel(month: string): string {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
 
-export default function Dashboard({ categoryTotals, incomeCents, expensesCents, currentMonth }: DashboardProps) {
+function formatDateRange(from: string, to: string): string {
+    const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    const fromDate = new Date(from + 'T00:00:00');
+    const toDate = new Date(to + 'T00:00:00');
+    return `${fromDate.toLocaleDateString('en-US', opts)} – ${toDate.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
+}
+
+export default function Dashboard({
+    categoryTotals,
+    incomeCents,
+    expensesCents,
+    currentMonth,
+    importPreview,
+}: DashboardProps) {
+    const { errors } = usePage().props as { errors: Record<string, string> };
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [file, setFile] = useState<File | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+
+    // Show confirmation dialog when importPreview arrives from server
+    useEffect(() => {
+        if (importPreview && file) {
+            setShowConfirmation(true);
+            setIsUploading(false);
+        }
+    }, [importPreview, file]);
+
+    const triggerFileInput = useCallback(() => {
+        fileInputRef.current?.click();
+    }, []);
+
+    const handleFileSelect = useCallback((selectedFile: File) => {
+        setFile(selectedFile);
+        setIsUploading(true);
+
+        router.post('/imports/preview', { csv_file: selectedFile }, {
+            preserveState: true,
+            preserveScroll: true,
+            onError: () => {
+                setIsUploading(false);
+                setFile(null);
+            },
+        });
+    }, []);
+
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            handleFileSelect(selectedFile);
+        }
+        // Reset input so the same file can be selected again
+        e.target.value = '';
+    }, [handleFileSelect]);
+
+    const handleConfirmImport = useCallback(() => {
+        if (!file) return;
+        setIsUploading(true);
+
+        router.post('/imports', { csv_file: file }, {
+            onSuccess: () => {
+                setFile(null);
+                setShowConfirmation(false);
+                setIsUploading(false);
+            },
+            onError: () => {
+                setShowConfirmation(false);
+                setIsUploading(false);
+                setFile(null);
+            },
+        });
+    }, [file]);
+
+    const handleCancelImport = useCallback(() => {
+        setShowConfirmation(false);
+        setFile(null);
+    }, []);
+
+    // --- Drag-and-drop handlers (desktop) ---
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Only hide overlay if leaving the page entirely (not entering a child)
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+        setIsDragging(false);
+    }, []);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault(); // Required to enable drop
+        e.stopPropagation();
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const droppedFile = e.dataTransfer.files[0];
+        if (droppedFile) {
+            handleFileSelect(droppedFile);
+        }
+    }, [handleFileSelect]);
+
     return (
         <AppLayout>
             <Head title="Budget" />
-            <div className="py-6 space-y-5">
+
+            {/* Hidden file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={handleInputChange}
+            />
+
+            {/* Drag-and-drop zone wraps the entire page content */}
+            <div
+                className="py-6 space-y-5"
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+            >
+                {/* Import error display */}
+                {errors.csv_file && (
+                    <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4">
+                        <p className="text-sm text-red-400">{errors.csv_file}</p>
+                    </div>
+                )}
+
                 <SummaryWidget incomeCents={incomeCents} expensesCents={expensesCents} />
 
                 {categoryTotals.length === 0 ? (
-                    <div className="rounded-xl bg-surface p-6 text-center">
-                        <p className="text-sm text-text-secondary">
-                            No transactions for {formatMonthLabel(currentMonth)}.
-                            Import your first CSV to get started.
-                        </p>
-                    </div>
+                    <EmptyState onImportClick={triggerFileInput} disabled={isUploading} />
                 ) : (
-                    <div className="space-y-3">
-                        {categoryTotals.map((cat: CategoryTotal) => (
-                            <CategoryCard
-                                key={cat.id}
-                                name={cat.name}
-                                color={cat.color}
-                                amountCents={cat.amountCents}
-                                transactionCount={cat.transactionCount}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="space-y-3">
+                            {categoryTotals.map((cat: CategoryTotal) => (
+                                <CategoryCard
+                                    key={cat.id}
+                                    name={cat.name}
+                                    color={cat.color}
+                                    amountCents={cat.amountCents}
+                                    transactionCount={cat.transactionCount}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Inline import button for subsequent imports */}
+                        <button
+                            type="button"
+                            onClick={triggerFileInput}
+                            disabled={isUploading}
+                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-surface p-3 text-sm text-text-secondary transition-colors hover:border-zinc-600 hover:text-white disabled:opacity-50"
+                        >
+                            <UploadIcon className="size-4" />
+                            {isUploading ? 'Uploading...' : 'Import CSV'}
+                        </button>
+                    </>
                 )}
             </div>
+
+            {/* Desktop drag-and-drop overlay */}
+            <ImportDropZone visible={isDragging} />
+
+            {/* Import confirmation dialog */}
+            <Dialog open={showConfirmation} onOpenChange={(open) => {
+                if (!open) handleCancelImport();
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Import transactions</DialogTitle>
+                        <DialogDescription>
+                            Review the import summary before committing.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {importPreview && (
+                        <div className="space-y-3 py-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-text-secondary">Bank</span>
+                                <span className="font-medium text-white">{importPreview.bank}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-text-secondary">Transactions</span>
+                                <span className="font-medium text-white">{importPreview.transactionCount}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-text-secondary">Period</span>
+                                <span className="font-medium text-white">
+                                    {formatDateRange(importPreview.dateFrom, importPreview.dateTo)}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={handleCancelImport} disabled={isUploading}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleConfirmImport} disabled={isUploading}>
+                            {isUploading ? 'Importing...' : 'Import'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

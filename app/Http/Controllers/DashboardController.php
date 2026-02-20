@@ -28,6 +28,7 @@ class DashboardController extends Controller
             'incomeCents'    => $data['incomeCents'],
             'expensesCents'  => $data['expensesCents'],
             'currentMonth'   => $monthParam,
+            'importPreview'  => session('importPreview'),
         ]);
     }
 }
