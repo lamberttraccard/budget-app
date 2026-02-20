@@ -52,7 +52,7 @@ development_status:
   2-2-revolut-csv-parser: done
   2-3-import-pipeline-with-deduplication: done
   2-4-ai-auto-categorization-engine: done
-  2-5-financial-overview-dashboard: backlog
+  2-5-financial-overview-dashboard: done
   2-6-import-user-interface-and-confirmation: backlog
   epic-2-retrospective: optional
 
