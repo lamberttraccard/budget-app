@@ -34,8 +34,8 @@ class CategorySeeder extends Seeder
 
         $subcategories = [
             'transport' => ['Fuel', 'Car Maintenance'],
-            'housing'   => ['Mortgage', 'Maintenance'],
-            'income'    => ['Salary', 'Freelance', 'Refunds', 'Investments'],
+            'housing' => ['Mortgage', 'Maintenance'],
+            'income' => ['Salary', 'Freelance', 'Refunds', 'Investments'],
         ];
 
         foreach ($subcategories as $parentSlug => $children) {
@@ -47,10 +47,10 @@ class CategorySeeder extends Seeder
                 Category::updateOrCreate(
                     ['slug' => $slug],
                     [
-                        'name'      => $name,
-                        'slug'      => $slug,
-                        'color'     => $parent->color,
-                        'icon'      => null,
+                        'name' => $name,
+                        'slug' => $slug,
+                        'color' => $parent->color,
+                        'icon' => null,
                         'parent_id' => $parent->id,
                     ]
                 );

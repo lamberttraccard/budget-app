@@ -90,5 +90,4 @@ class CategorizeTransactions implements ShouldQueue
             }
         }
     }
-
 }
