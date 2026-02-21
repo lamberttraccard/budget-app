@@ -293,6 +293,86 @@ class BudgetQueryServiceTest extends TestCase
         $this->assertEquals(-9000, $professionalResult['totalAmountCents']);
     }
 
+    public function test_subcategory_transactions_roll_up_to_parent()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $groceries = Category::where('slug', 'food-groceries')->first();
+
+        Transaction::factory()->create([
+            'amount_cents' => -3000,
+            'date' => '2026-02-10',
+            'category_id' => $groceries->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+        ]);
+
+        $result = $this->service->getMonthlyData(2026, 2);
+
+        $this->assertCount(1, $result['categoryTotals']);
+        $total = $result['categoryTotals'][0];
+        $this->assertEquals('food', $total['slug']);
+        $this->assertEquals('Food', $total['name']);
+        $this->assertEquals(-3000, $total['amountCents']);
+        $this->assertEquals(1, $total['transactionCount']);
+        $this->assertIsInt($total['id']);
+    }
+
+    public function test_parent_and_subcategory_transactions_aggregate_together()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $groceries = Category::where('slug', 'food-groceries')->first();
+
+        Transaction::factory()->create([
+            'amount_cents' => -2000,
+            'date' => '2026-02-10',
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3000,
+            'date' => '2026-02-11',
+            'category_id' => $groceries->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+        ]);
+
+        $result = $this->service->getMonthlyData(2026, 2);
+
+        $this->assertCount(1, $result['categoryTotals']);
+        $total = $result['categoryTotals'][0];
+        $this->assertEquals('food', $total['slug']);
+        $this->assertEquals(-5000, $total['amountCents']);
+        $this->assertEquals(2, $total['transactionCount']);
+    }
+
+    public function test_income_subcategory_transactions_roll_up_to_income_total()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $salary = Category::where('slug', 'income-salary')->first();
+
+        Transaction::factory()->create([
+            'amount_cents' => 150000,
+            'date' => '2026-02-05',
+            'category_id' => $salary->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+        ]);
+
+        $result = $this->service->getMonthlyData(2026, 2);
+
+        $this->assertCount(1, $result['categoryTotals']);
+        $this->assertEquals('income', $result['categoryTotals'][0]['slug']);
+        $this->assertEquals(150000, $result['incomeCents']);
+    }
+
     public function test_month_filtering_only_includes_specified_month()
     {
         $this->seed(CategorySeeder::class);

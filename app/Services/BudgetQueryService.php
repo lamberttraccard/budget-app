@@ -12,18 +12,25 @@ class BudgetQueryService
     {
         $query = Transaction::query()
             ->select([
-                'categories.id',
-                'categories.name',
-                'categories.slug',
-                'categories.color',
-                'categories.icon',
+                DB::raw('COALESCE(parent_cat.id, categories.id) as id'),
+                DB::raw('COALESCE(parent_cat.name, categories.name) as name'),
+                DB::raw('COALESCE(parent_cat.slug, categories.slug) as slug'),
+                DB::raw('COALESCE(parent_cat.color, categories.color) as color'),
+                DB::raw('COALESCE(parent_cat.icon, categories.icon) as icon'),
                 DB::raw('SUM(transactions.amount_cents) as total_amount'),
                 DB::raw('COUNT(transactions.id) as transaction_count'),
             ])
             ->join('categories', 'transactions.category_id', '=', 'categories.id')
+            ->leftJoin('categories as parent_cat', 'categories.parent_id', '=', 'parent_cat.id')
             ->whereYear('transactions.date', $year)
             ->whereMonth('transactions.date', $month)
-            ->groupBy('categories.id', 'categories.name', 'categories.slug', 'categories.color', 'categories.icon')
+            ->groupBy(
+                DB::raw('COALESCE(parent_cat.id, categories.id)'),
+                DB::raw('COALESCE(parent_cat.name, categories.name)'),
+                DB::raw('COALESCE(parent_cat.slug, categories.slug)'),
+                DB::raw('COALESCE(parent_cat.color, categories.color)'),
+                DB::raw('COALESCE(parent_cat.icon, categories.icon)'),
+            )
             ->orderByRaw('ABS(SUM(transactions.amount_cents)) DESC');
 
         if ($accountType !== null) {
@@ -34,7 +41,7 @@ class BudgetQueryService
         $rows = $query->get();
 
         $categoryTotals = $rows->map(fn ($row) => [
-            'id' => $row->id,
+            'id' => (int) $row->id,
             'name' => $row->name,
             'slug' => $row->slug,
             'color' => $row->color,
