@@ -9,7 +9,7 @@ use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 Route::get('/', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+    ->name('home');
 
 Route::post('imports/preview', [ImportController::class, 'preview'])
     ->middleware(['auth', 'verified'])

@@ -18,7 +18,7 @@ class DashboardTest extends TestCase
 
     public function test_guests_are_redirected_to_the_login_page()
     {
-        $response = $this->get(route('dashboard'));
+        $response = $this->get(route('home'));
         $response->assertRedirect(route('login'));
     }
 
@@ -27,7 +27,7 @@ class DashboardTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        $response = $this->get(route('dashboard'));
+        $response = $this->get(route('home'));
         $response->assertOk();
     }
 
@@ -36,7 +36,7 @@ class DashboardTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('categoryTotals')
                 ->has('incomeCents')
@@ -83,7 +83,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('categoryTotals.0.slug', 'transport')
                 ->where('categoryTotals.1.slug', 'food')
@@ -116,7 +116,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('incomeCents', 200000)
             );
@@ -157,7 +157,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('expensesCents', 50000)
             );
@@ -189,7 +189,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-01']))
+            ->get(route('home', ['month' => '2026-01']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('categoryTotals', 1)
                 ->where('categoryTotals.0.amountCents', -10000)
@@ -213,7 +213,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-01']))
+            ->get(route('home', ['month' => '2026-01']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('currentMonth', '2026-01')
                 ->where('categoryTotals.0.amountCents', -45000)
@@ -225,7 +225,7 @@ class DashboardTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => 'invalid']))
+            ->get(route('home', ['month' => 'invalid']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('currentMonth', now()->format('Y-m'))
@@ -237,7 +237,7 @@ class DashboardTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-13']))
+            ->get(route('home', ['month' => '2026-13']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('currentMonth', now()->format('Y-m'))
@@ -249,7 +249,7 @@ class DashboardTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2025-06']))
+            ->get(route('home', ['month' => '2025-06']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('categoryTotals', [])
                 ->where('incomeCents', 0)
@@ -281,7 +281,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('availableMonths', 2)
                 ->where('availableMonths.0', '2026-01')
@@ -294,7 +294,7 @@ class DashboardTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('availableMonths', 0)
             );
@@ -325,7 +325,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('availableMonths', 2)
                 ->where('availableMonths.0', '2026-01')
@@ -359,7 +359,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('currentAccount', 'personal')
                 ->has('categoryTotals', 1)
@@ -393,7 +393,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['account' => 'professional']))
+            ->get(route('home', ['account' => 'professional']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('currentAccount', 'professional')
                 ->has('categoryTotals', 1)
@@ -427,7 +427,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['account' => 'personal']))
+            ->get(route('home', ['account' => 'personal']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('categoryTotals', 1)
                 ->where('categoryTotals.0.amountCents', -5000)
@@ -439,7 +439,7 @@ class DashboardTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['account' => 'invalid']))
+            ->get(route('home', ['account' => 'invalid']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('currentAccount', 'personal')
@@ -479,7 +479,7 @@ class DashboardTest extends TestCase
 
         // January + Professional = only the 9000 transaction
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-01', 'account' => 'professional']))
+            ->get(route('home', ['month' => '2026-01', 'account' => 'professional']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('currentMonth', '2026-01')
                 ->where('currentAccount', 'professional')
@@ -514,7 +514,7 @@ class DashboardTest extends TestCase
 
         // Personal view should only see January
         $this->actingAs($user)
-            ->get(route('dashboard', ['account' => 'personal']))
+            ->get(route('home', ['account' => 'personal']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('availableMonths', 1)
                 ->where('availableMonths.0', '2026-01')
@@ -528,7 +528,7 @@ class DashboardTest extends TestCase
         Account::factory()->professional()->create();
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('accountContexts', 2)
             );
@@ -552,7 +552,7 @@ class DashboardTest extends TestCase
 
         // Request March (no data)
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-03']))
+            ->get(route('home', ['month' => '2026-03']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('currentMonth', '2026-03')
                 ->has('categoryTotals', 0)
@@ -592,7 +592,7 @@ class DashboardTest extends TestCase
 
         // ((42000 - 38000) / 38000) * 100 = (4000/38000)*100 = 10.526... ≈ 11
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-02']))
+            ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('categoryTotals.0.trendPercentage', 11)
             );
@@ -625,7 +625,7 @@ class DashboardTest extends TestCase
 
         // ((40000 - 50000) / 50000) * 100 = (-10000/50000)*100 = -20
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-02']))
+            ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('categoryTotals.0.trendPercentage', -20)
             );
@@ -657,7 +657,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-02']))
+            ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('categoryTotals.0.trendPercentage', 0)
             );
@@ -681,7 +681,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-02']))
+            ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('categoryTotals.0.trendPercentage', null)
             );
@@ -720,7 +720,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-02']))
+            ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('categoryTotals.0.trendPercentage', null)
             );
@@ -753,7 +753,7 @@ class DashboardTest extends TestCase
 
         // abs: ((30000 - 20000) / 20000) * 100 = (10000/20000)*100 = 50
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-01']))
+            ->get(route('home', ['month' => '2026-01']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('categoryTotals.0.trendPercentage', 50)
             );
@@ -795,7 +795,7 @@ class DashboardTest extends TestCase
         // Personal account abs: ((20000 - 10000) / 10000) * 100 = (10000/10000)*100 = 100
         // Should NOT use the professional January amount
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-02', 'account' => 'personal']))
+            ->get(route('home', ['month' => '2026-02', 'account' => 'personal']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('categoryTotals.0.trendPercentage', 100)
             );
@@ -819,7 +819,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('categoryTotals.0.trendPercentage')
             );
@@ -852,7 +852,7 @@ class DashboardTest extends TestCase
 
         // ((250000 - 200000) / 200000) * 100 = 25
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-02']))
+            ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('categoryTotals.0.trendPercentage', 25)
             );
@@ -882,7 +882,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-02']))
+            ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('hasPreviousMonthData', true)
             );
@@ -906,7 +906,7 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-02']))
+            ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('hasPreviousMonthData', false)
             );

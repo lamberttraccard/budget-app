@@ -94,7 +94,7 @@ class ImportControllerTest extends TestCase
         $response = $this->actingAs($user)
             ->post(route('imports.store'), ['csv_file' => $file]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('home'));
 
         $this->assertDatabaseHas('imports', [
             'file_name' => 'releve.csv',
@@ -259,7 +259,7 @@ class ImportControllerTest extends TestCase
         $response = $this->actingAs($user)
             ->post(route('imports.store'), ['csv_file' => $file2]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('home'));
 
         // Should still be 3 transactions (no duplicates)
         $this->assertDatabaseCount('transactions', 3);
@@ -276,7 +276,7 @@ class ImportControllerTest extends TestCase
 
         // GET dashboard should include importPreview prop from flashed session
         $response = $this->actingAs($user)
-            ->get(route('dashboard'));
+            ->get(route('home'));
 
         $response->assertInertia(fn ($page) => $page
             ->component('dashboard')
@@ -375,7 +375,7 @@ class ImportControllerTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('dashboard')
                 ->has('imports', 1)
@@ -402,7 +402,7 @@ class ImportControllerTest extends TestCase
 
         // January should be in available months
         $this->actingAs($user)
-            ->get(route('dashboard', ['month' => '2026-01']))
+            ->get(route('home', ['month' => '2026-01']))
             ->assertInertia(fn (Assert $page) => $page
                 ->has('availableMonths', 1)
                 ->where('availableMonths.0', '2026-01')
@@ -414,7 +414,7 @@ class ImportControllerTest extends TestCase
 
         // January should no longer be available
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page
                 ->has('availableMonths', 0)
             );
@@ -436,7 +436,7 @@ class ImportControllerTest extends TestCase
         Import::factory()->pending()->create(['bank' => 'Revolut']);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('dashboard')
                 ->has('imports', 1)

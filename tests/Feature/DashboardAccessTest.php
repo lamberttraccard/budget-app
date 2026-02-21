@@ -21,7 +21,7 @@ class DashboardAccessTest extends TestCase
     #[Test]
     public function unauthenticated_users_are_redirected_to_login(): void
     {
-        $response = $this->get('/dashboard');
+        $response = $this->get('/');
 
         $response->assertRedirect('/login');
     }
@@ -41,7 +41,7 @@ class DashboardAccessTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect('/dashboard');
+        $response->assertRedirect('/');
     }
 
     #[Test]

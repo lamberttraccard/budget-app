@@ -78,7 +78,7 @@ class ImportController extends Controller
             return back()->withErrors(['csv_file' => $e->getMessage()]);
         }
 
-        return redirect()->route('dashboard');
+        return redirect()->route('home');
     }
 
     public function destroy(Import $import): RedirectResponse
