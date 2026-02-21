@@ -86,31 +86,9 @@ class CategorizeTransactions implements ShouldQueue
                     'error' => $e->getMessage(),
                 ]);
 
-                $isLastAttempt = $this->job === null || $this->attempts() >= $this->tries;
-
-                if ($isLastAttempt) {
-                    $this->assignFallbackCategory($chunk, $fallbackCategoryId);
-
-                    continue;
-                }
-
                 throw $e;
             }
         }
     }
 
-    /**
-     * @param  \Illuminate\Support\Collection<int, Transaction>  $transactions
-     */
-    private function assignFallbackCategory($transactions, int $fallbackCategoryId): void
-    {
-        DB::transaction(function () use ($transactions, $fallbackCategoryId) {
-            foreach ($transactions as $transaction) {
-                if ($transaction->category_id === null) {
-                    $transaction->update(['category_id' => $fallbackCategoryId]);
-                    TransactionCategorized::dispatch($transaction->fresh());
-                }
-            }
-        });
-    }
 }

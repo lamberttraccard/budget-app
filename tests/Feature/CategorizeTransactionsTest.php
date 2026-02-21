@@ -92,7 +92,7 @@ class CategorizeTransactionsTest extends TestCase
         $this->assertSame($this->categories['other']->id, $t1->fresh()->category_id);
     }
 
-    public function test_job_assigns_other_category_when_agent_throws_exception(): void
+    public function test_job_leaves_transactions_uncategorized_when_agent_throws_exception(): void
     {
         $t1 = $this->createUncategorizedTransaction('SOME MERCHANT');
         $t2 = $this->createUncategorizedTransaction('ANOTHER MERCHANT');
@@ -103,11 +103,14 @@ class CategorizeTransactionsTest extends TestCase
 
         Event::fake([TransactionCategorized::class]);
 
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('API error');
+
         (new CategorizeTransactions($this->import))->handle();
 
-        $this->assertSame($this->categories['other']->id, $t1->fresh()->category_id);
-        $this->assertSame($this->categories['other']->id, $t2->fresh()->category_id);
-        Event::assertDispatched(TransactionCategorized::class, 2);
+        $this->assertNull($t1->fresh()->category_id);
+        $this->assertNull($t2->fresh()->category_id);
+        Event::assertNotDispatched(TransactionCategorized::class);
     }
 
     public function test_job_dispatches_transaction_categorized_event_for_each_transaction(): void
