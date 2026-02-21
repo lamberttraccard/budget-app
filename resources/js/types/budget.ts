@@ -3,6 +3,7 @@ export type CategoryTotal = {
     name: string;
     slug: string;
     color: string;
+    icon: string | null;
     amountCents: number;
     transactionCount: number;
     trendPercentage: number | null;
@@ -28,6 +29,7 @@ export type CategoryOption = {
     id: number;
     name: string;
     color: string;
+    icon: string | null;
 };
 
 export type SubcategoryTotal = {
@@ -58,6 +60,7 @@ export type CategoryShowProps = {
         name: string;
         color: string;
         slug: string;
+        icon: string | null;
     };
     subcategories: SubcategoryTotal[];
     transactions: TransactionItem[];

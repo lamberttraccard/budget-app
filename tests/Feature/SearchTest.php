@@ -231,6 +231,7 @@ class SearchTest extends TestCase
                     ->has('id')
                     ->has('name')
                     ->has('color')
+                    ->has('icon')
                 )
             );
     }

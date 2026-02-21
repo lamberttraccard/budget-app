@@ -1,7 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
-import AppLogoIcon from '@/components/app-logo-icon';
 import { Toaster } from 'sonner';
 import AccountPicker from '@/components/AccountPicker';
+import AppLogoIcon from '@/components/app-logo-icon';
 import BottomDock from '@/components/BottomDock';
 import { useNavItems } from '@/hooks/use-nav-items';
 import type { AccountContext, AppLayoutProps } from '@/types';

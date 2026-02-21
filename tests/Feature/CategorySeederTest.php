@@ -78,4 +78,25 @@ class CategorySeederTest extends TestCase
 
         $this->assertDatabaseCount('categories', 14);
     }
+
+    public function test_food_category_has_correct_icon(): void
+    {
+        $this->seed(CategorySeeder::class);
+
+        $food = Category::where('slug', 'food')->first();
+
+        $this->assertNotNull($food);
+        $this->assertSame('apple', $food->icon);
+    }
+
+    public function test_all_categories_have_icons(): void
+    {
+        $this->seed(CategorySeeder::class);
+
+        $categoriesWithoutIcons = Category::whereNull('parent_id')
+            ->whereNull('icon')
+            ->count();
+
+        $this->assertSame(0, $categoriesWithoutIcons);
+    }
 }

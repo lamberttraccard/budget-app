@@ -250,6 +250,7 @@ export default function Dashboard({
                                                 id={cat.id}
                                                 name={cat.name}
                                                 color={cat.color}
+                                                icon={cat.icon}
                                                 amountCents={cat.amountCents}
                                                 transactionCount={cat.transactionCount}
                                                 trendPercentage={hasPreviousMonthData ? cat.trendPercentage : undefined}
@@ -272,6 +273,7 @@ export default function Dashboard({
                                                     id={cat.id}
                                                     name={cat.name}
                                                     color={cat.color}
+                                                    icon={cat.icon}
                                                     amountCents={cat.amountCents}
                                                     transactionCount={cat.transactionCount}
                                                     trendPercentage={hasPreviousMonthData ? cat.trendPercentage : undefined}

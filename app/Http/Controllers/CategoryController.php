@@ -35,6 +35,7 @@ class CategoryController extends Controller
                 'name' => $category->name,
                 'color' => $category->color,
                 'slug' => $category->slug,
+                'icon' => $category->icon,
             ],
             'subcategories' => $data['subcategories'],
             'transactions' => $data['transactions'],
@@ -44,11 +45,12 @@ class CategoryController extends Controller
             'currentAccount' => $accountParam,
             'allCategories' => Category::whereNull('parent_id')
                 ->orderBy('name')
-                ->get(['id', 'name', 'color'])
+                ->get(['id', 'name', 'color', 'icon'])
                 ->map(fn ($c) => [
                     'id' => $c->id,
                     'name' => $c->name,
                     'color' => $c->color,
+                    'icon' => $c->icon,
                 ])
                 ->toArray(),
         ]);

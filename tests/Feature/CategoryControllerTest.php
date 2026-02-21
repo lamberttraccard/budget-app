@@ -48,6 +48,7 @@ class CategoryControllerTest extends TestCase
                 ->where('category.name', $category->name)
                 ->where('category.color', $category->color)
                 ->where('category.slug', $category->slug)
+                ->where('category.icon', $category->icon)
                 ->has('subcategories')
                 ->has('transactions', 3)
                 ->where('transactionCount', 3)
@@ -298,6 +299,7 @@ class CategoryControllerTest extends TestCase
                     ->has('id')
                     ->has('name')
                     ->has('color')
+                    ->has('icon')
                 )
             );
     }

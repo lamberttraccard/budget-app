@@ -12,6 +12,7 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { CategoryIcon } from '@/lib/category-icons';
 import type { CategoryOption } from '@/types';
 
 type Props = {
@@ -40,9 +41,11 @@ function CategoryItem({ category, isCurrent, onSelect }: {
             }`}
         >
             <span
-                className="size-4 rounded-full shrink-0"
+                className="size-7 rounded-lg shrink-0 flex items-center justify-center"
                 style={{ backgroundColor: category.color }}
-            />
+            >
+                <CategoryIcon name={category.icon} className="size-4 text-black/60" />
+            </span>
             <span className="text-sm text-white flex-1">{category.name}</span>
             {isCurrent && (
                 <span className="text-xs text-text-tertiary">(current)</span>
@@ -110,9 +113,11 @@ export default function CategoryPicker({
                             }`}
                         >
                             <span
-                                className="size-3.5 rounded-full shrink-0"
+                                className="size-6 rounded-md shrink-0 flex items-center justify-center"
                                 style={{ backgroundColor: cat.color }}
-                            />
+                            >
+                                <CategoryIcon name={cat.icon} className="size-3.5 text-black/60" />
+                            </span>
                             <span className="flex-1">{cat.name}</span>
                             {isCurrent && (
                                 <span className="text-xs text-text-tertiary">(current)</span>

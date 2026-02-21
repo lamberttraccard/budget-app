@@ -1,10 +1,12 @@
 import { Link } from '@inertiajs/react';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
+import { CategoryIcon } from '@/lib/category-icons';
 
 type Props = {
     id: number;
     name: string;
     color: string;
+    icon: string | null;
     amountCents: number;
     transactionCount: number;
     trendPercentage?: number | null;
@@ -25,17 +27,19 @@ function TrendIndicator({ value }: { value: number | null }) {
     return <span className="text-xs" style={{ color: '#FB7185' }}>↑{value}%</span>;
 }
 
-export default function CategoryCard({ id, name, color, amountCents, transactionCount, trendPercentage, currentMonth, currentAccount }: Props) {
+export default function CategoryCard({ id, name, color, icon, amountCents, transactionCount, trendPercentage, currentMonth, currentAccount }: Props) {
     return (
         <Link
             href={`/categories/${id}?month=${currentMonth}&account=${currentAccount}`}
             className="flex items-center gap-4 bg-surface rounded-xl p-4 transition-colors hover:bg-surface-elevated"
         >
             <div
-                className="w-12 h-12 rounded-xl flex-shrink-0"
+                className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center"
                 style={{ backgroundColor: color }}
                 aria-hidden="true"
-            />
+            >
+                <CategoryIcon name={icon} className="size-6 text-black/60" />
+            </div>
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-normal text-white truncate">{name}</p>
                 <p className="text-xs text-text-secondary">

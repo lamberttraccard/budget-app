@@ -16,13 +16,14 @@ class BudgetQueryService
                 'categories.name',
                 'categories.slug',
                 'categories.color',
+                'categories.icon',
                 DB::raw('SUM(transactions.amount_cents) as total_amount'),
                 DB::raw('COUNT(transactions.id) as transaction_count'),
             ])
             ->join('categories', 'transactions.category_id', '=', 'categories.id')
             ->whereYear('transactions.date', $year)
             ->whereMonth('transactions.date', $month)
-            ->groupBy('categories.id', 'categories.name', 'categories.slug', 'categories.color')
+            ->groupBy('categories.id', 'categories.name', 'categories.slug', 'categories.color', 'categories.icon')
             ->orderByRaw('ABS(SUM(transactions.amount_cents)) DESC');
 
         if ($accountType !== null) {
@@ -37,6 +38,7 @@ class BudgetQueryService
             'name' => $row->name,
             'slug' => $row->slug,
             'color' => $row->color,
+            'icon' => $row->icon,
             'amountCents' => (int) $row->total_amount,
             'transactionCount' => (int) $row->transaction_count,
         ])->values()->toArray();
@@ -254,6 +256,7 @@ class BudgetQueryService
                 'name' => $reference['name'],
                 'slug' => $reference['slug'],
                 'color' => $reference['color'] ?? null,
+                'icon' => $reference['icon'] ?? null,
                 'baseAmountCents' => $baseAmount,
                 'compareAmountCents' => $compareAmount,
                 'changeCents' => $changeCents,

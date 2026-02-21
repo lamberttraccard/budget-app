@@ -1,9 +1,11 @@
 import { ArrowLeftIcon } from 'lucide-react';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
+import { CategoryIcon } from '@/lib/category-icons';
 
 type Props = {
     name: string;
     color: string;
+    icon: string | null;
     totalAmountCents: number;
     transactionCount: number;
     onBack: () => void;
@@ -22,7 +24,7 @@ function isLightColor(hex: string): boolean {
     return luminance > 0.35;
 }
 
-export default function ColorHeader({ name, color, totalAmountCents, transactionCount, onBack }: Props) {
+export default function ColorHeader({ name, color, icon, totalAmountCents, transactionCount, onBack }: Props) {
     const light = isLightColor(color);
     const textPrimary = light ? 'text-black/90' : 'text-white/90';
     const textSecondary = light ? 'text-black/60' : 'text-white/60';
@@ -41,10 +43,12 @@ export default function ColorHeader({ name, color, totalAmountCents, transaction
 
             <div className="flex flex-col items-center pt-8">
                 <div
-                    className="w-16 h-16 rounded-2xl mb-4"
+                    className="w-16 h-16 rounded-2xl mb-4 flex items-center justify-center"
                     style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}
                     aria-hidden="true"
-                />
+                >
+                    <CategoryIcon name={icon} className={`size-8 ${textSecondary}`} />
+                </div>
 
                 <h1 className={`text-xl font-semibold ${textPrimary}`}>{name}</h1>
 

@@ -32,11 +32,12 @@ class SearchController extends Controller
 
         $allCategories = Category::whereNull('parent_id')
             ->orderBy('name')
-            ->get(['id', 'name', 'color'])
+            ->get(['id', 'name', 'color', 'icon'])
             ->map(fn ($c) => [
                 'id' => $c->id,
                 'name' => $c->name,
                 'color' => $c->color,
+                'icon' => $c->icon,
             ])
             ->toArray();
 

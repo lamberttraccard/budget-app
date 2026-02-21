@@ -1,5 +1,5 @@
-import type { ComponentType } from 'react';
 import { LayoutGrid, Repeat, Search } from 'lucide-react';
+import type { ComponentType } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 
 export type DockNavItem = {

@@ -95,6 +95,7 @@ export default function CategoryShow({
                 <ColorHeader
                     name={category.name}
                     color={category.color}
+                    icon={category.icon}
                     totalAmountCents={totalAmountCents}
                     transactionCount={transactionCount}
                     onBack={handleBack}
