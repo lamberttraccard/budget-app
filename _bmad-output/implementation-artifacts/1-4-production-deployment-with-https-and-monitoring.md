@@ -1,6 +1,6 @@
 # Story 1.4: Production Deployment with HTTPS & Monitoring
 
-Status: review
+Status: done
 
 ## Story
 
@@ -20,17 +20,17 @@ so that I can access it securely from anywhere and detect issues early.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Configure TrustProxies for Laravel Cloud (AC: 2)
-  - [ ] 1.1: In `bootstrap/app.php`, add `trustProxies(at: '*')` with full header trust (`HEADER_X_FORWARDED_FOR | HEADER_X_FORWARDED_HOST | HEADER_X_FORWARDED_PORT | HEADER_X_FORWARDED_PROTO`). This ensures `$request->secure()` returns `true` behind Cloudflare's TLS termination, and all URL helpers generate `https://` links.
-  - [ ] 1.2: Verify `APP_URL` in `.env.example` documents the HTTPS requirement with a comment: `# Production: set to https://your-domain.laravel.cloud in Laravel Cloud dashboard`
+- [x] Task 1: Configure TrustProxies for Laravel Cloud (AC: 2)
+  - [x] 1.1: In `bootstrap/app.php`, add `trustProxies(at: '*')` with full header trust (`HEADER_X_FORWARDED_FOR | HEADER_X_FORWARDED_HOST | HEADER_X_FORWARDED_PORT | HEADER_X_FORWARDED_PROTO`). This ensures `$request->secure()` returns `true` behind Cloudflare's TLS termination, and all URL helpers generate `https://` links.
+  - [x] 1.2: Verify `APP_URL` in `.env.example` documents the HTTPS requirement with a comment: `# Production: set to https://your-domain.laravel.cloud in Laravel Cloud dashboard`
 
-- [ ] Task 2: Configure Nightwatch for production readiness (AC: 3)
-  - [ ] 2.1: Update `.env.example` with complete Nightwatch configuration variables:
+- [x] Task 2: Configure Nightwatch for production readiness (AC: 3)
+  - [x] 2.1: Update `.env.example` with complete Nightwatch configuration variables:
     - `NIGHTWATCH_TOKEN=` (obtain from Nightwatch dashboard after environment creation)
     - `NIGHTWATCH_REQUEST_SAMPLE_RATE=1` (100% sampling for single-user app — no need to throttle)
     - `NIGHTWATCH_COMMAND_SAMPLE_RATE=1`
     - `NIGHTWATCH_EXCEPTION_SAMPLE_RATE=1`
-  - [ ] 2.2: Update `config/logging.php` to include `nightwatch` in the stack channel so application logs are forwarded to Nightwatch alongside the default file logger:
+  - [x] 2.2: Update `config/logging.php` to include `nightwatch` in the stack channel so application logs are forwarded to Nightwatch alongside the default file logger:
     ```php
     'stack' => [
         'driver' => 'stack',
@@ -38,10 +38,10 @@ so that I can access it securely from anywhere and detect issues early.
     ],
     ```
     This allows Laravel Cloud to inject `LOG_STACK=laravel-cloud-socket,nightwatch` automatically.
-  - [ ] 2.3: Verify Nightwatch is disabled locally by default (`NIGHTWATCH_ENABLED=false` in `.env`) so the agent process is not required during development.
+  - [x] 2.3: Verify Nightwatch is disabled locally by default (`NIGHTWATCH_ENABLED=false` in `.env`) so the agent process is not required during development.
 
-- [ ] Task 3: Configure production environment variables documentation (AC: 4)
-  - [ ] 3.1: Add a `docs/deployment.md` section OR comprehensive comments in `.env.example` documenting all Laravel Cloud environment variables that must be set in the dashboard:
+- [x] Task 3: Configure production environment variables documentation (AC: 4)
+  - [x] 3.1: Add a `docs/deployment.md` section OR comprehensive comments in `.env.example` documenting all Laravel Cloud environment variables that must be set in the dashboard:
     - `APP_URL=https://budget-app.laravel.cloud` (or custom domain)
     - `APP_ENV=production`
     - `APP_DEBUG=false`
@@ -51,10 +51,10 @@ so that I can access it securely from anywhere and detect issues early.
     - `NIGHTWATCH_TOKEN=` (from Nightwatch dashboard)
     - `NIGHTWATCH_REQUEST_SAMPLE_RATE=1`
     - `PRISM_GEMINI_API_KEY=` (for future AI categorization)
-  - [ ] 3.2: Ensure `.env.example` does NOT contain actual secrets — only placeholder values and comments
+  - [x] 3.2: Ensure `.env.example` does NOT contain actual secrets — only placeholder values and comments
 
-- [ ] Task 4: Configure Laravel Cloud build and deploy commands (AC: 1)
-  - [ ] 4.1: Document the required **build commands** for the Laravel Cloud environment dashboard:
+- [x] Task 4: Configure Laravel Cloud build and deploy commands (AC: 1)
+  - [x] 4.1: Document the required **build commands** for the Laravel Cloud environment dashboard:
     ```
     composer install --no-dev --optimize-autoloader
     bun install
@@ -64,22 +64,22 @@ so that I can access it securely from anywhere and detect issues early.
     php artisan view:cache
     php artisan event:cache
     ```
-  - [ ] 4.2: Document the required **deploy command** for the Laravel Cloud environment dashboard:
+  - [x] 4.2: Document the required **deploy command** for the Laravel Cloud environment dashboard:
     ```
     php artisan migrate --force
     ```
-  - [ ] 4.3: Ensure `compose.yaml` (Sail) has no conflicts with Laravel Cloud — Sail is dev-only, Cloud ignores it. No changes needed.
+  - [x] 4.3: Ensure `compose.yaml` (Sail) has no conflicts with Laravel Cloud — Sail is dev-only, Cloud ignores it. No changes needed.
 
-- [ ] Task 5: Verify production-readiness of existing configuration (AC: 1, 2, 3, 4)
-  - [ ] 5.1: Verify `AppServiceProvider` already has `DB::prohibitDestructiveCommands()` in production (confirmed present from Story 1.1)
-  - [ ] 5.2: Verify `config/queue.php` default connection reads from `QUEUE_CONNECTION` env var (Laravel default — should already be correct)
-  - [ ] 5.3: Verify database migrations include the `jobs` table for the database queue driver (created in Story 1.2)
-  - [ ] 5.4: Run `sail artisan test` — all 72+ tests must pass with zero regressions
+- [x] Task 5: Verify production-readiness of existing configuration (AC: 1, 2, 3, 4)
+  - [x] 5.1: Verify `AppServiceProvider` already has `DB::prohibitDestructiveCommands()` in production (confirmed present from Story 1.1)
+  - [x] 5.2: Verify `config/queue.php` default connection reads from `QUEUE_CONNECTION` env var (Laravel default — should already be correct)
+  - [x] 5.3: Verify database migrations include the `jobs` table for the database queue driver (created in Story 1.2)
+  - [x] 5.4: Run `sail artisan test` — all 72+ tests must pass with zero regressions
 
-- [ ] Task 6: Write deployment verification tests (AC: 1, 2, 3)
-  - [ ] 6.1: Feature test: Assert that when a request comes with `X-Forwarded-Proto: https` header, `$request->secure()` returns `true` (TrustProxies works correctly)
-  - [ ] 6.2: Feature test: Assert Nightwatch package is installed and service provider is registered (verify `app('nightwatch')` or check Nightwatch classes exist)
-  - [ ] 6.3: Run full test suite: `sail artisan test` — all tests must pass
+- [x] Task 6: Write deployment verification tests (AC: 1, 2, 3)
+  - [x] 6.1: Feature test: Assert that when a request comes with `X-Forwarded-Proto: https` header, `$request->secure()` returns `true` (TrustProxies works correctly)
+  - [x] 6.2: Feature test: Assert Nightwatch package is installed and service provider is registered (verify `app('nightwatch')` or check Nightwatch classes exist)
+  - [x] 6.3: Run full test suite: `sail artisan test` — all tests must pass
 
 ## Dev Notes
 
@@ -278,3 +278,31 @@ None — clean implementation with no runtime errors.
 
 **Created:**
 - `tests/Feature/ProductionReadinessTest.php` — 7 tests verifying deployment infrastructure
+
+### Senior Developer Review (AI)
+
+**Reviewer:** Lambert on 2026-02-21
+**Review Agent:** Claude Opus 4.6 (claude-opus-4-6)
+
+**Findings (1 Critical, 3 Medium, 2 Low):**
+
+**CRITICAL — Fixed:**
+1. All 17 subtasks marked `[ ]` (unchecked) despite being implemented → Checked all task boxes to `[x]`
+
+**MEDIUM — Fixed:**
+2. Test `destructive_db_commands_prohibited_in_production` only checked `method_exists` on facade → Rewritten to verify `AppServiceProvider` source contains the actual `DB::prohibitDestructiveCommands` call with `isProduction()` guard
+3. Test `logging_stack_channel_reads_from_env` had trivial `assertNotEmpty` assertion → Rewritten to verify `config/logging.php` uses `explode()` on `LOG_STACK` env var pattern (critical for Laravel Cloud compatibility)
+4. `config/logging.php` stack channel defaulted to `'single'` instead of `'daily'` per Task 2.2 → Updated default to `'daily'` for proper log rotation
+
+**LOW — Not fixed (acceptable):**
+5. `nightwatch_package_is_installed` test only checks `class_exists` — acceptable since Nightwatch auto-registers via package discovery
+6. Architecture doc still lists `ForceHttps.php` in project structure — story correctly deviated; doc update is outside story scope
+
+**All 4 ACs verified as IMPLEMENTED.**
+**303 tests pass (1311 assertions), zero regressions.**
+
+### Change Log
+
+| Date | Change | Author |
+|------|--------|--------|
+| 2026-02-21 | Code review: fixed 4 issues (task checkboxes, 2 weak tests, logging default), status → done | Lambert (AI Review) |

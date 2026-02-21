@@ -55,22 +55,32 @@ class ProductionReadinessTest extends TestCase
     }
 
     #[Test]
-    public function logging_stack_channel_reads_from_env(): void
+    public function logging_stack_channel_supports_env_based_injection(): void
     {
-        $channels = config('logging.channels.stack.channels');
-
-        $this->assertIsArray($channels);
-        $this->assertNotEmpty($channels);
+        // Verify config/logging.php uses explode() on LOG_STACK env var
+        // Critical for Laravel Cloud which sets LOG_STACK=laravel-cloud-socket,nightwatch
+        $configFile = file_get_contents(config_path('logging.php'));
+        $this->assertMatchesRegularExpression(
+            "/explode\s*\(\s*','\s*,.*env\s*\(\s*'LOG_STACK'/",
+            $configFile,
+            'Stack channel must use explode() on LOG_STACK env var for Laravel Cloud compatibility',
+        );
     }
 
     #[Test]
     public function destructive_db_commands_prohibited_in_production(): void
     {
-        // AppServiceProvider calls DB::prohibitDestructiveCommands(app()->isProduction())
-        // In test env (not production), this is not active, but we verify the config exists
-        $this->assertTrue(
-            method_exists(\Illuminate\Support\Facades\DB::class, 'prohibitDestructiveCommands'),
-            'DB::prohibitDestructiveCommands method should exist',
+        // Verify AppServiceProvider actually calls DB::prohibitDestructiveCommands
+        $source = file_get_contents(app_path('Providers/AppServiceProvider.php'));
+        $this->assertStringContainsString(
+            'DB::prohibitDestructiveCommands',
+            $source,
+            'AppServiceProvider must call DB::prohibitDestructiveCommands',
+        );
+        $this->assertStringContainsString(
+            'isProduction()',
+            $source,
+            'DB::prohibitDestructiveCommands must be conditional on production environment',
         );
     }
 
