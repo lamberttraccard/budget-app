@@ -77,7 +77,7 @@ export default function Dashboard({
 
     const handleMonthChange = useCallback((month: string) => {
         setShouldCascade(false);
-        router.get('/dashboard', { month, account: currentAccount }, {
+        router.get('/', { month, account: currentAccount }, {
             preserveState: true,
             preserveScroll: true,
             only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth'],
@@ -86,7 +86,7 @@ export default function Dashboard({
 
     const handleAccountChange = useCallback((account: string) => {
         setShouldCascade(false);
-        router.get('/dashboard', { month: currentMonth, account }, {
+        router.get('/', { month: currentMonth, account }, {
             preserveState: true,
             preserveScroll: true,
             only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'currentAccount', 'availableMonths'],

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BottomDock from '../BottomDock';
 
-let mockUrl = '/dashboard';
+let mockUrl = '/';
 
 vi.mock('@inertiajs/react', () => ({
     usePage: () => ({ url: mockUrl }),
@@ -14,7 +14,7 @@ vi.mock('@inertiajs/react', () => ({
 
 describe('BottomDock', () => {
     beforeEach(() => {
-        mockUrl = '/dashboard';
+        mockUrl = '/';
     });
 
     it('renders 3 dock items with correct labels', () => {
@@ -24,8 +24,8 @@ describe('BottomDock', () => {
         expect(screen.getByText('Search')).toBeInTheDocument();
     });
 
-    it('highlights Dashboard when on /dashboard', () => {
-        mockUrl = '/dashboard';
+    it('highlights Dashboard when on /', () => {
+        mockUrl = '/';
         render(<BottomDock />);
         const dashboardLink = screen.getByText('Dashboard').closest('a');
         expect(dashboardLink).toHaveAttribute('aria-current', 'page');
@@ -66,7 +66,7 @@ describe('BottomDock', () => {
     it('does not append account param to Dashboard link', () => {
         render(<BottomDock currentAccount="personal" />);
         const dashboardLink = screen.getByText('Dashboard').closest('a');
-        expect(dashboardLink).toHaveAttribute('href', '/dashboard');
+        expect(dashboardLink).toHaveAttribute('href', '/');
     });
 
     it('renders items as links with correct hrefs', () => {
@@ -74,7 +74,7 @@ describe('BottomDock', () => {
         const dashboardLink = screen.getByText('Dashboard').closest('a');
         const recurringLink = screen.getByText('Recurring').closest('a');
         const searchLink = screen.getByText('Search').closest('a');
-        expect(dashboardLink).toHaveAttribute('href', '/dashboard');
+        expect(dashboardLink).toHaveAttribute('href', '/');
         expect(recurringLink).toHaveAttribute('href', '/recurring');
         expect(searchLink).toHaveAttribute('href', '/search');
     });

@@ -13,7 +13,7 @@ export function useNavItems(currentAccount?: string): DockNavItem[] {
     const { currentUrl } = useCurrentUrl();
 
     function buildHref(path: string): string {
-        if (currentAccount && path !== '/dashboard') {
+        if (currentAccount && path !== '/') {
             return `${path}?account=${currentAccount}`;
         }
         return path;
@@ -22,9 +22,9 @@ export function useNavItems(currentAccount?: string): DockNavItem[] {
     return [
         {
             label: 'Dashboard',
-            href: buildHref('/dashboard'),
+            href: buildHref('/'),
             icon: LayoutGrid,
-            isActive: currentUrl === '/dashboard' || currentUrl.startsWith('/categories'),
+            isActive: currentUrl === '/' || currentUrl.startsWith('/categories'),
         },
         {
             label: 'Recurring',

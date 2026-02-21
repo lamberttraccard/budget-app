@@ -31,12 +31,12 @@ export default function CategoryShow({
         if (window.history.length > 1 && document.referrer.includes(window.location.origin)) {
             window.history.back();
         } else {
-            router.visit('/dashboard');
+            router.visit('/');
         }
     };
 
     const handleAccountChange = useCallback((account: string) => {
-        router.get('/dashboard', { account });
+        router.get('/', { account });
     }, []);
 
     const handleSubcategoryClick = (subcategoryId: number) => {
