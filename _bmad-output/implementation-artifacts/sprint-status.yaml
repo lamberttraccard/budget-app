@@ -74,13 +74,13 @@ development_status:
   5-3-aggregation-and-comparison-tools: done
   epic-5-retrospective: optional
 
-  epic-6: in-progress
+  epic-6: done
   6-1-inline-trend-indicators: done
   6-2-animated-number-transitions: done
   6-3-drill-down-and-import-animations: done
   epic-6-retrospective: optional
 
-  epic-7: in-progress
+  epic-7: done
   7-1-transaction-search: done
   7-2-recurring-transaction-detection-and-view: done
   epic-7-retrospective: optional
