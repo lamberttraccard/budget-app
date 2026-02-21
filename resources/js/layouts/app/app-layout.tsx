@@ -12,7 +12,7 @@ export default function AppLayout({ children, currentAccount, onAccountChange }:
 
     return (
         <div className="min-h-screen bg-background">
-            <header className="px-4 sm:px-8 py-4">
+            <header className="px-4 sm:px-8 py-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
                 <div className="max-w-[480px] lg:max-w-[960px] mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <AppLogoIcon className="size-8 rounded-lg" />
