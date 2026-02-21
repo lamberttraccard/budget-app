@@ -70,6 +70,6 @@ development_status:
 
   epic-5: in-progress
   5-1-mcp-server-setup-with-sanctum-authentication: done
-  5-2-transaction-and-category-query-tools: backlog
+  5-2-transaction-and-category-query-tools: done
   5-3-aggregation-and-comparison-tools: backlog
   epic-5-retrospective: optional

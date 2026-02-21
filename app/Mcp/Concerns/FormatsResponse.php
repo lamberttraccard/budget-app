@@ -41,6 +41,8 @@ trait FormatsResponse
             'merchant_name' => $transaction['description'],
             'amount_cents' => $transaction['amountCents'],
             'category_id' => $transaction['categoryId'] ?? null,
+            'category_name' => $transaction['categoryName'] ?? null,
+            'account_name' => $transaction['accountName'] ?? null,
         ];
     }
 }

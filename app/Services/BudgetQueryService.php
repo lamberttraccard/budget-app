@@ -141,4 +141,101 @@ class BudgetQueryService
 
         return compact('subcategories', 'transactions', 'totalAmountCents', 'transactionCount');
     }
+
+    /**
+     * Query transactions with flexible filters and pagination.
+     *
+     * @param  array{category_id?: int, date_from?: string, date_to?: string, account_type?: string, limit?: int, offset?: int}  $filters
+     * @return array{transactions: array, totalCount: int}
+     */
+    public function queryTransactions(array $filters): array
+    {
+        $limit = min($filters['limit'] ?? 50, 200);
+        $offset = $filters['offset'] ?? 0;
+
+        $query = Transaction::query()
+            ->join('categories', 'transactions.category_id', '=', 'categories.id')
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->select([
+                'transactions.id',
+                'transactions.date',
+                'transactions.description',
+                'transactions.amount_cents',
+                'transactions.category_id',
+                'categories.name as category_name',
+                'accounts.name as account_name',
+            ]);
+
+        if (isset($filters['category_id'])) {
+            $query->where('transactions.category_id', $filters['category_id']);
+        }
+
+        if (isset($filters['date_from'])) {
+            $query->where('transactions.date', '>=', $filters['date_from']);
+        }
+
+        if (isset($filters['date_to'])) {
+            $query->where('transactions.date', '<=', $filters['date_to']);
+        }
+
+        if (isset($filters['account_type'])) {
+            $query->where('accounts.type', $filters['account_type']);
+        }
+
+        $totalCount = $query->count();
+
+        $transactions = $query
+            ->orderByDesc('transactions.date')
+            ->orderByDesc('transactions.id')
+            ->limit($limit)
+            ->offset($offset)
+            ->get()
+            ->map(fn ($row) => [
+                'id' => $row->id,
+                'date' => $row->date->toDateString(),
+                'description' => $row->description,
+                'amountCents' => (int) $row->amount_cents,
+                'categoryId' => $row->category_id,
+                'categoryName' => $row->category_name,
+                'accountName' => $row->account_name,
+            ])
+            ->values()
+            ->toArray();
+
+        return compact('transactions', 'totalCount');
+    }
+
+    /**
+     * Get full detail for a single transaction with all relationships.
+     *
+     * @return array|null
+     */
+    public function getTransactionDetail(int $transactionId): ?array
+    {
+        $transaction = Transaction::with(['category.parent', 'account', 'import'])
+            ->find($transactionId);
+
+        if (! $transaction) {
+            return null;
+        }
+
+        $category = $transaction->category;
+        $isSubcategory = $category && $category->parent_id !== null;
+
+        return [
+            'id' => $transaction->id,
+            'date' => $transaction->date->toDateString(),
+            'description' => $transaction->description,
+            'amountCents' => $transaction->amount_cents,
+            'categoryId' => $transaction->category_id,
+            'categoryName' => $isSubcategory ? $category->parent->name : ($category->name ?? null),
+            'subcategoryName' => $isSubcategory ? $category->name : null,
+            'accountId' => $transaction->account_id,
+            'accountName' => $transaction->account?->name,
+            'accountType' => $transaction->account?->type,
+            'importId' => $transaction->import_id,
+            'importFileName' => $transaction->import?->file_name,
+            'importBank' => $transaction->import?->bank,
+        ];
+    }
 }

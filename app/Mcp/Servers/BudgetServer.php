@@ -2,6 +2,10 @@
 
 namespace App\Mcp\Servers;
 
+use App\Mcp\Tools\GetCategoryBreakdown;
+use App\Mcp\Tools\GetCategoryTotals;
+use App\Mcp\Tools\GetTransactionDetails;
+use App\Mcp\Tools\QueryTransactions;
 use Laravel\Mcp\Server;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
@@ -28,6 +32,9 @@ MARKDOWN)]
 class BudgetServer extends Server
 {
     protected array $tools = [
-        // Tools will be added in Stories 5.2 and 5.3
+        GetCategoryTotals::class,
+        QueryTransactions::class,
+        GetTransactionDetails::class,
+        GetCategoryBreakdown::class,
     ];
 }
