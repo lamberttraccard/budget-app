@@ -27,6 +27,10 @@ class TransactionFactory extends Factory
     public function configure(): static
     {
         return $this->afterMaking(function (Transaction $transaction) {
+            if ($transaction->dedup_hash) {
+                return;
+            }
+
             $date = $transaction->date instanceof \DateTimeInterface
                 ? $transaction->date->format('Y-m-d')
                 : $transaction->date;

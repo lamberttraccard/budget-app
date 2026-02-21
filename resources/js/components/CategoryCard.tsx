@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { formatAbsAmount } from '@/lib/formatAmount';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 
 type Props = {
     id: number;
@@ -42,13 +42,12 @@ export default function CategoryCard({ id, name, color, amountCents, transaction
                     {transactionCount} transaction{transactionCount !== 1 ? 's' : ''}
                 </p>
             </div>
-            <div className="ml-auto text-right">
-                <p
+            <div className="ml-auto flex flex-col items-end">
+                <AnimatedNumber
+                    value={amountCents}
                     className="text-2xl font-semibold tabular-nums"
                     style={{ color }}
-                >
-                    {formatAbsAmount(amountCents)}
-                </p>
+                />
                 {trendPercentage !== undefined && <TrendIndicator value={trendPercentage} />}
             </div>
         </Link>
