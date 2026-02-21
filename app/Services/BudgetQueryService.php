@@ -206,6 +206,115 @@ class BudgetQueryService
     }
 
     /**
+     * Compare category spending between two months with absolute and percentage deltas.
+     */
+    public function getMonthlyComparison(
+        int $baseYear,
+        int $baseMonth,
+        int $compareYear,
+        int $compareMonth,
+        ?int $categoryId = null,
+        ?string $accountType = null,
+    ): array {
+        $baseData = $this->getMonthlyData($baseYear, $baseMonth, $accountType);
+        $compareData = $this->getMonthlyData($compareYear, $compareMonth, $accountType);
+
+        $baseByCategory = collect($baseData['categoryTotals'])->keyBy('id');
+        $compareByCategory = collect($compareData['categoryTotals'])->keyBy('id');
+
+        $allCategoryIds = $baseByCategory->keys()->merge($compareByCategory->keys())->unique();
+
+        $categories = $allCategoryIds->map(function ($id) use ($baseByCategory, $compareByCategory) {
+            $base = $baseByCategory->get($id);
+            $compare = $compareByCategory->get($id);
+
+            $baseAmount = $base ? $base['amountCents'] : 0;
+            $compareAmount = $compare ? $compare['amountCents'] : 0;
+
+            if ($baseAmount === 0 && $compareAmount === 0) {
+                return null;
+            }
+
+            $changeCents = $compareAmount - $baseAmount;
+            $changePct = $baseAmount !== 0
+                ? round(($changeCents / abs($baseAmount)) * 100, 2)
+                : null;
+
+            $reference = $base ?? $compare;
+
+            return [
+                'id' => $id,
+                'name' => $reference['name'],
+                'slug' => $reference['slug'],
+                'color' => $reference['color'] ?? null,
+                'baseAmountCents' => $baseAmount,
+                'compareAmountCents' => $compareAmount,
+                'changeCents' => $changeCents,
+                'changePct' => $changePct,
+            ];
+        })->filter()->values();
+
+        if ($categoryId !== null) {
+            $categories = $categories->where('id', $categoryId)->values();
+        }
+
+        return [
+            'categories' => $categories->toArray(),
+            'baseIncomeCents' => $baseData['incomeCents'],
+            'baseExpensesCents' => $baseData['expensesCents'],
+            'compareIncomeCents' => $compareData['incomeCents'],
+            'compareExpensesCents' => $compareData['expensesCents'],
+        ];
+    }
+
+    /**
+     * Get per-account income and expense totals, optionally filtered by period.
+     */
+    public function getAccountSummary(?int $year = null, ?int $month = null): array
+    {
+        $query = DB::table('accounts')
+            ->leftJoin('transactions', function ($join) use ($year, $month) {
+                $join->on('accounts.id', '=', 'transactions.account_id');
+                if ($year !== null) {
+                    $join->whereYear('transactions.date', $year);
+                    if ($month !== null) {
+                        $join->whereMonth('transactions.date', $month);
+                    }
+                }
+            })
+            ->leftJoin('categories', 'transactions.category_id', '=', 'categories.id')
+            ->select([
+                'accounts.id',
+                'accounts.name',
+                'accounts.bank',
+                'accounts.type',
+                DB::raw("COALESCE(SUM(CASE WHEN categories.slug = 'income' THEN transactions.amount_cents ELSE 0 END), 0) as income_cents"),
+                DB::raw("COALESCE(SUM(CASE WHEN categories.slug != 'income' THEN ABS(transactions.amount_cents) ELSE 0 END), 0) as expenses_cents"),
+                DB::raw('COUNT(transactions.id) as transaction_count'),
+            ])
+            ->groupBy('accounts.id', 'accounts.name', 'accounts.bank', 'accounts.type');
+
+        $rows = $query->orderBy('accounts.name')->get();
+
+        $accounts = $rows->map(fn ($row) => [
+            'id' => $row->id,
+            'name' => $row->name,
+            'bank' => $row->bank,
+            'type' => $row->type,
+            'incomeCents' => (int) $row->income_cents,
+            'expensesCents' => (int) $row->expenses_cents,
+            'netCents' => (int) $row->income_cents - (int) $row->expenses_cents,
+            'transactionCount' => (int) $row->transaction_count,
+        ])->toArray();
+
+        return [
+            'accounts' => $accounts,
+            'totalIncomeCents' => (int) $rows->sum('income_cents'),
+            'totalExpensesCents' => (int) $rows->sum('expenses_cents'),
+        ];
+    }
+
+    /**
      * Get full detail for a single transaction with all relationships.
      *
      * @return array|null

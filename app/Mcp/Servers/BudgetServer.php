@@ -2,8 +2,10 @@
 
 namespace App\Mcp\Servers;
 
+use App\Mcp\Tools\GetAccountSummary;
 use App\Mcp\Tools\GetCategoryBreakdown;
 use App\Mcp\Tools\GetCategoryTotals;
+use App\Mcp\Tools\GetMonthlyComparison;
 use App\Mcp\Tools\GetTransactionDetails;
 use App\Mcp\Tools\QueryTransactions;
 use Laravel\Mcp\Server;
@@ -28,6 +30,8 @@ Use the available tools to query transactions, categories, and spending summarie
 - By date range (month or custom range)
 - By account type (personal or professional)
 - By individual transaction
+- By month-over-month comparison (two months side by side with deltas)
+- By account summary (per-account income/expenses/net)
 MARKDOWN)]
 class BudgetServer extends Server
 {
@@ -36,5 +40,7 @@ class BudgetServer extends Server
         QueryTransactions::class,
         GetTransactionDetails::class,
         GetCategoryBreakdown::class,
+        GetMonthlyComparison::class,
+        GetAccountSummary::class,
     ];
 }

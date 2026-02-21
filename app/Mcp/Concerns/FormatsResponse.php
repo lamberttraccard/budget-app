@@ -45,4 +45,32 @@ trait FormatsResponse
             'account_name' => $transaction['accountName'] ?? null,
         ];
     }
+
+    protected function formatComparisonItem(array $comparison): array
+    {
+        return [
+            'category_id' => $comparison['id'],
+            'category_name' => $comparison['name'],
+            'category_slug' => $comparison['slug'],
+            'color' => $comparison['color'] ?? null,
+            'base_amount_cents' => $comparison['baseAmountCents'],
+            'compare_amount_cents' => $comparison['compareAmountCents'],
+            'change_cents' => $comparison['changeCents'],
+            'change_pct' => $comparison['changePct'],
+        ];
+    }
+
+    protected function formatAccountItem(array $account): array
+    {
+        return [
+            'account_id' => $account['id'],
+            'account_name' => $account['name'],
+            'account_bank' => $account['bank'],
+            'account_type' => $account['type'],
+            'income_cents' => $account['incomeCents'],
+            'expenses_cents' => $account['expensesCents'],
+            'net_cents' => $account['netCents'],
+            'transaction_count' => $account['transactionCount'],
+        ];
+    }
 }

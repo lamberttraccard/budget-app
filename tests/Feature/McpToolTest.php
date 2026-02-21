@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Mcp\Servers\BudgetServer;
+use App\Mcp\Tools\GetAccountSummary;
 use App\Mcp\Tools\GetCategoryBreakdown;
 use App\Mcp\Tools\GetCategoryTotals;
+use App\Mcp\Tools\GetMonthlyComparison;
 use App\Mcp\Tools\GetTransactionDetails;
 use App\Mcp\Tools\QueryTransactions;
 use App\Models\Account;
@@ -526,6 +528,8 @@ class McpToolTest extends TestCase
             ['query_transactions', []],
             ['get_transaction_details', ['transaction_id' => 1]],
             ['get_category_breakdown', ['category_id' => 1, 'year' => 2026, 'month' => 2]],
+            ['get_monthly_comparison', ['base_year' => 2026, 'base_month' => 1, 'compare_year' => 2026, 'compare_month' => 2]],
+            ['get_account_summary', []],
         ];
 
         foreach ($tools as [$name, $args]) {
@@ -566,5 +570,367 @@ class McpToolTest extends TestCase
         $response->assertOk();
         $response->assertSee('"data"');
         $response->assertSee('"meta"');
+    }
+
+    // ──────────────────────────────────────────────────
+    // BudgetQueryService::getMonthlyComparison() tests
+    // ──────────────────────────────────────────────────
+
+    public function test_get_monthly_comparison_returns_category_by_category_deltas(): void
+    {
+        // January: Food=-5000, Transport=-3000
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-01-15',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3000, 'date' => '2026-01-20',
+            'category_id' => $this->transport->id, 'account_id' => $this->personal->id,
+        ]);
+        // February: Food=-3500, Transport=-3000
+        Transaction::factory()->create([
+            'amount_cents' => -3500, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3000, 'date' => '2026-02-12',
+            'category_id' => $this->transport->id, 'account_id' => $this->personal->id,
+        ]);
+
+        $service = app(BudgetQueryService::class);
+        $result = $service->getMonthlyComparison(2026, 1, 2026, 2);
+
+        $this->assertCount(2, $result['categories']);
+
+        $food = collect($result['categories'])->firstWhere('slug', 'food');
+        $this->assertEquals(-5000, $food['baseAmountCents']);
+        $this->assertEquals(-3500, $food['compareAmountCents']);
+        $this->assertEquals(1500, $food['changeCents']);
+        $this->assertEquals(30.0, $food['changePct']);
+
+        $transport = collect($result['categories'])->firstWhere('slug', 'transport');
+        $this->assertEquals(-3000, $transport['baseAmountCents']);
+        $this->assertEquals(-3000, $transport['compareAmountCents']);
+        $this->assertEquals(0, $transport['changeCents']);
+        $this->assertEquals(0.0, $transport['changePct']);
+    }
+
+    public function test_get_monthly_comparison_with_category_id_filter(): void
+    {
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-01-15',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3000, 'date' => '2026-01-20',
+            'category_id' => $this->transport->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3500, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+
+        $service = app(BudgetQueryService::class);
+        $result = $service->getMonthlyComparison(2026, 1, 2026, 2, $this->food->id);
+
+        $this->assertCount(1, $result['categories']);
+        $this->assertEquals('food', $result['categories'][0]['slug']);
+    }
+
+    public function test_get_monthly_comparison_handles_category_in_one_month_only(): void
+    {
+        // January: Food=-5000 (no Restaurants)
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-01-15',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        // February: Restaurants=-2000 (no Food)
+        $restaurants = Category::where('slug', 'restaurants')->first();
+        Transaction::factory()->create([
+            'amount_cents' => -2000, 'date' => '2026-02-10',
+            'category_id' => $restaurants->id, 'account_id' => $this->personal->id,
+        ]);
+
+        $service = app(BudgetQueryService::class);
+        $result = $service->getMonthlyComparison(2026, 1, 2026, 2);
+
+        $food = collect($result['categories'])->firstWhere('slug', 'food');
+        $this->assertEquals(-5000, $food['baseAmountCents']);
+        $this->assertEquals(0, $food['compareAmountCents']);
+        $this->assertEquals(5000, $food['changeCents']);
+
+        $rest = collect($result['categories'])->firstWhere('slug', 'restaurants');
+        $this->assertEquals(0, $rest['baseAmountCents']);
+        $this->assertEquals(-2000, $rest['compareAmountCents']);
+        $this->assertNull($rest['changePct']); // Cannot compute pct from zero base
+    }
+
+    // ──────────────────────────────────────────────────
+    // BudgetQueryService::getAccountSummary() tests
+    // ──────────────────────────────────────────────────
+
+    public function test_get_account_summary_returns_per_account_totals(): void
+    {
+        Transaction::factory()->create([
+            'amount_cents' => 300000, 'date' => '2026-02-01',
+            'category_id' => $this->income->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -2000, 'date' => '2026-02-15',
+            'category_id' => $this->food->id, 'account_id' => $this->professional->id,
+        ]);
+
+        $service = app(BudgetQueryService::class);
+        $result = $service->getAccountSummary(2026, 2);
+
+        $this->assertCount(2, $result['accounts']);
+
+        $personal = collect($result['accounts'])->firstWhere('name', 'Personal Checking');
+        $this->assertEquals(300000, $personal['incomeCents']);
+        $this->assertEquals(5000, $personal['expensesCents']);
+        $this->assertEquals(295000, $personal['netCents']);
+        $this->assertEquals(2, $personal['transactionCount']);
+
+        $pro = collect($result['accounts'])->firstWhere('name', 'Pro Account');
+        $this->assertEquals(0, $pro['incomeCents']);
+        $this->assertEquals(2000, $pro['expensesCents']);
+    }
+
+    public function test_get_account_summary_with_year_month_filter(): void
+    {
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-01-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3000, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+
+        $service = app(BudgetQueryService::class);
+        $result = $service->getAccountSummary(2026, 2);
+
+        $personal = collect($result['accounts'])->firstWhere('name', 'Personal Checking');
+        $this->assertEquals(3000, $personal['expensesCents']);
+        $this->assertEquals(1, $personal['transactionCount']);
+    }
+
+    public function test_get_account_summary_includes_accounts_with_zero_transactions_in_period(): void
+    {
+        // Only personal has February transactions; professional has none
+        Transaction::factory()->create([
+            'amount_cents' => -3000, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+
+        $service = app(BudgetQueryService::class);
+        $result = $service->getAccountSummary(2026, 2);
+
+        // Both accounts must appear even though professional has zero transactions in Feb
+        $this->assertCount(2, $result['accounts']);
+
+        $pro = collect($result['accounts'])->firstWhere('name', 'Pro Account');
+        $this->assertNotNull($pro);
+        $this->assertEquals(0, $pro['incomeCents']);
+        $this->assertEquals(0, $pro['expensesCents']);
+        $this->assertEquals(0, $pro['netCents']);
+        $this->assertEquals(0, $pro['transactionCount']);
+    }
+
+    // ──────────────────────────────────────────────────
+    // GetMonthlyComparison MCP tool tests
+    // ──────────────────────────────────────────────────
+
+    public function test_get_monthly_comparison_tool_returns_correct_comparison(): void
+    {
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-01-15',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3500, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+
+        $response = BudgetServer::actingAs($this->user)
+            ->tool(GetMonthlyComparison::class, [
+                'base_year' => 2026, 'base_month' => 1,
+                'compare_year' => 2026, 'compare_month' => 2,
+            ]);
+
+        $response->assertOk();
+        $response->assertSee('base_amount_cents');
+        $response->assertSee('compare_amount_cents');
+        $response->assertSee('change_cents');
+        $response->assertSee('change_pct');
+        $response->assertSee('"base_period":"2026-01"');
+        $response->assertSee('"compare_period":"2026-02"');
+    }
+
+    public function test_get_monthly_comparison_tool_with_category_id_filter(): void
+    {
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-01-15',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3000, 'date' => '2026-01-20',
+            'category_id' => $this->transport->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3500, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+
+        $response = BudgetServer::actingAs($this->user)
+            ->tool(GetMonthlyComparison::class, [
+                'base_year' => 2026, 'base_month' => 1,
+                'compare_year' => 2026, 'compare_month' => 2,
+                'category_id' => $this->food->id,
+            ]);
+
+        $response->assertOk();
+        $response->assertSee('food');
+        $response->assertDontSee('transport');
+        $response->assertSee('"total_count":1');
+    }
+
+    public function test_get_monthly_comparison_tool_with_account_type_filter(): void
+    {
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-01-15',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -2000, 'date' => '2026-01-15',
+            'category_id' => $this->food->id, 'account_id' => $this->professional->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3500, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+
+        $response = BudgetServer::actingAs($this->user)
+            ->tool(GetMonthlyComparison::class, [
+                'base_year' => 2026, 'base_month' => 1,
+                'compare_year' => 2026, 'compare_month' => 2,
+                'account_type' => 'personal',
+            ]);
+
+        $response->assertOk();
+        $response->assertSee('"account":"personal"');
+    }
+
+    // ──────────────────────────────────────────────────
+    // GetAccountSummary MCP tool tests
+    // ──────────────────────────────────────────────────
+
+    public function test_get_account_summary_tool_returns_all_accounts(): void
+    {
+        Transaction::factory()->create([
+            'amount_cents' => 300000, 'date' => '2026-02-01',
+            'category_id' => $this->income->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -2000, 'date' => '2026-02-15',
+            'category_id' => $this->food->id, 'account_id' => $this->professional->id,
+        ]);
+
+        $response = BudgetServer::actingAs($this->user)
+            ->tool(GetAccountSummary::class, ['year' => 2026, 'month' => 2]);
+
+        $response->assertOk();
+        $response->assertSee('account_id');
+        $response->assertSee('account_name');
+        $response->assertSee('income_cents');
+        $response->assertSee('expenses_cents');
+        $response->assertSee('net_cents');
+        $response->assertSee('"period":"2026-02"');
+        $response->assertSee('"total_count":2');
+    }
+
+    public function test_get_account_summary_tool_with_period_filter(): void
+    {
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-01-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3000, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+
+        $response = BudgetServer::actingAs($this->user)
+            ->tool(GetAccountSummary::class, ['year' => 2026, 'month' => 2]);
+
+        $response->assertOk();
+        $response->assertSee('"period":"2026-02"');
+    }
+
+    public function test_get_account_summary_tool_month_without_year_returns_error(): void
+    {
+        $response = BudgetServer::actingAs($this->user)
+            ->tool(GetAccountSummary::class, ['month' => 2]);
+
+        $response->assertHasErrors();
+    }
+
+    public function test_get_account_summary_tool_without_period_returns_all_time(): void
+    {
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-01-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+
+        $response = BudgetServer::actingAs($this->user)
+            ->tool(GetAccountSummary::class, []);
+
+        $response->assertOk();
+        $response->assertSee('"period":"all"');
+    }
+
+    // ──────────────────────────────────────────────────
+    // New tools response format tests
+    // ──────────────────────────────────────────────────
+
+    public function test_new_tools_response_format_matches_convention(): void
+    {
+        Transaction::factory()->create([
+            'amount_cents' => -5000, 'date' => '2026-01-15',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+        Transaction::factory()->create([
+            'amount_cents' => -3500, 'date' => '2026-02-10',
+            'category_id' => $this->food->id, 'account_id' => $this->personal->id,
+        ]);
+
+        // Check comparison tool format
+        $compResponse = BudgetServer::actingAs($this->user)
+            ->tool(GetMonthlyComparison::class, [
+                'base_year' => 2026, 'base_month' => 1,
+                'compare_year' => 2026, 'compare_month' => 2,
+            ]);
+        $compResponse->assertOk();
+        $compResponse->assertSee('"data"');
+        $compResponse->assertSee('"meta"');
+        $compResponse->assertDontSee('baseAmountCents');
+        $compResponse->assertDontSee('compareAmountCents');
+
+        // Check account summary tool format
+        $accResponse = BudgetServer::actingAs($this->user)
+            ->tool(GetAccountSummary::class, ['year' => 2026, 'month' => 2]);
+        $accResponse->assertOk();
+        $accResponse->assertSee('"data"');
+        $accResponse->assertSee('"meta"');
+        $accResponse->assertDontSee('incomeCents');
+        $accResponse->assertDontSee('expensesCents');
     }
 }
