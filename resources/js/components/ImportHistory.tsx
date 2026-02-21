@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { toast } from 'sonner';
 import { Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,

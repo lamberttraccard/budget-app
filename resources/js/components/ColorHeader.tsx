@@ -1,5 +1,5 @@
 import { ArrowLeftIcon } from 'lucide-react';
-import { formatAbsAmount } from '@/lib/formatAmount';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 
 type Props = {
     name: string;
@@ -48,9 +48,10 @@ export default function ColorHeader({ name, color, totalAmountCents, transaction
 
                 <h1 className={`text-xl font-semibold ${textPrimary}`}>{name}</h1>
 
-                <p className={`mt-2 text-4xl font-bold tabular-nums ${textPrimary}`}>
-                    {formatAbsAmount(totalAmountCents)}
-                </p>
+                <AnimatedNumber
+                    value={totalAmountCents}
+                    className={`mt-2 text-4xl font-bold tabular-nums ${textPrimary}`}
+                />
 
                 <p className={`mt-1 text-sm ${textSecondary}`}>
                     {transactionCount} transaction{transactionCount !== 1 ? 's' : ''}

@@ -1,13 +1,14 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { UploadIcon } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
-import SummaryWidget from '@/components/SummaryWidget';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import CategoryCard from '@/components/CategoryCard';
 import EmptyState from '@/components/EmptyState';
 import ImportDropZone from '@/components/ImportDropZone';
 import ImportHistory from '@/components/ImportHistory';
 import MonthStrip from '@/components/MonthStrip';
+import SummaryWidget from '@/components/SummaryWidget';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -16,7 +17,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import type { CategoryTotal, DashboardProps, ImportRecord } from '@/types';
 
 function formatMonthLabel(month: string): string {
@@ -31,6 +32,24 @@ function formatDateRange(from: string, to: string): string {
     const toDate = new Date(to + 'T00:00:00');
     return `${fromDate.toLocaleDateString('en-US', opts)} – ${toDate.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
 }
+
+const containerVariants = {
+    hidden: {},
+    visible: {
+        transition: {
+            staggerChildren: 0.08,
+        },
+    },
+};
+
+const cardVariants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.3, ease: 'easeOut' as const },
+    },
+};
 
 export default function Dashboard({
     categoryTotals,
@@ -50,11 +69,14 @@ export default function Dashboard({
     const [isUploading, setIsUploading] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [importAccountType, setImportAccountType] = useState<string>('personal');
+    const [shouldCascade, setShouldCascade] = useState(false);
+    const shouldReduceMotion = useReducedMotion();
 
     const hasAnyData = availableMonths.length > 0;
     const isEmptyMonth = hasAnyData && categoryTotals.length === 0;
 
     const handleMonthChange = useCallback((month: string) => {
+        setShouldCascade(false);
         router.get('/dashboard', { month, account: currentAccount }, {
             preserveState: true,
             preserveScroll: true,
@@ -63,6 +85,7 @@ export default function Dashboard({
     }, [currentAccount]);
 
     const handleAccountChange = useCallback((account: string) => {
+        setShouldCascade(false);
         router.get('/dashboard', { month: currentMonth, account }, {
             preserveState: true,
             preserveScroll: true,
@@ -115,6 +138,7 @@ export default function Dashboard({
                 setShowConfirmation(false);
                 setIsUploading(false);
                 setImportAccountType('personal');
+                setShouldCascade(true);
             },
             onError: () => {
                 setShowConfirmation(false);
@@ -206,38 +230,72 @@ export default function Dashboard({
                             No transactions for {formatMonthLabel(currentMonth)}
                         </p>
                     </div>
-                ) : categoryTotals.length === 0 ? (
-                    <EmptyState onImportClick={triggerFileInput} disabled={isUploading} />
                 ) : (
-                    <>
-                        <div className="space-y-3">
-                            {categoryTotals.map((cat: CategoryTotal) => (
-                                <CategoryCard
-                                    key={cat.id}
-                                    id={cat.id}
-                                    name={cat.name}
-                                    color={cat.color}
-                                    amountCents={cat.amountCents}
-                                    transactionCount={cat.transactionCount}
-                                    trendPercentage={hasPreviousMonthData ? cat.trendPercentage : undefined}
-                                    currentMonth={currentMonth}
-                                    currentAccount={currentAccount}
-                                />
-                            ))}
-                        </div>
+                    <AnimatePresence mode="wait">
+                        {categoryTotals.length === 0 ? (
+                            <motion.div
+                                key="empty"
+                                exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <EmptyState onImportClick={triggerFileInput} disabled={isUploading} />
+                            </motion.div>
+                        ) : (
+                            <div key="categories">
+                                {shouldReduceMotion ? (
+                                    <div className="space-y-3">
+                                        {categoryTotals.map((cat: CategoryTotal) => (
+                                            <CategoryCard
+                                                key={cat.id}
+                                                id={cat.id}
+                                                name={cat.name}
+                                                color={cat.color}
+                                                amountCents={cat.amountCents}
+                                                transactionCount={cat.transactionCount}
+                                                trendPercentage={hasPreviousMonthData ? cat.trendPercentage : undefined}
+                                                currentMonth={currentMonth}
+                                                currentAccount={currentAccount}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <motion.div
+                                        className="space-y-3"
+                                        variants={containerVariants}
+                                        initial={shouldCascade ? 'hidden' : false}
+                                        animate="visible"
+                                        onAnimationComplete={() => setShouldCascade(false)}
+                                    >
+                                        {categoryTotals.map((cat: CategoryTotal) => (
+                                            <motion.div key={cat.id} variants={cardVariants}>
+                                                <CategoryCard
+                                                    id={cat.id}
+                                                    name={cat.name}
+                                                    color={cat.color}
+                                                    amountCents={cat.amountCents}
+                                                    transactionCount={cat.transactionCount}
+                                                    trendPercentage={hasPreviousMonthData ? cat.trendPercentage : undefined}
+                                                    currentMonth={currentMonth}
+                                                    currentAccount={currentAccount}
+                                                />
+                                            </motion.div>
+                                        ))}
+                                    </motion.div>
+                                )}
 
-                        {/* Inline import button for subsequent imports */}
-                        <button
-                            type="button"
-                            onClick={triggerFileInput}
-                            disabled={isUploading}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-surface p-3 text-sm text-text-secondary transition-colors hover:border-zinc-600 hover:text-white disabled:opacity-50"
-                        >
-                            <UploadIcon className="size-4" />
-                            {isUploading ? 'Uploading...' : 'Import CSV'}
-                        </button>
-
-                    </>
+                                {/* Inline import button for subsequent imports */}
+                                <button
+                                    type="button"
+                                    onClick={triggerFileInput}
+                                    disabled={isUploading}
+                                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-surface p-3 text-sm text-text-secondary transition-colors hover:border-zinc-600 hover:text-white disabled:opacity-50"
+                                >
+                                    <UploadIcon className="size-4" />
+                                    {isUploading ? 'Uploading...' : 'Import CSV'}
+                                </button>
+                            </div>
+                        )}
+                    </AnimatePresence>
                 )}
 
                 {imports.length > 0 && (

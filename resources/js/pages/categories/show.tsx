@@ -1,11 +1,12 @@
 import { Head, router } from '@inertiajs/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import AppLayout from '@/layouts/app-layout';
+import CategoryPicker from '@/components/CategoryPicker';
 import ColorHeader from '@/components/ColorHeader';
 import SubcategoryRow from '@/components/SubcategoryRow';
 import TransactionRow from '@/components/TransactionRow';
-import CategoryPicker from '@/components/CategoryPicker';
+import AppLayout from '@/layouts/app-layout';
 import type { CategoryShowProps, TransactionItem } from '@/types';
 
 export default function CategoryShow({
@@ -76,6 +77,8 @@ export default function CategoryShow({
         });
     }, [selectedTransactionId, isPatching]);
 
+    const shouldReduceMotion = useReducedMotion();
+
     const visibleTransactions: TransactionItem[] = activeSubcategoryId
         ? transactions.filter((t) => t.categoryId === activeSubcategoryId)
         : transactions;
@@ -84,15 +87,26 @@ export default function CategoryShow({
         <AppLayout currentAccount={currentAccount} onAccountChange={handleAccountChange}>
             <Head title={category.name} />
 
-            <ColorHeader
-                name={category.name}
-                color={category.color}
-                totalAmountCents={totalAmountCents}
-                transactionCount={transactionCount}
-                onBack={handleBack}
-            />
+            <motion.div
+                initial={shouldReduceMotion ? false : { opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+            >
+                <ColorHeader
+                    name={category.name}
+                    color={category.color}
+                    totalAmountCents={totalAmountCents}
+                    transactionCount={transactionCount}
+                    onBack={handleBack}
+                />
+            </motion.div>
 
-            <div className="py-5 space-y-4">
+            <motion.div
+                className="py-5 space-y-4"
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: 'easeOut', delay: 0.15 }}
+            >
                 {subcategories.length > 0 && (
                     <div className="bg-surface rounded-xl overflow-hidden">
                         {subcategories.map((sub, index) => (
@@ -137,7 +151,7 @@ export default function CategoryShow({
                         </p>
                     </div>
                 )}
-            </div>
+            </motion.div>
 
             <CategoryPicker
                 categories={allCategories}
