@@ -1,7 +1,7 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { UploadIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import CategoryCard from '@/components/CategoryCard';
 import EmptyState from '@/components/EmptyState';
 import ImportDropZone from '@/components/ImportDropZone';
@@ -93,14 +93,6 @@ export default function Dashboard({
         });
     }, [currentMonth]);
 
-    // Show confirmation dialog when importPreview arrives from server
-    useEffect(() => {
-        if (importPreview && file) {
-            setShowConfirmation(true);
-            setIsUploading(false);
-        }
-    }, [importPreview, file]);
-
     const triggerFileInput = useCallback(() => {
         fileInputRef.current?.click();
     }, []);
@@ -112,6 +104,10 @@ export default function Dashboard({
         router.post('/imports/preview', { csv_file: selectedFile }, {
             preserveState: true,
             preserveScroll: true,
+            onSuccess: () => {
+                setShowConfirmation(true);
+                setIsUploading(false);
+            },
             onError: () => {
                 setIsUploading(false);
                 setFile(null);

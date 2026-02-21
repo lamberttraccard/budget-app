@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { formatAbsAmount, formatAmount } from '@/lib/formatAmount';
 
 let reducedMotion = false;
-const animateSpy = vi.fn((..._args: any[]) => ({ stop: () => {} }));
+const animateSpy = vi.fn(() => ({ stop: () => {} }));
 
 vi.mock('motion/react', async () => {
     const React = await import('react');
@@ -15,7 +15,7 @@ vi.mock('motion/react', async () => {
             set(v: number) { this.current = v; },
         }),
         useTransform: (mv: { get: () => number }, fn: (v: number) => string) => fn(mv.get()),
-        animate: (...args: any[]) => animateSpy(...args),
+        animate: (...args: Parameters<typeof animateSpy>) => animateSpy(...args),
         motion: {
             span: React.forwardRef(
                 (props: Record<string, unknown>, ref: React.Ref<HTMLSpanElement>) =>

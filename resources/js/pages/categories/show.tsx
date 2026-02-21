@@ -15,7 +15,6 @@ export default function CategoryShow({
     transactions,
     totalAmountCents,
     transactionCount,
-    currentMonth,
     currentAccount,
     allCategories,
 }: CategoryShowProps) {
