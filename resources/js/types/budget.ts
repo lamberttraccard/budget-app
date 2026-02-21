@@ -87,6 +87,33 @@ export type SearchProps = {
     allCategories: CategoryOption[];
 };
 
+export type RecurringTransaction = {
+    id: number;
+    date: string;
+    amountCents: number;
+    accountName: string;
+};
+
+export type RecurringMerchant = {
+    merchantName: string;
+    categoryId: number | null;
+    categoryName: string;
+    categoryColor: string;
+    typicalAmountCents: number;
+    frequency: string;
+    lastSeenMonth: string;
+    monthCount: number;
+    amountVaries: boolean;
+    minAmountCents: number;
+    maxAmountCents: number;
+    transactions: RecurringTransaction[];
+};
+
+export type RecurringProps = {
+    recurringMerchants: RecurringMerchant[];
+    currentAccount: string | null;
+};
+
 export type DashboardProps = {
     categoryTotals: CategoryTotal[];
     incomeCents: number;

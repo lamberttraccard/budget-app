@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { Search, UploadIcon } from 'lucide-react';
+import { Repeat, Search, UploadIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import CategoryCard from '@/components/CategoryCard';
@@ -223,6 +223,14 @@ export default function Dashboard({
                                 onMonthChange={handleMonthChange}
                             />
                         </div>
+                        <button
+                            type="button"
+                            onClick={() => router.visit(currentAccount ? `/recurring?account=${currentAccount}` : '/recurring')}
+                            aria-label="Recurring transactions"
+                            className="flex items-center justify-center size-11 shrink-0 rounded-lg text-text-tertiary hover:text-white transition-colors"
+                        >
+                            <Repeat className="size-5" />
+                        </button>
                         <button
                             type="button"
                             onClick={() => router.visit('/search')}

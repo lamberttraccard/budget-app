@@ -3,6 +3,7 @@
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\RecurringController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,10 @@ Route::delete('imports/{import}', [ImportController::class, 'destroy'])
 Route::get('search', [SearchController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('search');
+
+Route::get('recurring', [RecurringController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('recurring');
 
 Route::get('categories/{category}', [CategoryController::class, 'show'])
     ->middleware(['auth', 'verified'])

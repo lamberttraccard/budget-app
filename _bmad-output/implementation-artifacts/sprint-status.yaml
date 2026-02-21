@@ -82,5 +82,5 @@ development_status:
 
   epic-7: in-progress
   7-1-transaction-search: done
-  7-2-recurring-transaction-detection-and-view: backlog
+  7-2-recurring-transaction-detection-and-view: done
   epic-7-retrospective: optional
