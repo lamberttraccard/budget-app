@@ -35,7 +35,7 @@ class CategorizationPipelineTest extends TestCase
 
     private function seedCategories(): void
     {
-        $slugs = ['food', 'restaurants', 'transport', 'housing', 'entertainment', 'shopping', 'health', 'subscriptions', 'education', 'travel', 'insurance', 'income', 'professional', 'other'];
+        $slugs = ['food', 'restaurants', 'transport', 'housing', 'entertainment', 'shopping', 'health', 'education', 'travel', 'insurance', 'income', 'professional', 'other'];
         $this->categories = [];
         foreach ($slugs as $slug) {
             $this->categories[$slug] = Category::factory()->create(['slug' => $slug, 'name' => ucfirst($slug)]);

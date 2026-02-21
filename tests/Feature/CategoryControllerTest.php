@@ -294,7 +294,7 @@ class CategoryControllerTest extends TestCase
             ->get(route('categories.show', ['category' => $category->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->has('allCategories', 14)
+                ->has('allCategories', 13)
                 ->has('allCategories.0', fn (Assert $cat) => $cat
                     ->has('id')
                     ->has('name')

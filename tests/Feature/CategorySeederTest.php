@@ -11,18 +11,20 @@ class CategorySeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_seeder_creates_exactly_14_categories(): void
+    public function test_seeder_creates_all_categories(): void
     {
         $this->seed(CategorySeeder::class);
 
-        $this->assertDatabaseCount('categories', 14);
+        $this->assertSame(13, Category::whereNull('parent_id')->count());
+        $this->assertSame(8, Category::whereNotNull('parent_id')->count());
+        $this->assertDatabaseCount('categories', 21);
     }
 
     public function test_all_top_level_categories_have_null_parent(): void
     {
         $this->seed(CategorySeeder::class);
 
-        $this->assertSame(14, Category::whereNull('parent_id')->count());
+        $this->assertSame(13, Category::whereNull('parent_id')->count());
     }
 
     public function test_food_category_has_correct_color(): void
@@ -62,7 +64,7 @@ class CategorySeederTest extends TestCase
 
         $expectedSlugs = [
             'food', 'restaurants', 'transport', 'housing', 'entertainment',
-            'shopping', 'health', 'subscriptions', 'education', 'travel',
+            'shopping', 'health', 'education', 'travel',
             'insurance', 'income', 'professional', 'other',
         ];
 
@@ -76,7 +78,40 @@ class CategorySeederTest extends TestCase
         $this->seed(CategorySeeder::class);
         $this->seed(CategorySeeder::class);
 
-        $this->assertDatabaseCount('categories', 14);
+        $this->assertDatabaseCount('categories', 21);
+    }
+
+    public function test_subcategories_have_correct_parent(): void
+    {
+        $this->seed(CategorySeeder::class);
+
+        $transport = Category::where('slug', 'transport')->first();
+        $fuel = Category::where('slug', 'transport-fuel')->first();
+
+        $this->assertNotNull($fuel);
+        $this->assertSame($transport->id, $fuel->parent_id);
+    }
+
+    public function test_subcategories_inherit_parent_color(): void
+    {
+        $this->seed(CategorySeeder::class);
+
+        $transport = Category::where('slug', 'transport')->first();
+        $fuel = Category::where('slug', 'transport-fuel')->first();
+
+        $this->assertNotNull($fuel);
+        $this->assertSame($transport->color, $fuel->color);
+    }
+
+    public function test_subcategories_have_null_icon(): void
+    {
+        $this->seed(CategorySeeder::class);
+
+        $subcategoriesWithIcons = Category::whereNotNull('parent_id')
+            ->whereNotNull('icon')
+            ->count();
+
+        $this->assertSame(0, $subcategoriesWithIcons);
     }
 
     public function test_food_category_has_correct_icon(): void

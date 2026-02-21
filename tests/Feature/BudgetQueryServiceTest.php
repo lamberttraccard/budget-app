@@ -298,12 +298,12 @@ class BudgetQueryServiceTest extends TestCase
         $this->seed(CategorySeeder::class);
         $account = Account::factory()->personal()->create();
         $import = Import::factory()->completed()->create();
-        $groceries = Category::where('slug', 'food-groceries')->first();
+        $fuel = Category::where('slug', 'transport-fuel')->first();
 
         Transaction::factory()->create([
             'amount_cents' => -3000,
             'date' => '2026-02-10',
-            'category_id' => $groceries->id,
+            'category_id' => $fuel->id,
             'account_id' => $account->id,
             'import_id' => $import->id,
         ]);
@@ -312,8 +312,8 @@ class BudgetQueryServiceTest extends TestCase
 
         $this->assertCount(1, $result['categoryTotals']);
         $total = $result['categoryTotals'][0];
-        $this->assertEquals('food', $total['slug']);
-        $this->assertEquals('Food', $total['name']);
+        $this->assertEquals('transport', $total['slug']);
+        $this->assertEquals('Transport', $total['name']);
         $this->assertEquals(-3000, $total['amountCents']);
         $this->assertEquals(1, $total['transactionCount']);
         $this->assertIsInt($total['id']);
@@ -324,20 +324,20 @@ class BudgetQueryServiceTest extends TestCase
         $this->seed(CategorySeeder::class);
         $account = Account::factory()->personal()->create();
         $import = Import::factory()->completed()->create();
-        $food = Category::where('slug', 'food')->first();
-        $groceries = Category::where('slug', 'food-groceries')->first();
+        $transport = Category::where('slug', 'transport')->first();
+        $fuel = Category::where('slug', 'transport-fuel')->first();
 
         Transaction::factory()->create([
             'amount_cents' => -2000,
             'date' => '2026-02-10',
-            'category_id' => $food->id,
+            'category_id' => $transport->id,
             'account_id' => $account->id,
             'import_id' => $import->id,
         ]);
         Transaction::factory()->create([
             'amount_cents' => -3000,
             'date' => '2026-02-11',
-            'category_id' => $groceries->id,
+            'category_id' => $fuel->id,
             'account_id' => $account->id,
             'import_id' => $import->id,
         ]);
@@ -346,7 +346,7 @@ class BudgetQueryServiceTest extends TestCase
 
         $this->assertCount(1, $result['categoryTotals']);
         $total = $result['categoryTotals'][0];
-        $this->assertEquals('food', $total['slug']);
+        $this->assertEquals('transport', $total['slug']);
         $this->assertEquals(-5000, $total['amountCents']);
         $this->assertEquals(2, $total['transactionCount']);
     }

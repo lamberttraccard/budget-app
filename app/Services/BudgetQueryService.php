@@ -300,13 +300,14 @@ class BudgetQueryService
                 }
             })
             ->leftJoin('categories', 'transactions.category_id', '=', 'categories.id')
+            ->leftJoin('categories as parent_cat', 'categories.parent_id', '=', 'parent_cat.id')
             ->select([
                 'accounts.id',
                 'accounts.name',
                 'accounts.bank',
                 'accounts.type',
-                DB::raw("COALESCE(SUM(CASE WHEN categories.slug = 'income' THEN transactions.amount_cents ELSE 0 END), 0) as income_cents"),
-                DB::raw("COALESCE(SUM(CASE WHEN categories.slug != 'income' THEN ABS(transactions.amount_cents) ELSE 0 END), 0) as expenses_cents"),
+                DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) = 'income' THEN transactions.amount_cents ELSE 0 END), 0) as income_cents"),
+                DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) != 'income' THEN ABS(transactions.amount_cents) ELSE 0 END), 0) as expenses_cents"),
                 DB::raw('COUNT(transactions.id) as transaction_count'),
             ])
             ->groupBy('accounts.id', 'accounts.name', 'accounts.bank', 'accounts.type');

@@ -33,7 +33,7 @@ class CategorizeTransactionsTest extends TestCase
 
     private function seedCategories(): void
     {
-        $slugs = ['food', 'restaurants', 'transport', 'housing', 'entertainment', 'shopping', 'health', 'subscriptions', 'education', 'travel', 'insurance', 'income', 'professional', 'other'];
+        $slugs = ['food', 'restaurants', 'transport', 'housing', 'entertainment', 'shopping', 'health', 'education', 'travel', 'insurance', 'income', 'professional', 'other'];
         $this->categories = [];
         foreach ($slugs as $slug) {
             $this->categories[$slug] = Category::factory()->create(['slug' => $slug, 'name' => ucfirst($slug)]);
@@ -60,7 +60,7 @@ class CategorizeTransactionsTest extends TestCase
             [
                 'results' => [
                     ['index' => 1, 'description' => 'CARREFOUR CITY', 'category_slug' => 'food', 'confidence' => 0.95],
-                    ['index' => 2, 'description' => 'NETFLIX.COM', 'category_slug' => 'subscriptions', 'confidence' => 0.99],
+                    ['index' => 2, 'description' => 'NETFLIX.COM', 'category_slug' => 'entertainment', 'confidence' => 0.99],
                 ],
             ],
         ]);
@@ -70,7 +70,7 @@ class CategorizeTransactionsTest extends TestCase
         (new CategorizeTransactions($this->import))->handle();
 
         $this->assertSame($this->categories['food']->id, $t1->fresh()->category_id);
-        $this->assertSame($this->categories['subscriptions']->id, $t2->fresh()->category_id);
+        $this->assertSame($this->categories['entertainment']->id, $t2->fresh()->category_id);
     }
 
     public function test_job_assigns_other_category_when_confidence_below_threshold(): void
@@ -119,7 +119,7 @@ class CategorizeTransactionsTest extends TestCase
             [
                 'results' => [
                     ['index' => 1, 'description' => 'CARREFOUR CITY', 'category_slug' => 'food', 'confidence' => 0.95],
-                    ['index' => 2, 'description' => 'NETFLIX.COM', 'category_slug' => 'subscriptions', 'confidence' => 0.99],
+                    ['index' => 2, 'description' => 'NETFLIX.COM', 'category_slug' => 'entertainment', 'confidence' => 0.99],
                 ],
             ],
         ]);

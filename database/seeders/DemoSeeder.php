@@ -59,21 +59,21 @@ class DemoSeeder extends Seeder
     private function createMerchantRules(): void
     {
         $rules = [
-            'CARREFOUR' => 'food',       'LECLERC' => 'food',
-            'LIDL' => 'food',            'PICARD' => 'food',
-            'FRANPRIX' => 'food',        'MCDONALD' => 'restaurants',
-            'DELIVEROO' => 'restaurants', 'UBER EATS' => 'restaurants',
-            'RATP' => 'transport',       'SNCF' => 'transport',
-            'UBER TRIP' => 'transport',  'TOTAL ENERGIES' => 'transport',
-            'LOYER' => 'housing',        'EDF' => 'housing',
-            'ENGIE' => 'housing',        'FREE MOBILE' => 'subscriptions',
-            'NETFLIX' => 'subscriptions', 'SPOTIFY' => 'subscriptions',
-            'AMAZON PRIME' => 'subscriptions', 'CANAL+' => 'entertainment',
-            'FNAC' => 'shopping',        'AMAZON' => 'shopping',
-            'ZARA' => 'shopping',        'PHARMACIE' => 'health',
-            'DOCTOLIB' => 'health',      'MAIF' => 'insurance',
-            'ALLIANZ' => 'insurance',    'SALARIAL' => 'income',
-            'FREELANCE' => 'income',
+            'CARREFOUR' => 'food',                 'LECLERC' => 'food',
+            'LIDL' => 'food',                      'PICARD' => 'food',
+            'FRANPRIX' => 'food',                  'MCDONALD' => 'restaurants',
+            'DELIVEROO' => 'restaurants',           'UBER EATS' => 'restaurants',
+            'RATP' => 'transport',                  'SNCF' => 'transport',
+            'UBER TRIP' => 'transport',             'TOTAL ENERGIES' => 'transport-fuel',
+            'LOYER' => 'housing-mortgage',          'EDF' => 'housing',
+            'ENGIE' => 'housing',                   'FREE MOBILE' => 'housing',
+            'NETFLIX' => 'entertainment',           'SPOTIFY' => 'entertainment',
+            'AMAZON PRIME' => 'entertainment',      'CANAL+' => 'entertainment',
+            'FNAC' => 'shopping',                   'AMAZON' => 'shopping',
+            'ZARA' => 'shopping',                   'PHARMACIE' => 'health',
+            'DOCTOLIB' => 'health',                 'MAIF' => 'insurance',
+            'ALLIANZ' => 'insurance',               'SALARIAL' => 'income-salary',
+            'FREELANCE' => 'income-freelance',
         ];
 
         foreach ($rules as $pattern => $slug) {
@@ -102,17 +102,17 @@ class DemoSeeder extends Seeder
 
         $base = [
             // ── Income ──
-            [$d(1),  285000,  'VIR SALARIAL ACME SAS', 'income'],
+            [$d(1),  285000,  'VIR SALARIAL ACME SAS', 'income-salary'],
             // ── Fixed charges ──
-            [$d(3),  -85000,  'PRLV LOYER NEXITY', 'housing'],
+            [$d(3),  -85000,  'PRLV LOYER NEXITY', 'housing-mortgage'],
             [$d(5),  -12500 + $v * 30, 'PRLV EDF ELECTRICITE', 'housing'],
-            [$d(5),  -4500,   'PRLV FREE MOBILE', 'subscriptions'],
+            [$d(5),  -4500,   'PRLV FREE MOBILE', 'housing'],
             [$d(6),  -9800,   'PRLV MAIF ASSURANCE AUTO', 'insurance'],
             [$d(1),  -7590,   'PRLV RATP NAVIGO', 'transport'],
-            [$d(9),  -1399,   'CB NETFLIX.COM', 'subscriptions'],
-            [$d(9),  -999,    'CB SPOTIFY PREMIUM', 'subscriptions'],
+            [$d(9),  -1399,   'CB NETFLIX.COM', 'entertainment'],
+            [$d(9),  -999,    'CB SPOTIFY PREMIUM', 'entertainment'],
             [$d(20), -2199,   'PRLV CANAL+ CINEPACK', 'entertainment'],
-            // ── Groceries ──
+            // ── Food ──
             [$d(7),  -6532 - $v * 15, 'CB CARREFOUR MARKET', 'food'],
             [$d(10), -4298 + $v * 12, 'CB LIDL PARIS 11', 'food'],
             [$d(14), -7845 - $v * 20, 'CB LECLERC DRIVE', 'food'],
@@ -120,7 +120,7 @@ class DemoSeeder extends Seeder
             [$d(22), -5123 - $v * 10, 'CB FRANPRIX', 'food'],
             [$d(27), -8910 + $v * 18, 'CB CARREFOUR CITY', 'food'],
             // ── Transport ──
-            [$d(12), -3500 - $v * 5, 'CB TOTAL ENERGIES SP98', 'transport'],
+            [$d(12), -3500 - $v * 5, 'CB TOTAL ENERGIES SP98', 'transport-fuel'],
             // ── Restaurants ──
             [$d(8),  -1890 + $v * 3,  'CB MCDONALD\'S PARIS', 'restaurants'],
             [$d(15), -3420 - $v * 7,  'CB DELIVEROO FR', 'restaurants'],
@@ -140,7 +140,7 @@ class DemoSeeder extends Seeder
                 [$d(21), -5500, 'CB DECATHLON RUNNING', 'shopping'],
             ],
             '2025-05' => [
-                [$d(1),  -8500, 'CB FLEURISTE FETE MERES', 'shopping'],
+                [$d(1),  -8500, 'CB FLEURISTE FETE MERES', 'other'],
                 [$d(15), -25000, 'IMPOTS.GOUV ACOMPTE IR', null],
                 [$d(25), -4200, 'CB RESTAURANT ANNIVERSAIRE', 'restaurants'],
             ],
@@ -150,7 +150,7 @@ class DemoSeeder extends Seeder
             ],
             '2025-07' => [
                 [$d(1),  -95000, 'CB AIRBNB LOCATION VACANCES', 'travel'],
-                [$d(5),  -15000, 'CB PEAGE AUTOROUTE A7', 'transport'],
+                [$d(5),  -15000, 'CB PEAGE AUTOROUTE A7', 'transport-fuel'],
                 [$d(8),  -8500,  'CB RESTAURANT PLAGE', 'restaurants'],
                 [$d(12), -6200,  'CB SUPERMARCHE VACANCES', 'food'],
                 [$d(15), -4500,  'CB ACTIVITE NAUTIQUE', 'entertainment'],
@@ -158,8 +158,8 @@ class DemoSeeder extends Seeder
             '2025-08' => [
                 [$d(3),  -7800,  'CB RESTAURANT VACANCES SUD', 'restaurants'],
                 [$d(10), -5500,  'CB MARCHE PROVENCAL', 'food'],
-                [$d(20), -15000, 'CB PEAGE RETOUR AUTOROUTE', 'transport'],
-                [$d(25), -3200,  'CB STATION SERVICE RETOUR', 'transport'],
+                [$d(20), -15000, 'CB PEAGE RETOUR AUTOROUTE', 'transport-fuel'],
+                [$d(25), -3200,  'CB STATION SERVICE RETOUR', 'transport-fuel'],
             ],
             '2025-09' => [
                 [$d(2),  -15000, 'CB FNAC FOURNITURES RENTREE', 'shopping'],
@@ -176,12 +176,12 @@ class DemoSeeder extends Seeder
                 [$d(15), -25000, 'IMPOTS.GOUV ACOMPTE IR', null],
             ],
             '2025-12' => [
-                [$d(15), -15000, 'CB FNAC CADEAUX NOEL', 'shopping'],
+                [$d(15), -15000, 'CB FNAC CADEAUX NOEL', 'other'],
                 [$d(18), -12000, 'CB GALERIES LAFAYETTE NOEL', 'shopping'],
-                [$d(20), -8500,  'CB AMAZON CADEAUX NOEL', 'shopping'],
+                [$d(20), -8500,  'CB AMAZON CADEAUX NOEL', 'other'],
                 [$d(24), -9500,  'CB TRAITEUR REVEILLON', 'food'],
                 [$d(31), -12000, 'CB RESTAURANT REVEILLON', 'restaurants'],
-                [$d(22), 50000,  'VIR PRIME NOEL ACME SAS', 'income'],
+                [$d(22), 50000,  'VIR PRIME NOEL ACME SAS', 'income-salary'],
             ],
             '2026-01' => [
                 [$d(2),  -35000, 'CB SNCF VOYAGE BILLET', 'travel'],
@@ -191,7 +191,7 @@ class DemoSeeder extends Seeder
             ],
             '2026-02' => [
                 [$d(14), -8500, 'CB RESTAURANT ST VALENTIN', 'restaurants'],
-                [$d(14), -4500, 'CB FLEURISTE ST VALENTIN', 'shopping'],
+                [$d(14), -4500, 'CB FLEURISTE ST VALENTIN', 'other'],
             ],
             default => [],
         };
@@ -226,7 +226,7 @@ class DemoSeeder extends Seeder
             [$d(15), -5990 - $v * 12, 'ZARA FRANCE', 'shopping'],
             [$d(10), -1245 + $v * 2,  'UBER TRIP PARIS', 'transport'],
             [$d(22), -870,            'UBER TRIP PARIS 2', 'transport'],
-            [$d(7),  -699,            'AMAZON PRIME VIDEO', 'subscriptions'],
+            [$d(7),  -699,            'AMAZON PRIME VIDEO', 'entertainment'],
             [$d(17), -5000,           'DOCTOLIB CONSULTATION', 'health'],
             [$d(25), -1500 - $v * 4,  'VINTED ACHAT', null],
             [$d(28), -2100 + $v * 6,  'LEBONCOIN PAIEMENT', null],
@@ -246,7 +246,7 @@ class DemoSeeder extends Seeder
             '2025-11' => [[$d(25), -15000, 'AMAZON BLACK FRIDAY TECH', 'shopping']],
             '2025-12' => [
                 [$d(20), -8900, 'AIRBNB WEEKEND LYON', 'travel'],
-                [$d(23), -6500, 'AMAZON CADEAUX', 'shopping'],
+                [$d(23), -6500, 'AMAZON CADEAUX', 'other'],
             ],
             '2026-01' => [[$d(5), -7500, 'SOLDES AMAZON FR', 'shopping']],
             default => [],
@@ -274,8 +274,8 @@ class DemoSeeder extends Seeder
         $v = $this->variation($month);
 
         $base = [
-            [$d(5),  350000 + $v * 500, 'VIR FREELANCE CLIENT ALPHA', 'income'],
-            [$d(18), 280000 - $v * 300, 'VIR FREELANCE CLIENT BETA', 'income'],
+            [$d(5),  350000 + $v * 500, 'VIR FREELANCE CLIENT ALPHA', 'income-freelance'],
+            [$d(18), 280000 - $v * 300, 'VIR FREELANCE CLIENT BETA', 'income-freelance'],
             [$d(3),  -4999,  'GITHUB SUBSCRIPTION', 'professional'],
             [$d(3),  -2999,  'FIGMA PROFESSIONAL', 'professional'],
             [$d(3),  -1099,  'NOTION WORKSPACE', 'professional'],
@@ -290,7 +290,7 @@ class DemoSeeder extends Seeder
 
         $seasonal = match ($month) {
             '2025-03' => [[$d(25), -45000, 'EXPERT COMPTABLE BILAN 2024', 'professional']],
-            '2025-05' => [[$d(10), 450000, 'VIR FREELANCE CLIENT GAMMA', 'income']],
+            '2025-05' => [[$d(10), 450000, 'VIR FREELANCE CLIENT GAMMA', 'income-freelance']],
             '2025-06' => [
                 [$d(8),  -25000, 'CONFERENCE LARACON EU BILLET', 'education'],
                 [$d(9),  -18000, 'HOTEL LARACON EU', 'travel'],
@@ -298,19 +298,19 @@ class DemoSeeder extends Seeder
             '2025-07' => [[$d(15), -3500, 'RESTAURANT CLIENT VISIO', null]],
             '2025-09' => [
                 [$d(5),  -35000, 'MACBOOK RENOUVELLEMENT', 'professional'],
-                [$d(10), 520000, 'VIR FREELANCE GROS PROJET', 'income'],
+                [$d(10), 520000, 'VIR FREELANCE GROS PROJET', 'income-freelance'],
             ],
             '2025-10' => [[$d(15), -8000, 'CONFERENCE FORUM PHP', 'education']],
             '2025-11' => [[$d(20), -12000, 'BLACK FRIDAY LICENCES JETBRAINS', 'professional']],
             '2025-12' => [
-                [$d(10), 180000, 'VIR FREELANCE BONUS FIN ANNEE', 'income'],
-                [$d(28), -8000,  'CADEAU CLIENTS FIN ANNEE', null],
+                [$d(10), 180000, 'VIR FREELANCE BONUS FIN ANNEE', 'income-freelance'],
+                [$d(28), -8000,  'CADEAU CLIENTS FIN ANNEE', 'other'],
             ],
             '2026-01' => [
                 [$d(8),  -55000, 'EXPERT COMPTABLE CLOTURE', 'professional'],
                 [$d(20), -9000,  'URSSAF COTISATIONS T1', null],
             ],
-            '2026-02' => [[$d(5), 380000, 'VIR FREELANCE NOUVEAU CLIENT', 'income']],
+            '2026-02' => [[$d(5), 380000, 'VIR FREELANCE NOUVEAU CLIENT', 'income-freelance']],
             default => [],
         };
 

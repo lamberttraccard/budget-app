@@ -17,7 +17,6 @@ class CategorySeeder extends Seeder
             ['name' => 'Entertainment', 'slug' => 'entertainment', 'color' => '#C084FC', 'icon' => 'film'],
             ['name' => 'Shopping',      'slug' => 'shopping',      'color' => '#F472B6', 'icon' => 'shopping-bag'],
             ['name' => 'Health',        'slug' => 'health',        'color' => '#34D399', 'icon' => 'heart-pulse'],
-            ['name' => 'Subscriptions', 'slug' => 'subscriptions', 'color' => '#FB7185', 'icon' => 'credit-card'],
             ['name' => 'Education',     'slug' => 'education',     'color' => '#38BDF8', 'icon' => 'graduation-cap'],
             ['name' => 'Travel',        'slug' => 'travel',        'color' => '#818CF8', 'icon' => 'plane'],
             ['name' => 'Insurance',     'slug' => 'insurance',     'color' => '#94A3B8', 'icon' => 'shield'],
@@ -31,6 +30,31 @@ class CategorySeeder extends Seeder
                 ['slug' => $category['slug']],
                 array_merge($category, ['parent_id' => null])
             );
+        }
+
+        $subcategories = [
+            'transport' => ['Fuel', 'Car Maintenance'],
+            'housing'   => ['Mortgage', 'Maintenance'],
+            'income'    => ['Salary', 'Freelance', 'Refunds', 'Investments'],
+        ];
+
+        foreach ($subcategories as $parentSlug => $children) {
+            $parent = Category::where('slug', $parentSlug)->first();
+
+            foreach ($children as $name) {
+                $slug = $parentSlug.'-'.str($name)->slug();
+
+                Category::updateOrCreate(
+                    ['slug' => $slug],
+                    [
+                        'name'      => $name,
+                        'slug'      => $slug,
+                        'color'     => $parent->color,
+                        'icon'      => null,
+                        'parent_id' => $parent->id,
+                    ]
+                );
+            }
         }
     }
 }

@@ -32,11 +32,10 @@ Categories:
 - food: Groceries, supermarkets (Carrefour, Leclerc, Lidl, Auchan, etc.)
 - restaurants: Restaurants, cafés, bars, fast food, bakeries
 - transport: Public transport, fuel, parking, tolls, car maintenance
-- housing: Rent, mortgage, home maintenance, furniture
-- entertainment: Cinema, concerts, streaming, games, hobbies
+- housing: Rent, mortgage, utilities, home maintenance
+- entertainment: Cinema, concerts, streaming services, games, hobbies
 - shopping: Clothing, electronics, Amazon, online shopping
 - health: Pharmacy, doctor, dentist, gym, medical
-- subscriptions: Recurring subscriptions (Netflix, Spotify, phone, internet)
 - education: Books, courses, training, school supplies
 - travel: Hotels, flights, vacation expenses
 - insurance: Insurance premiums, banking fees
@@ -62,7 +61,7 @@ PROMPT;
                     'description' => $schema->string()->required(),
                     'category_slug' => $schema->string()->enum([
                         'food', 'restaurants', 'transport', 'housing', 'entertainment',
-                        'shopping', 'health', 'subscriptions', 'education', 'travel',
+                        'shopping', 'health', 'education', 'travel',
                         'insurance', 'income', 'professional', 'other',
                     ])->required(),
                     'confidence' => $schema->number()->min(0)->max(1)->required(),
