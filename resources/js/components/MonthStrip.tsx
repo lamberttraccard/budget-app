@@ -12,13 +12,18 @@ function formatMonthPill(month: string): string {
     return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 }
 
+function todayMonth(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function generateMonthRange(availableMonths: string[], currentMonth: string): string[] {
     if (availableMonths.length === 0) return [currentMonth];
 
-    const earliest = currentMonth < availableMonths[0] ? currentMonth : availableMonths[0];
-    const latest = currentMonth > availableMonths[availableMonths.length - 1]
-        ? currentMonth
-        : availableMonths[availableMonths.length - 1];
+    const today = todayMonth();
+    const candidates = [currentMonth, today, availableMonths[0], availableMonths[availableMonths.length - 1]];
+    const earliest = candidates.reduce((a, b) => (a < b ? a : b));
+    const latest = candidates.reduce((a, b) => (a > b ? a : b));
 
     const months: string[] = [];
     const [startYear, startMonth] = earliest.split('-').map(Number);

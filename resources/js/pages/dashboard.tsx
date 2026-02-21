@@ -80,7 +80,7 @@ export default function Dashboard({
         router.get('/', { month, account: currentAccount }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth'],
+            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'availableMonths', 'hasPreviousMonthData'],
         });
     }, [currentAccount]);
 
