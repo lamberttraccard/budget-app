@@ -30,23 +30,17 @@ class RecurringControllerTest extends TestCase
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
-        // Create recurring transactions (Jan + Feb same merchant)
-        Transaction::factory()->create([
-            'description' => 'Netflix',
-            'date' => '2026-01-15',
-            'amount_cents' => -1599,
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-        Transaction::factory()->create([
-            'description' => 'Netflix',
-            'date' => '2026-02-15',
-            'amount_cents' => -1599,
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
+        // Create recurring transactions (3 consecutive months, same amount)
+        foreach (['2026-01-15', '2026-02-15', '2026-03-15'] as $date) {
+            Transaction::factory()->create([
+                'description' => 'Netflix',
+                'date' => $date,
+                'amount_cents' => -1599,
+                'category_id' => $food->id,
+                'account_id' => $account->id,
+                'import_id' => $import->id,
+            ]);
+        }
 
         $this->actingAs($user)
             ->get(route('recurring'))
@@ -80,41 +74,29 @@ class RecurringControllerTest extends TestCase
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
-        // Personal recurring
-        Transaction::factory()->create([
-            'description' => 'Netflix',
-            'date' => '2026-01-15',
-            'amount_cents' => -1599,
-            'category_id' => $food->id,
-            'account_id' => $personalAccount->id,
-            'import_id' => $import->id,
-        ]);
-        Transaction::factory()->create([
-            'description' => 'Netflix',
-            'date' => '2026-02-15',
-            'amount_cents' => -1599,
-            'category_id' => $food->id,
-            'account_id' => $personalAccount->id,
-            'import_id' => $import->id,
-        ]);
+        // Personal recurring (3 consecutive months)
+        foreach (['2026-01-15', '2026-02-15', '2026-03-15'] as $date) {
+            Transaction::factory()->create([
+                'description' => 'Netflix',
+                'date' => $date,
+                'amount_cents' => -1599,
+                'category_id' => $food->id,
+                'account_id' => $personalAccount->id,
+                'import_id' => $import->id,
+            ]);
+        }
 
-        // Professional recurring
-        Transaction::factory()->create([
-            'description' => 'Office 365',
-            'date' => '2026-01-15',
-            'amount_cents' => -2200,
-            'category_id' => $food->id,
-            'account_id' => $proAccount->id,
-            'import_id' => $import->id,
-        ]);
-        Transaction::factory()->create([
-            'description' => 'Office 365',
-            'date' => '2026-02-15',
-            'amount_cents' => -2200,
-            'category_id' => $food->id,
-            'account_id' => $proAccount->id,
-            'import_id' => $import->id,
-        ]);
+        // Professional recurring (3 consecutive months)
+        foreach (['2026-01-15', '2026-02-15', '2026-03-15'] as $date) {
+            Transaction::factory()->create([
+                'description' => 'Office 365',
+                'date' => $date,
+                'amount_cents' => -2200,
+                'category_id' => $food->id,
+                'account_id' => $proAccount->id,
+                'import_id' => $import->id,
+            ]);
+        }
 
         $this->actingAs($user)
             ->get(route('recurring', ['account' => 'personal']))

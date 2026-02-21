@@ -14,7 +14,7 @@ use Laravel\Mcp\Server\Tool;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 
 #[Name('get_recurring_transactions')]
-#[Description('Detect and return recurring transactions (subscriptions, rent, salary). Groups transactions by merchant that appear in 2+ consecutive months. Returns merchant name, category, typical amount, frequency, and full transaction history.')]
+#[Description('Detect and return recurring transactions (subscriptions, rent, salary). Identifies merchants with consistent monthly charges: same amount, one charge per month, 3+ consecutive months. Returns merchant name, category, typical amount, frequency, and full transaction history.')]
 #[IsReadOnly]
 class GetRecurringTransactions extends Tool
 {
