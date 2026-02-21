@@ -3,7 +3,6 @@
 namespace App\Ai\Agents;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Attributes\Temperature;
@@ -16,8 +15,7 @@ use Laravel\Ai\Promptable;
 #[Provider(Lab::Gemini)]
 #[Model('gemini-2.5-flash')]
 #[Temperature(0.1)]
-#[MaxTokens(2048)]
-#[Timeout(30)]
+#[Timeout(60)]
 class TransactionCategorizer implements Agent, HasStructuredOutput
 {
     use Promptable;

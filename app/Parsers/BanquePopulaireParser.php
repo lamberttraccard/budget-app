@@ -8,7 +8,7 @@ use Illuminate\Support\Collection;
 
 class BanquePopulaireParser implements CsvParserInterface
 {
-    private const EXPECTED_HEADERS = [
+    private const CLASSIC_HEADERS = [
         'Compte',
         'Date de comptabilisation',
         'Date opération',
@@ -16,6 +16,22 @@ class BanquePopulaireParser implements CsvParserInterface
         'Référence',
         'Date valeur',
         'Montant',
+    ];
+
+    private const ENRICHED_HEADERS = [
+        'Date de comptabilisation',
+        'Libelle simplifie',
+        'Libelle operation',
+        'Reference',
+        'Informations complementaires',
+        'Type operation',
+        'Categorie',
+        'Sous categorie',
+        'Debit',
+        'Credit',
+        'Date operation',
+        'Date de valeur',
+        'Pointage operation',
     ];
 
     public function bankName(): string
@@ -34,7 +50,7 @@ class BanquePopulaireParser implements CsvParserInterface
 
         $headers = str_getcsv(trim($firstLine), ';', '"', '');
 
-        return $headers === self::EXPECTED_HEADERS;
+        return $headers === self::CLASSIC_HEADERS || $headers === self::ENRICHED_HEADERS;
     }
 
     /** @return Collection<int, TransactionData> */
@@ -51,10 +67,20 @@ class BanquePopulaireParser implements CsvParserInterface
 
         $headers = str_getcsv(trim($headerLine), ';', '"', '');
 
-        if ($headers !== self::EXPECTED_HEADERS) {
-            throw new CsvParseException('Invalid Banque Populaire CSV headers.');
+        if ($headers === self::ENRICHED_HEADERS) {
+            return $this->parseEnriched($lines);
         }
 
+        if ($headers === self::CLASSIC_HEADERS) {
+            return $this->parseClassic($lines);
+        }
+
+        throw new CsvParseException('Invalid Banque Populaire CSV headers.');
+    }
+
+    /** @return Collection<int, TransactionData> */
+    private function parseClassic(array $lines): Collection
+    {
         $transactions = new Collection;
 
         foreach ($lines as $line) {
@@ -85,6 +111,49 @@ class BanquePopulaireParser implements CsvParserInterface
         return $transactions;
     }
 
+    /** @return Collection<int, TransactionData> */
+    private function parseEnriched(array $lines): Collection
+    {
+        $transactions = new Collection;
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $fields = str_getcsv($trimmed, ';', '"', '');
+
+            if (count($fields) < 13) {
+                continue;
+            }
+
+            try {
+                $debit = trim($fields[8]);
+                $credit = trim($fields[9]);
+                $amountRaw = $debit !== '' ? $debit : $credit;
+
+                if ($amountRaw === '') {
+                    continue;
+                }
+
+                $description = trim($fields[2]) !== '' ? trim($fields[2]) : trim($fields[1]);
+
+                $transactions->push(new TransactionData(
+                    date: $this->parseDate($fields[10]),
+                    description: $description,
+                    amountCents: $this->parseAmount($amountRaw),
+                    rawLine: $trimmed,
+                ));
+            } catch (CsvParseException) {
+                continue;
+            }
+        }
+
+        return $transactions;
+    }
+
     private function convertEncoding(string $content): string
     {
         return mb_convert_encoding($content, 'UTF-8', 'ISO-8859-15');
@@ -101,7 +170,7 @@ class BanquePopulaireParser implements CsvParserInterface
 
     private function parseAmount(string $amount): int
     {
-        $trimmed = trim($amount);
+        $trimmed = str_replace('+', '', trim($amount));
         $normalized = str_replace(',', '.', $trimmed);
 
         if ($normalized === '' || ! is_numeric($normalized)) {
