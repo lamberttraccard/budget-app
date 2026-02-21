@@ -1,12 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#0A0A0B" rx="0"/>
-  <!-- Wallet icon centered with ~20% safe area padding for maskable -->
-  <g transform="translate(256,256)" stroke="white" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Wallet body -->
-    <rect x="-120" y="-90" width="240" height="180" rx="20"/>
-    <!-- Wallet flap -->
-    <path d="M-120-50 L-120-70 Q-120-90-100-90 L80-90 Q120-90 120-50"/>
-    <!-- Clasp circle -->
-    <circle cx="90" cy="10" r="16" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect x="0" y="0" width="512" height="512" fill="#003B5C" />
+  <g transform="translate(64, 64)">
+    <path d="M72,196 v60 a80,80 0 0,0 80,80 h80 a80,80 0 0,0 80,-80 v-60"
+          fill="none" stroke="#4DB6AC" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="152" y1="276" x2="152" y2="156"
+          fill="none" stroke="#4DB6AC" stroke-width="56" stroke-linecap="round"/>
+    <line x1="232" y1="276" x2="232" y2="96"
+          fill="none" stroke="#FFB300" stroke-width="56" stroke-linecap="round"/>
+    <circle cx="232" cy="96" r="28" fill="#FFB300"/>
   </g>
 </svg>

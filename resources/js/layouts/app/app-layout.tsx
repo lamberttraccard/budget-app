@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Wallet } from 'lucide-react';
+import AppLogoIcon from '@/components/app-logo-icon';
 import { Toaster } from 'sonner';
 import AccountPicker from '@/components/AccountPicker';
 import BottomDock from '@/components/BottomDock';
@@ -15,7 +15,7 @@ export default function AppLayout({ children, currentAccount, onAccountChange }:
             <header className="px-4 sm:px-8 py-4">
                 <div className="max-w-[480px] lg:max-w-[960px] mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Wallet className="size-6 text-white" />
+                        <AppLogoIcon className="size-8 rounded-lg" />
                         <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
                             {navItems.map((item) => (
                                 <Link
