@@ -3,6 +3,7 @@
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -29,6 +30,10 @@ Route::post('imports', [ImportController::class, 'store'])
 Route::delete('imports/{import}', [ImportController::class, 'destroy'])
     ->middleware(['auth', 'verified'])
     ->name('imports.destroy');
+
+Route::get('search', [SearchController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('search');
 
 Route::get('categories/{category}', [CategoryController::class, 'show'])
     ->middleware(['auth', 'verified'])

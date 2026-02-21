@@ -26,7 +26,7 @@ class ImportControllerTest extends TestCase
             "Compte;Date de comptabilisation;Date opération;Libellé;Référence;Date valeur;Montant\r\n"
             ."00012345678;01/02/2026;01/02/2026;CARREFOUR CITY;REF001;01/02/2026;-42,50\r\n"
             ."00012345678;05/02/2026;05/02/2026;SNCF INTERNET;REF002;05/02/2026;-85,00\r\n"
-            ."00012345678;10/02/2026;10/02/2026;VIREMENT SALAIRE;REF003;10/02/2026;3200,00",
+            .'00012345678;10/02/2026;10/02/2026;VIREMENT SALAIRE;REF003;10/02/2026;3200,00',
             'ISO-8859-15',
             'UTF-8',
         );
@@ -36,7 +36,7 @@ class ImportControllerTest extends TestCase
     {
         return "Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance\n"
             ."CARD_PAYMENT,Current,2026-02-01 10:00:00,2026-02-01 10:00:00,Amazon,-25.99,0.00,EUR,COMPLETED,1000.00\n"
-            ."CARD_PAYMENT,Current,2026-02-15 14:30:00,2026-02-15 14:30:00,Netflix,-13.99,0.00,EUR,COMPLETED,986.01";
+            .'CARD_PAYMENT,Current,2026-02-15 14:30:00,2026-02-15 14:30:00,Netflix,-13.99,0.00,EUR,COMPLETED,986.01';
     }
 
     public function test_preview_with_valid_bp_csv_flashes_import_preview(): void

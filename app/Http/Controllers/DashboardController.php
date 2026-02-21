@@ -16,12 +16,12 @@ class DashboardController extends Controller
     {
         $monthParam = $request->query('month', now()->format('Y-m'));
 
-        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $monthParam)) {
+        if (! preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $monthParam)) {
             $monthParam = now()->format('Y-m');
         }
 
         $accountParam = $request->query('account', 'personal');
-        if (!in_array($accountParam, ['personal', 'professional'], true)) {
+        if (! in_array($accountParam, ['personal', 'professional'], true)) {
             $accountParam = 'personal';
         }
 
@@ -45,6 +45,7 @@ class DashboardController extends Controller
                 $category['amountCents'],
                 $prevAmount
             );
+
             return $category;
         }, $data['categoryTotals']);
 
@@ -62,15 +63,15 @@ class DashboardController extends Controller
             ]);
 
         return Inertia::render('dashboard', [
-            'categoryTotals'        => $categoryTotals,
-            'incomeCents'           => $data['incomeCents'],
-            'expensesCents'         => $data['expensesCents'],
-            'currentMonth'          => $monthParam,
-            'currentAccount'        => $accountParam,
-            'availableMonths'       => $this->budgetQueryService->getAvailableMonths($accountParam),
-            'hasPreviousMonthData'  => $hasPreviousMonthData,
-            'importPreview'         => session('importPreview'),
-            'imports'               => $imports,
+            'categoryTotals' => $categoryTotals,
+            'incomeCents' => $data['incomeCents'],
+            'expensesCents' => $data['expensesCents'],
+            'currentMonth' => $monthParam,
+            'currentAccount' => $accountParam,
+            'availableMonths' => $this->budgetQueryService->getAvailableMonths($accountParam),
+            'hasPreviousMonthData' => $hasPreviousMonthData,
+            'importPreview' => session('importPreview'),
+            'imports' => $imports,
         ]);
     }
 

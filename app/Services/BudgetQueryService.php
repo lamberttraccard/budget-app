@@ -27,17 +27,17 @@ class BudgetQueryService
 
         if ($accountType !== null) {
             $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                  ->where('accounts.type', $accountType);
+                ->where('accounts.type', $accountType);
         }
 
         $rows = $query->get();
 
         $categoryTotals = $rows->map(fn ($row) => [
-            'id'               => $row->id,
-            'name'             => $row->name,
-            'slug'             => $row->slug,
-            'color'            => $row->color,
-            'amountCents'      => (int) $row->total_amount,
+            'id' => $row->id,
+            'name' => $row->name,
+            'slug' => $row->slug,
+            'color' => $row->color,
+            'amountCents' => (int) $row->total_amount,
             'transactionCount' => (int) $row->transaction_count,
         ])->values()->toArray();
 
@@ -46,7 +46,7 @@ class BudgetQueryService
 
         $expensesCents = abs(
             $rows->filter(fn ($r) => $r->slug !== 'income')
-                 ->sum(fn ($r) => (int) $r->total_amount)
+                ->sum(fn ($r) => (int) $r->total_amount)
         );
 
         return compact('categoryTotals', 'incomeCents', 'expensesCents');
@@ -64,7 +64,7 @@ class BudgetQueryService
 
         if ($accountType !== null) {
             $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                  ->where('accounts.type', $accountType);
+                ->where('accounts.type', $accountType);
         }
 
         return $query->orderBy('month')
@@ -94,7 +94,7 @@ class BudgetQueryService
 
             if ($accountType !== null) {
                 $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                      ->where('accounts.type', $accountType);
+                    ->where('accounts.type', $accountType);
             }
 
             $subcategories = $query
@@ -102,9 +102,9 @@ class BudgetQueryService
                 ->orderByRaw('ABS(SUM(transactions.amount_cents)) DESC')
                 ->get()
                 ->map(fn ($row) => [
-                    'id'               => $row->id,
-                    'name'             => $row->name,
-                    'amountCents'      => (int) $row->total_amount,
+                    'id' => $row->id,
+                    'name' => $row->name,
+                    'amountCents' => (int) $row->total_amount,
                     'transactionCount' => (int) $row->transaction_count,
                 ])
                 ->values()
@@ -118,8 +118,8 @@ class BudgetQueryService
 
         if ($accountType !== null) {
             $txQuery->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                    ->where('accounts.type', $accountType)
-                    ->select('transactions.*');
+                ->where('accounts.type', $accountType)
+                ->select('transactions.*');
         }
 
         $transactions = $txQuery
@@ -127,11 +127,11 @@ class BudgetQueryService
             ->orderByDesc('transactions.id')
             ->get()
             ->map(fn (Transaction $t) => [
-                'id'          => $t->id,
-                'date'        => $t->date->toDateString(),
+                'id' => $t->id,
+                'date' => $t->date->toDateString(),
                 'description' => $t->description,
                 'amountCents' => $t->amount_cents,
-                'categoryId'  => $t->category_id,
+                'categoryId' => $t->category_id,
             ])
             ->values()
             ->toArray();
@@ -145,7 +145,7 @@ class BudgetQueryService
     /**
      * Query transactions with flexible filters and pagination.
      *
-     * @param  array{category_id?: int, date_from?: string, date_to?: string, account_type?: string, limit?: int, offset?: int}  $filters
+     * @param  array{q?: string, category_id?: int, date_from?: string, date_to?: string, account_type?: string, limit?: int, offset?: int}  $filters
      * @return array{transactions: array, totalCount: int}
      */
     public function queryTransactions(array $filters): array
@@ -154,7 +154,7 @@ class BudgetQueryService
         $offset = $filters['offset'] ?? 0;
 
         $query = Transaction::query()
-            ->join('categories', 'transactions.category_id', '=', 'categories.id')
+            ->leftJoin('categories', 'transactions.category_id', '=', 'categories.id')
             ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->select([
                 'transactions.id',
@@ -163,8 +163,14 @@ class BudgetQueryService
                 'transactions.amount_cents',
                 'transactions.category_id',
                 'categories.name as category_name',
+                'categories.color as category_color',
                 'accounts.name as account_name',
             ]);
+
+        if (isset($filters['q']) && strlen($filters['q']) >= 2) {
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $filters['q']);
+            $query->where('transactions.description', 'ILIKE', '%'.$escaped.'%');
+        }
 
         if (isset($filters['category_id'])) {
             $query->where('transactions.category_id', $filters['category_id']);
@@ -196,7 +202,8 @@ class BudgetQueryService
                 'description' => $row->description,
                 'amountCents' => (int) $row->amount_cents,
                 'categoryId' => $row->category_id,
-                'categoryName' => $row->category_name,
+                'categoryName' => $row->category_name ?? 'Uncategorized',
+                'categoryColor' => $row->category_color ?? '#6B7280',
                 'accountName' => $row->account_name,
             ])
             ->values()
@@ -316,8 +323,6 @@ class BudgetQueryService
 
     /**
      * Get full detail for a single transaction with all relationships.
-     *
-     * @return array|null
      */
     public function getTransactionDetail(int $transactionId): ?array
     {

@@ -89,7 +89,7 @@ class DemoSeeder extends Seeder
     private function seedBanquePopulaire(Account $account): void
     {
         foreach (self::MONTHS as $month) {
-            $fileName = 'releve_' . str_replace('-', '_', $month) . '.csv';
+            $fileName = 'releve_'.str_replace('-', '_', $month).'.csv';
             $txnData = $this->bpMonth($month);
             $this->createImportWithTransactions($fileName, 'Banque Populaire', $account, $txnData);
         }
@@ -97,7 +97,7 @@ class DemoSeeder extends Seeder
 
     private function bpMonth(string $month): array
     {
-        $d = fn (int $day) => "{$month}-" . str_pad($day, 2, '0', STR_PAD_LEFT);
+        $d = fn (int $day) => "{$month}-".str_pad($day, 2, '0', STR_PAD_LEFT);
         $v = $this->variation($month);
 
         $base = [
@@ -207,14 +207,14 @@ class DemoSeeder extends Seeder
             $txnData = array_merge(
                 ...array_map(fn ($m) => $this->revolutPersonalMonth($m), $pair),
             );
-            $label = str_replace('-', '_', $pair[0]) . '-' . str_replace('-', '_', end($pair));
+            $label = str_replace('-', '_', $pair[0]).'-'.str_replace('-', '_', end($pair));
             $this->createImportWithTransactions("transactions_{$label}.csv", 'Revolut', $account, $txnData);
         }
     }
 
     private function revolutPersonalMonth(string $month): array
     {
-        $d = fn (int $day) => "{$month}-" . str_pad($day, 2, '0', STR_PAD_LEFT);
+        $d = fn (int $day) => "{$month}-".str_pad($day, 2, '0', STR_PAD_LEFT);
         $v = $this->variation($month);
 
         $base = [
@@ -263,14 +263,14 @@ class DemoSeeder extends Seeder
             $txnData = array_merge(
                 ...array_map(fn ($m) => $this->revolutBusinessMonth($m), $pair),
             );
-            $label = str_replace('-', '_', $pair[0]) . '-' . str_replace('-', '_', end($pair));
+            $label = str_replace('-', '_', $pair[0]).'-'.str_replace('-', '_', end($pair));
             $this->createImportWithTransactions("business_{$label}.csv", 'Revolut', $account, $txnData);
         }
     }
 
     private function revolutBusinessMonth(string $month): array
     {
-        $d = fn (int $day) => "{$month}-" . str_pad($day, 2, '0', STR_PAD_LEFT);
+        $d = fn (int $day) => "{$month}-".str_pad($day, 2, '0', STR_PAD_LEFT);
         $v = $this->variation($month);
 
         $base = [

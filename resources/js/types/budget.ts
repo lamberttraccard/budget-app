@@ -68,6 +68,25 @@ export type CategoryShowProps = {
     allCategories: CategoryOption[];
 };
 
+export type SearchResultItem = {
+    id: number;
+    date: string;
+    description: string;
+    amountCents: number;
+    categoryId: number;
+    categoryName: string;
+    categoryColor: string;
+    accountName: string;
+};
+
+export type SearchProps = {
+    results: SearchResultItem[];
+    totalCount: number;
+    query: string;
+    currentAccount: string | null;
+    allCategories: CategoryOption[];
+};
+
 export type DashboardProps = {
     categoryTotals: CategoryTotal[];
     incomeCents: number;

@@ -37,7 +37,7 @@ class UpdateMerchantRuleTest extends TestCase
         ]);
 
         $event = new CategoryCorrected($transaction, $food->id, $restaurants->id);
-        $listener = new UpdateMerchantRule();
+        $listener = new UpdateMerchantRule;
         $listener->handle($event);
 
         $this->assertDatabaseHas('merchant_rules', [
@@ -64,7 +64,7 @@ class UpdateMerchantRuleTest extends TestCase
         ]);
 
         $event = new CategoryCorrected($transaction, $restaurants->id, $transport->id);
-        $listener = new UpdateMerchantRule();
+        $listener = new UpdateMerchantRule;
         $listener->handle($event);
 
         $this->assertDatabaseCount('merchant_rules', 1);

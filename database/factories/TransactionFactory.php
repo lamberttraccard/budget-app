@@ -17,7 +17,7 @@ class TransactionFactory extends Factory
         return [
             'amount_cents' => fake()->randomElement([-1, 1]) * fake()->numberBetween(100, 100000),
             'date' => fake()->dateTimeBetween('first day of January this year', 'now')->format('Y-m-d'),
-            'description' => fake()->company() . ' ' . strtoupper(fake()->lexify('????')),
+            'description' => fake()->company().' '.strtoupper(fake()->lexify('????')),
             'category_id' => Category::factory(),
             'account_id' => Account::factory(),
             'import_id' => null,

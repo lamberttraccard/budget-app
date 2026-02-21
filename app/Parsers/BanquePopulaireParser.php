@@ -104,7 +104,7 @@ class BanquePopulaireParser implements CsvParserInterface
         $trimmed = trim($amount);
         $normalized = str_replace(',', '.', $trimmed);
 
-        if ($normalized === '' || !is_numeric($normalized)) {
+        if ($normalized === '' || ! is_numeric($normalized)) {
             throw new CsvParseException("Invalid amount: '{$trimmed}'.");
         }
 

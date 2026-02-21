@@ -20,7 +20,7 @@ class BudgetQueryServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new BudgetQueryService();
+        $this->service = new BudgetQueryService;
     }
 
     public function test_returns_correct_structure()

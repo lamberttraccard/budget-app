@@ -2,13 +2,13 @@
 
 namespace App\Providers;
 
-use App\Parsers\BanquePopulaireParser;
-use App\Parsers\CsvParserFactory;
-use App\Parsers\RevolutParser;
 use App\Events\CategoryCorrected;
 use App\Events\ImportCompleted;
 use App\Listeners\CategorizeImportedTransactions;
 use App\Listeners\UpdateMerchantRule;
+use App\Parsers\BanquePopulaireParser;
+use App\Parsers\CsvParserFactory;
+use App\Parsers\RevolutParser;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;

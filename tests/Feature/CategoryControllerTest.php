@@ -24,9 +24,9 @@ class CategoryControllerTest extends TestCase
         for ($i = 0; $i < $count; $i++) {
             Transaction::factory()->create([
                 'category_id' => $category->id,
-                'account_id'  => $account->id,
-                'import_id'   => $import->id,
-                'date'        => "{$month}-" . str_pad($i + 1, 2, '0', STR_PAD_LEFT),
+                'account_id' => $account->id,
+                'import_id' => $import->id,
+                'date' => "{$month}-".str_pad($i + 1, 2, '0', STR_PAD_LEFT),
                 'amount_cents' => -($i + 1) * 1000,
             ]);
         }
@@ -84,9 +84,9 @@ class CategoryControllerTest extends TestCase
 
         // Create a subcategory
         $subcategory = Category::create([
-            'name'      => 'Groceries',
-            'slug'      => 'groceries',
-            'color'     => '#A3E635',
+            'name' => 'Groceries',
+            'slug' => 'groceries',
+            'color' => '#A3E635',
             'parent_id' => $parent->id,
         ]);
 
@@ -96,18 +96,18 @@ class CategoryControllerTest extends TestCase
         // Transactions on the subcategory
         Transaction::factory()->create([
             'category_id' => $subcategory->id,
-            'account_id'  => $account->id,
-            'import_id'   => $import->id,
-            'date'        => '2026-02-10',
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-10',
             'amount_cents' => -5000,
         ]);
 
         // Transactions on the parent category directly
         Transaction::factory()->create([
             'category_id' => $parent->id,
-            'account_id'  => $account->id,
-            'import_id'   => $import->id,
-            'date'        => '2026-02-15',
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-15',
             'amount_cents' => -3000,
         ]);
 
@@ -212,19 +212,19 @@ class CategoryControllerTest extends TestCase
 
         Transaction::factory()->create([
             'category_id' => $category->id,
-            'account_id'  => $personalAccount->id,
-            'import_id'   => $import->id,
-            'date'        => '2026-02-10',
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-10',
             'amount_cents' => -5000,
-            'description'  => 'Personal food',
+            'description' => 'Personal food',
         ]);
         Transaction::factory()->create([
             'category_id' => $category->id,
-            'account_id'  => $professionalAccount->id,
-            'import_id'   => $import->id,
-            'date'        => '2026-02-15',
+            'account_id' => $professionalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-15',
             'amount_cents' => -9000,
-            'description'  => 'Professional food',
+            'description' => 'Professional food',
         ]);
 
         $this->actingAs($user)
@@ -249,17 +249,17 @@ class CategoryControllerTest extends TestCase
 
         Transaction::factory()->create([
             'category_id' => $category->id,
-            'account_id'  => $account->id,
-            'import_id'   => $import->id,
-            'date'        => '2026-02-05',
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-05',
             'amount_cents' => -2500,
         ]);
 
         Transaction::factory()->create([
             'category_id' => $category->id,
-            'account_id'  => $account->id,
-            'import_id'   => $import->id,
-            'date'        => '2026-02-10',
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-10',
             'amount_cents' => -7500,
         ]);
 
@@ -283,9 +283,9 @@ class CategoryControllerTest extends TestCase
 
         Transaction::factory()->create([
             'category_id' => $category->id,
-            'account_id'  => $account->id,
-            'import_id'   => $import->id,
-            'date'        => now(),
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => now(),
             'amount_cents' => -5000,
         ]);
 

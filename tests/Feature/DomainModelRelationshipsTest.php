@@ -7,7 +7,6 @@ use App\Models\Category;
 use App\Models\Import;
 use App\Models\MerchantRule;
 use App\Models\Transaction;
-use Database\Seeders\CategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

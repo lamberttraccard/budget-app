@@ -31,18 +31,18 @@ class CategoryController extends Controller
 
         return Inertia::render('categories/show', [
             'category' => [
-                'id'    => $category->id,
-                'name'  => $category->name,
+                'id' => $category->id,
+                'name' => $category->name,
                 'color' => $category->color,
-                'slug'  => $category->slug,
+                'slug' => $category->slug,
             ],
-            'subcategories'    => $data['subcategories'],
-            'transactions'     => $data['transactions'],
+            'subcategories' => $data['subcategories'],
+            'transactions' => $data['transactions'],
             'totalAmountCents' => $data['totalAmountCents'],
             'transactionCount' => $data['transactionCount'],
-            'currentMonth'     => $monthParam,
-            'currentAccount'   => $accountParam,
-            'allCategories'    => Category::whereNull('parent_id')
+            'currentMonth' => $monthParam,
+            'currentAccount' => $accountParam,
+            'allCategories' => Category::whereNull('parent_id')
                 ->orderBy('name')
                 ->get(['id', 'name', 'color'])
                 ->map(fn ($c) => [

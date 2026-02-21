@@ -12,7 +12,7 @@ class ImportFactory extends Factory
     public function definition(): array
     {
         return [
-            'file_name' => fake()->randomElement(['export', 'releve', 'transactions']) . '_' . fake()->date('Y_m') . '.csv',
+            'file_name' => fake()->randomElement(['export', 'releve', 'transactions']).'_'.fake()->date('Y_m').'.csv',
             'bank' => fake()->randomElement(['Banque Populaire', 'Revolut']),
             'status' => fake()->randomElement(['pending', 'completed']),
             'transaction_count' => fake()->numberBetween(0, 200),

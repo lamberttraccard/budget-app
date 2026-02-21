@@ -80,7 +80,7 @@ development_status:
   6-3-drill-down-and-import-animations: done
   epic-6-retrospective: optional
 
-  epic-7: backlog
-  7-1-transaction-search: backlog
+  epic-7: in-progress
+  7-1-transaction-search: done
   7-2-recurring-transaction-detection-and-view: backlog
   epic-7-retrospective: optional

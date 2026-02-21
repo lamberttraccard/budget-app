@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { UploadIcon } from 'lucide-react';
+import { Search, UploadIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import CategoryCard from '@/components/CategoryCard';
@@ -215,11 +215,23 @@ export default function Dashboard({
                 )}
 
                 {hasAnyData && (
-                    <MonthStrip
-                        currentMonth={currentMonth}
-                        availableMonths={availableMonths}
-                        onMonthChange={handleMonthChange}
-                    />
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                            <MonthStrip
+                                currentMonth={currentMonth}
+                                availableMonths={availableMonths}
+                                onMonthChange={handleMonthChange}
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => router.visit('/search')}
+                            aria-label="Search transactions"
+                            className="flex items-center justify-center size-11 shrink-0 rounded-lg text-text-tertiary hover:text-white transition-colors"
+                        >
+                            <Search className="size-5" />
+                        </button>
+                    </div>
                 )}
 
                 <SummaryWidget incomeCents={incomeCents} expensesCents={expensesCents} showDashes={isEmptyMonth} />
