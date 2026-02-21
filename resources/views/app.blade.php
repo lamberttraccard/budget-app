@@ -7,7 +7,7 @@
         {{-- Inline style to prevent white flash — always dark --}}
         <style>
             html {
-                background-color: #0A0A0B;
+                background-color: #111113;
             }
         </style>
 
@@ -17,7 +17,7 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <link rel="manifest" href="/manifest.json">
-        <meta name="theme-color" content="#0A0A0B">
+        <meta name="theme-color" content="#111113">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
