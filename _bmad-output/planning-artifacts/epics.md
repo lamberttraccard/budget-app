@@ -49,6 +49,15 @@ FR32: The MCP endpoint requires authentication for access
 FR33: Unauthenticated users cannot access any financial data
 FR34: The system shows an import confirmation dialog with summary (bank source, transaction count, date range) before committing transactions
 FR35: Lambert can delete an import and all its linked transactions (cascading removal)
+FR36: The system displays a month-over-month percentage change indicator next to each category amount on the overview
+FR37: The system compares the current month's category total to the previous month's total to calculate the trend percentage
+FR38: Category amounts animate with number transitions when values change (month navigation, import completion)
+FR39: Drill-down navigation uses smooth animated transitions between overview and category detail views
+FR40: After import confirmation, category cards animate in a staggered cascade as amounts update
+FR41: Lambert can view a list of recurring transactions detected across all categories
+FR42: The system identifies recurring transactions by grouping transactions with the same merchant appearing in 2+ consecutive months
+FR43: Lambert can search transactions by merchant name or description across all months and accounts
+FR44: Search results display matching transactions with their category, date, amount, and account context
 
 ### NonFunctional Requirements
 
@@ -150,6 +159,15 @@ FR32: Epic 5 - Conversational Finance / MCP Server (MCP endpoint authentication)
 FR33: Epic 1 - Project Foundation & Secure Access (No anonymous data access)
 FR34: Epic 2 - CSV Import & Financial Overview (Import confirmation dialog)
 FR35: Epic 4 - Category Correction & AI Learning (Import deletion with cascade)
+FR36: Epic 6 - Visual Polish & Animations (Trend indicator display)
+FR37: Epic 6 - Visual Polish & Animations (Trend percentage calculation)
+FR38: Epic 6 - Visual Polish & Animations (Animated number transitions)
+FR39: Epic 6 - Visual Polish & Animations (Drill-down animations)
+FR40: Epic 6 - Visual Polish & Animations (Import cascade animation)
+FR41: Epic 7 - Transaction Discovery (Recurring transaction view)
+FR42: Epic 7 - Transaction Discovery (Recurring transaction detection)
+FR43: Epic 7 - Transaction Discovery (Transaction search)
+FR44: Epic 7 - Transaction Discovery (Search results display)
 
 ## Epic List
 
@@ -177,6 +195,16 @@ Lambert can correct AI categorization mistakes with a single tap, and the system
 Claude can query Lambert's budget data conversationally, giving financial insights without opening the app.
 **FRs covered:** FR24, FR25, FR26, FR27, FR28, FR29, FR32
 **Includes:** 6 MCP tools via laravel/mcp (GetCategoryTotals, QueryTransactions, GetMonthlyComparison, GetTransactionDetails, GetAccountSummary, GetCategoryBreakdown), Sanctum API token authentication for MCP endpoint, structured snake_case JSON responses with metadata, LLM-optimized field names and format.
+
+### Epic 6: Visual Polish & Animations
+Lambert's budget overview feels alive with trend indicators showing spending changes and smooth animations throughout the interface.
+**FRs covered:** FR36, FR37, FR38, FR39, FR40
+**Includes:** Inline trend indicators on CategoryCard (month-over-month percentage change via BudgetQueryService), AnimatedNumber component (Framer Motion, ~400ms counting transitions), drill-down page transitions (AnimatePresence), import cascade animation (staggered variants ~80ms delay), prefers-reduced-motion support throughout.
+
+### Epic 7: Transaction Discovery
+Lambert can find specific transactions through search and identify recurring spending patterns across categories.
+**FRs covered:** FR41, FR42, FR43, FR44
+**Includes:** SearchBar component (inline on Dashboard, PostgreSQL ILIKE search across all months/accounts), RecurringDetectionService (merchant grouping + frequency analysis), RecurringList page (Recurring/Index.tsx), MCP tools (SearchTransactions, GetRecurringTransactions), category correction from search results.
 
 ## Epic 1: Project Foundation & Secure Access
 
@@ -745,3 +773,155 @@ So that I can get trend insights and financial overviews through conversation.
 **Given** any aggregation tool returns large result sets
 **When** the response is formatted
 **Then** amounts remain as integer cents (never pre-formatted), dates as ISO 8601, and metadata includes total_count and period context for Claude to format in natural language (FR29, NFR15)
+
+## Epic 6: Visual Polish & Animations
+
+Lambert's budget overview feels alive with trend indicators showing spending changes and smooth animations throughout the interface.
+
+### Story 6.1: Inline Trend Indicators
+
+As Lambert,
+I want to see a percentage change next to each category amount compared to last month,
+So that I instantly know if my spending in a category is trending up or down.
+
+**Acceptance Criteria:**
+
+**Given** I am viewing the Dashboard for a month with data
+**When** the previous month also has data for a category
+**Then** a trend indicator appears next to the category amount (e.g., "↓12%" in green, "↑8%" in coral) (FR36)
+
+**Given** BudgetQueryService calculates trends
+**When** DashboardController passes category data as Inertia props
+**Then** each category includes a `trendPercentage` (integer, nullable) comparing current month total to previous month total (FR37)
+
+**Given** a category exists in the current month but not the previous month
+**When** the trend is calculated
+**Then** the trend indicator shows "new" in tertiary text instead of a percentage
+
+**Given** a category's trend is exactly 0%
+**When** the indicator renders
+**Then** it shows "—" in tertiary text (no arrow, no color)
+
+**Given** the trend indicator is displayed
+**When** I look at the CategoryCard
+**Then** the indicator appears below the amount in body-sm size, using emerald (#10B981) for decreases (spending down = good) and coral (#FB7185) for increases
+
+### Story 6.2: Animated Number Transitions
+
+As Lambert,
+I want category amounts to animate smoothly when values change,
+So that the interface feels responsive and alive rather than static.
+
+**Acceptance Criteria:**
+
+**Given** I am on the Dashboard viewing category amounts
+**When** I navigate to a different month via the MonthStrip
+**Then** category amounts animate from old values to new values with a smooth counting transition (~400ms duration) (FR38)
+
+**Given** an import completes and category amounts update
+**When** the Dashboard re-renders with new data
+**Then** amounts animate from previous values to updated values (FR38)
+
+**Given** the SummaryWidget shows Income and Expenses
+**When** values change (month navigation or import)
+**Then** those amounts also animate with the same counting transition
+
+**Given** the user has `prefers-reduced-motion` enabled
+**When** any animation would trigger
+**Then** values update instantly with no animation
+
+### Story 6.3: Drill-Down & Import Animations
+
+As Lambert,
+I want smooth transitions when drilling into categories and a satisfying cascade when importing,
+So that navigation feels fluid and importing feels rewarding.
+
+**Acceptance Criteria:**
+
+**Given** I am on the Dashboard
+**When** I tap a CategoryCard to drill down
+**Then** the transition to Categories/Show uses a smooth animation (the color header expands from the card position or fades in) rather than an instant page swap (FR39)
+
+**Given** I am on the Categories/Show drill-down
+**When** I tap back/close to return to the Dashboard
+**Then** the reverse transition animates smoothly back to the overview
+
+**Given** I confirm an import and transactions are committed
+**When** category cards update with new amounts
+**Then** cards animate in a staggered cascade (top to bottom, ~80ms delay between cards) as their amounts update (FR40)
+
+**Given** the Dashboard had an empty state before import
+**When** the first import completes
+**Then** category cards cascade in from empty, creating the "reveal moment"
+
+**Given** the user has `prefers-reduced-motion` enabled
+**When** any animation would trigger
+**Then** transitions are instant with no animation
+
+## Epic 7: Transaction Discovery
+
+Lambert can find specific transactions through search and identify recurring spending patterns across categories.
+
+### Story 7.1: Transaction Search
+
+As Lambert,
+I want to search for transactions by merchant name or description,
+So that I can quickly find specific transactions without drilling through categories manually.
+
+**Acceptance Criteria:**
+
+**Given** I am on the Dashboard
+**When** I tap the search icon/area
+**Then** a search input appears at the top of the overview (FR43)
+
+**Given** I type at least 2 characters in the search input
+**When** the search executes
+**Then** matching transactions are displayed below the input, showing: merchant name, category (with color dot), date, amount, and account (FR44)
+
+**Given** search results are displayed
+**When** I tap a transaction row
+**Then** the category correction picker opens (same as drill-down correction flow)
+
+**Given** BudgetQueryService handles the search
+**When** a search query is received
+**Then** it searches across all months and accounts using PostgreSQL `ILIKE` on the transaction description field (FR43)
+
+**Given** the search input is empty or cleared
+**When** I dismiss the search
+**Then** the Dashboard returns to the normal category overview
+
+**Given** no transactions match the search query
+**When** results render
+**Then** "No transactions found" appears in tertiary text
+
+### Story 7.2: Recurring Transaction Detection & View
+
+As Lambert,
+I want to see a list of my recurring transactions (subscriptions, rent, salary),
+So that I can understand my fixed costs across all categories in one place.
+
+**Acceptance Criteria:**
+
+**Given** I want to view recurring transactions
+**When** I access the recurring view (accessible from Dashboard, e.g., a subtle icon or menu item)
+**Then** I see a list of detected recurring transactions grouped by merchant (FR41)
+
+**Given** BudgetQueryService analyzes transaction patterns
+**When** it detects recurring transactions
+**Then** it groups transactions by normalized merchant name and flags those appearing in 2+ consecutive months as recurring (FR42)
+
+**Given** recurring transactions are displayed
+**When** I view the list
+**Then** each entry shows: merchant name, category (with color dot), typical amount, frequency (monthly), and last occurrence date
+
+**Given** a recurring transaction has varying amounts (e.g., electricity bill)
+**When** it is displayed
+**Then** the typical amount shows the most recent amount, with a range indicator if amounts vary significantly
+
+**Given** I tap a recurring transaction entry
+**When** the detail expands
+**Then** I see the full history of that recurring transaction across all months
+
+**Given** the recurring view is accessed via MCP
+**When** Claude calls a `get_recurring_transactions` tool
+**Then** it returns the same recurring detection data in snake_case JSON format

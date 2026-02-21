@@ -39,6 +39,7 @@ export default function Dashboard({
     currentMonth,
     currentAccount,
     availableMonths,
+    hasPreviousMonthData,
     importPreview,
     imports,
 }: DashboardProps) {
@@ -218,6 +219,7 @@ export default function Dashboard({
                                     color={cat.color}
                                     amountCents={cat.amountCents}
                                     transactionCount={cat.transactionCount}
+                                    trendPercentage={hasPreviousMonthData ? cat.trendPercentage : undefined}
                                     currentMonth={currentMonth}
                                     currentAccount={currentAccount}
                                 />

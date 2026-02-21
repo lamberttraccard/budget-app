@@ -5,6 +5,7 @@ export type CategoryTotal = {
     color: string;
     amountCents: number;
     transactionCount: number;
+    trendPercentage: number | null;
 };
 
 export type ImportPreview = {
@@ -74,6 +75,7 @@ export type DashboardProps = {
     currentMonth: string;
     currentAccount: string;
     availableMonths: string[];
+    hasPreviousMonthData: boolean;
     importPreview?: ImportPreview | null;
     imports: ImportRecord[];
 };

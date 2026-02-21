@@ -237,12 +237,12 @@ Single-page application (SPA) with a backend API and MCP server. Mobile-first re
 
 ### Post-MVP Features
 
-**Phase 2 -- Polish & Insight (Post-MVP):**
-- Inline trend indicators (↓12% next to category amounts)
-- Animated number transitions and smooth drill-down animations
-- Satisfying import cascade animation
-- Recurring transaction filter (view all subscriptions across categories)
-- Search across transactions
+**Phase 2 -- Polish & Insight (In Progress):**
+- Inline trend indicators (↓12% next to category amounts) → FR36-FR37
+- Animated number transitions and smooth drill-down animations → FR38-FR39
+- Satisfying import cascade animation → FR40
+- Recurring transaction filter (view all subscriptions across categories) → FR41-FR42
+- Search across transactions → FR43-FR44
 
 Phase 2 is about making the app feel alive. These features build on a working MVP -- they enhance the experience but aren't needed for core financial clarity.
 
@@ -334,6 +334,21 @@ Phase 3 turns the app from a mirror into a tool that actively helps shape spendi
 - **FR31:** The system enforces HTTPS for all traffic
 - **FR32:** The MCP endpoint requires authentication for access
 - **FR33:** Unauthenticated users cannot access any financial data
+
+### Visual Polish
+
+- **FR36:** The system displays a month-over-month percentage change indicator next to each category amount on the overview (e.g., ↓12%, ↑8%)
+- **FR37:** The system compares the current month's category total to the previous month's total to calculate the trend percentage
+- **FR38:** Category amounts animate with number transitions when values change (month navigation, import completion)
+- **FR39:** Drill-down navigation uses smooth animated transitions between overview and category detail views
+- **FR40:** After import confirmation, category cards animate in a staggered cascade as amounts update
+
+### Transaction Discovery
+
+- **FR41:** Lambert can view a list of recurring transactions detected across all categories (e.g., subscriptions, rent, salary)
+- **FR42:** The system identifies recurring transactions by grouping transactions with the same merchant appearing in 2+ consecutive months
+- **FR43:** Lambert can search transactions by merchant name or description across all months and accounts
+- **FR44:** Search results display matching transactions with their category, date, amount, and account context
 
 ## Non-Functional Requirements
 

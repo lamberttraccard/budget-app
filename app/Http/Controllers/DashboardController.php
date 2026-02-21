@@ -29,6 +29,25 @@ class DashboardController extends Controller
 
         $data = $this->budgetQueryService->getMonthlyData($year, $month, $accountParam);
 
+        $prevMonth = $month === 1 ? 12 : $month - 1;
+        $prevYear = $month === 1 ? $year - 1 : $year;
+        $previousData = $this->budgetQueryService->getMonthlyData($prevYear, $prevMonth, $accountParam);
+
+        $hasPreviousMonthData = count($previousData['categoryTotals']) > 0;
+
+        $previousAmounts = collect($previousData['categoryTotals'])
+            ->keyBy('slug')
+            ->map(fn ($cat) => $cat['amountCents']);
+
+        $categoryTotals = array_map(function ($category) use ($previousAmounts) {
+            $prevAmount = $previousAmounts->get($category['slug']);
+            $category['trendPercentage'] = $this->calculateTrendPercentage(
+                $category['amountCents'],
+                $prevAmount
+            );
+            return $category;
+        }, $data['categoryTotals']);
+
         $imports = Import::where('status', 'completed')
             ->orderByDesc('imported_at')
             ->get()
@@ -43,14 +62,31 @@ class DashboardController extends Controller
             ]);
 
         return Inertia::render('dashboard', [
-            'categoryTotals'  => $data['categoryTotals'],
-            'incomeCents'     => $data['incomeCents'],
-            'expensesCents'   => $data['expensesCents'],
-            'currentMonth'    => $monthParam,
-            'currentAccount'  => $accountParam,
-            'availableMonths' => $this->budgetQueryService->getAvailableMonths($accountParam),
-            'importPreview'   => session('importPreview'),
-            'imports'         => $imports,
+            'categoryTotals'        => $categoryTotals,
+            'incomeCents'           => $data['incomeCents'],
+            'expensesCents'         => $data['expensesCents'],
+            'currentMonth'          => $monthParam,
+            'currentAccount'        => $accountParam,
+            'availableMonths'       => $this->budgetQueryService->getAvailableMonths($accountParam),
+            'hasPreviousMonthData'  => $hasPreviousMonthData,
+            'importPreview'         => session('importPreview'),
+            'imports'               => $imports,
         ]);
+    }
+
+    private function calculateTrendPercentage(int $currentCents, ?int $previousCents): ?int
+    {
+        if ($previousCents === null) {
+            return null;
+        }
+
+        if ($previousCents === 0) {
+            return null;
+        }
+
+        $currentAbs = abs($currentCents);
+        $previousAbs = abs($previousCents);
+
+        return (int) round((($currentAbs - $previousAbs) / $previousAbs) * 100);
     }
 }

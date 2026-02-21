@@ -668,6 +668,12 @@ All shadcn/ui components inherit the dark theme via CSS variables aligned to the
 - Category name (15px, semibold, white)
 - Transaction count subtitle (13px, secondary text)
 - Amount (22px, bold, category accent color, right-aligned)
+- Trend indicator (12px, below amount, right-aligned):
+  - Spending decreased: "↓12%" in emerald (#10B981)
+  - Spending increased: "↑8%" in coral (#FB7185)
+  - No change: "—" in tertiary text (#71717A)
+  - New category (no previous month): "new" in tertiary text
+  - No previous month data at all: indicator hidden
 - Card container (surface background, 16px border radius, 16px padding)
 
 **States:**
@@ -776,6 +782,59 @@ All shadcn/ui components inherit the dark theme via CSS variables aligned to the
 
 **States:** Only shown when the database has zero transactions. Disappears permanently after first successful import.
 
+#### AnimatedNumber
+
+**Purpose:** Smooth counting transition when financial amounts change. Makes the interface feel alive during month navigation and imports.
+**Anatomy:**
+- Wraps any amount display (CategoryCard, SummaryWidget, ColorHeader)
+- Animates from previous value to new value over ~400ms with ease-out
+- Uses formatAmount.ts at each frame to maintain French locale formatting
+- Tabular-nums preserved during animation for stable layout
+
+**States:**
+- Idle: displays final formatted value
+- Animating: counts from old to new value
+- Reduced motion: instant value swap, no animation
+
+#### SearchBar
+
+**Purpose:** Find transactions by merchant name across all months and accounts.
+**Anatomy:**
+- Search icon (magnifying glass, tertiary text) in Dashboard header area
+- On tap: expands into a full-width text input with subtle surface background
+- Results appear below input, replacing the category list temporarily
+- Each result row: category color dot (8px), merchant name, date (body-sm), amount (right-aligned), account badge if not default
+- Clear button (X) to dismiss search and restore category overview
+
+**States:**
+- Collapsed: search icon only, integrated into Dashboard header
+- Active: expanded input with cursor, category list replaced by results
+- Results: transaction rows matching query (live filtering after 2+ chars)
+- Empty results: "No transactions found" in tertiary text
+- Tappable rows: opens category correction picker (same as drill-down)
+
+**Behavior:** Search is global -- spans all months and all accounts. Results sorted by date descending (most recent first).
+
+#### RecurringList
+
+**Purpose:** View all recurring transactions (subscriptions, rent, salary) detected across categories.
+**Anatomy:**
+- Page header: "Recurring" title, back button
+- Grouped by merchant name, each entry in a surface card:
+  - Merchant name (15px, semibold, white)
+  - Category color dot + category name (body-sm, secondary text)
+  - Typical amount (heading-sm, right-aligned)
+  - Frequency label: "Monthly" (body-sm, secondary text)
+  - Last seen: "Feb 2026" (body-sm, tertiary text)
+- Tapping an entry expands to show full history (all occurrences as TransactionRows)
+
+**States:**
+- Default: collapsed list of recurring merchants
+- Expanded: shows transaction history for one merchant
+- Empty: "No recurring transactions detected yet" in tertiary text
+
+**Access:** Subtle icon or link from Dashboard header (e.g., repeat/loop icon next to search icon). Not prominent -- a discovery feature, not a primary view.
+
 ### Component Implementation Strategy
 
 - **Build order follows user journey priority** -- Components needed for Journey 1 (First Import) are built first, since the first import is the defining moment
@@ -803,6 +862,16 @@ All shadcn/ui components inherit the dark theme via CSS variables aligned to the
 
 All components are MVP-required. Phase 1 vs Phase 2 is build sequence, not feature priority -- both phases ship together.
 
+**Phase 2a -- Visual Polish (Epic 6):**
+- AnimatedNumber -- wrap existing amount displays
+- Trend indicator -- extend CategoryCard
+- Drill-down transition -- AnimatePresence on Inertia navigation
+- Import cascade -- staggered variants on category card list
+
+**Phase 2b -- Transaction Discovery (Epic 7):**
+- SearchBar -- new component in Dashboard header
+- RecurringList -- new page component
+
 ## UX Consistency Patterns
 
 ### Feedback Patterns
@@ -818,6 +887,13 @@ All components are MVP-required. Phase 1 vs Phase 2 is build sequence, not featu
 - **No codes, no jargon.** Never "Error 422" or "Parse exception." Always human language.
 - **Recoverable by design.** Every error state has an obvious next action (retry, adjust, close).
 - **Visual:** Error messages use the error color (#EF4444) for the icon/accent, but the message text stays white on surface for readability.
+
+**Animation Feedback:**
+- Number transitions on value change: ~400ms ease-out counting animation
+- Import cascade: cards animate in top-to-bottom with ~80ms stagger delay
+- Drill-down transition: color header expands/fades in (~300ms)
+- All animations respect `prefers-reduced-motion` (instant swap when enabled)
+- Animations are decorative polish, never blocking -- the UI is interactive during animations
 
 **Confirmation Feedback:**
 - **Minimal use.** Only two actions require confirmation:
@@ -841,6 +917,18 @@ All components are MVP-required. Phase 1 vs Phase 2 is build sequence, not featu
 **Account Switching:**
 - **Dropdown, not tabs.** "Personal ▾" in the header. Tap to see options (Personal, Professional). Selecting updates the entire view.
 - **Persistent selection.** The chosen account context persists across sessions. Defaults to Personal on first use.
+
+**Search Pattern:**
+- Triggered from Dashboard header (search icon).
+- Replaces category list with search results -- not a separate page.
+- Dismissing search restores the category overview instantly.
+- Search is a temporary overlay on the main screen, maintaining the "one screen" principle.
+
+**Recurring View:**
+- Accessed from Dashboard header (recurring icon).
+- Full Inertia page visit to /recurring.
+- Back button returns to Dashboard.
+- Follows the same dark surface + card pattern as drill-down views.
 
 ### Loading & Empty States
 
@@ -944,6 +1032,13 @@ All components are MVP-required. Phase 1 vs Phase 2 is build sequence, not featu
 | >= 640px (desktop) | Centered column, 480px max | 32px | Drag-and-drop + fallback file picker | Dropdown menu |
 
 No intermediate breakpoints. The UI is simple enough that a single breakpoint handles the transition cleanly. Tailwind's `sm:` prefix covers all desktop adaptations.
+
+**Search Responsive Behavior:**
+- Mobile: search input takes full width, results fill the screen
+- Desktop: search input within the centered column, same behavior
+
+**Recurring View Responsive Behavior:**
+- Same as drill-down: full-width mobile, centered column desktop
 
 ### Accessibility Strategy
 

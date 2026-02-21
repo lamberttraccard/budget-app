@@ -145,6 +145,7 @@ sail bun install
 | pgvector/pgvector | Vector similarity search for PostgreSQL | v0.2.2 |
 | tpetry/laravel-postgresql-enhanced | Enhanced PostgreSQL support (vector columns in migrations) | Latest |
 | laravel/nightwatch | Production monitoring (errors, queries, jobs, performance) | Latest |
+| framer/motion | React animation library for number transitions, page transitions, and staggered cascades | Latest |
 
 ### Architecture Note: Inertia Changes the Model
 
@@ -211,6 +212,7 @@ The PRD assumed a traditional SPA + REST API. With Inertia.js:
 | Drill-down navigation | Inertia page visits | Each level is a separate Inertia page (`/`, `/categories/{id}`, `/categories/{id}/subcategories/{id}`). Back button works natively. Laravel scopes data per page. Color takeover transition via page transition effects. |
 | Category correction | `router.patch` | Single-field update: `router.patch('/transactions/{id}', { category_id })`. Lighter than `useForm`. Automatic page prop refresh via Inertia. |
 | Component library | shadcn/ui (selective) | 4 components adopted: DropdownMenu, Sheet, Dialog, Toast. Themed via CSS variables. Custom components for domain-specific UI (CategoryCard, MonthStrip, etc.). |
+| Animation | Framer Motion | Number transitions (AnimatedNumber component), page transitions (AnimatePresence on Inertia navigation), staggered cascades (variants with staggerChildren). Respect prefers-reduced-motion via useReducedMotion hook. |
 
 ### Infrastructure & Deployment
 
@@ -354,6 +356,12 @@ tests/
 
 **Never** pre-format amounts on the server. **Never** use floating-point for money. **One** formatting function in TypeScript (`formatAmount`), **one** in PHP (for logs/debugging only).
 
+**Animated Amounts (Phase 2):**
+- `AnimatedNumber` component receives integer cents, animates between old and new values using Framer Motion
+- `formatAmount.ts` applies at each animation frame to maintain French locale formatting
+- `tabular-nums` preserved during animation for stable layout
+- On `prefers-reduced-motion`: skip animation, render final value directly
+
 **Date Handling:**
 
 | Layer | Format | Example |
@@ -477,7 +485,8 @@ budget-app/
 │   │   ├── CategorizationService.php         # Hybrid categorization orchestration (FR8-FR11)
 │   │   ├── MerchantMatchingService.php       # Fast merchant → category lookup (FR9, FR11)
 │   │   ├── DeduplicationService.php          # Hash-based dedup (FR5)
-│   │   └── BudgetQueryService.php            # Shared query logic for controllers + MCP
+│   │   ├── BudgetQueryService.php            # Shared query logic for controllers + MCP (extended: trends, search)
+│   │   └── RecurringDetectionService.php     # Merchant grouping + frequency analysis (FR41-FR42)
 │   │
 │   ├── Parsers/
 │   │   ├── CsvParserInterface.php            # Strategy interface
@@ -504,7 +513,9 @@ budget-app/
 │   │       ├── GetMonthlyComparison.php      # Month-over-month (FR27)
 │   │       ├── GetTransactionDetails.php     # Individual transaction access (FR28)
 │   │       ├── GetAccountSummary.php         # Income/expenses by account (FR26-FR27)
-│   │       └── GetCategoryBreakdown.php      # Subcategory drill-down (FR27-FR28)
+│   │       ├── GetCategoryBreakdown.php      # Subcategory drill-down (FR27-FR28)
+│   │       ├── SearchTransactions.php        # Full-text search via MCP (FR43-FR44)
+│   │       └── GetRecurringTransactions.php  # Recurring patterns via MCP (FR41-FR42)
 │   │
 │   ├── Exceptions/
 │   │   ├── UnrecognizedCsvFormatException.php  # Unknown CSV format (FR7)
@@ -533,11 +544,13 @@ budget-app/
 │   └── js/
 │       ├── app.tsx                           # Inertia app entry
 │       ├── pages/
-│       │   ├── Dashboard.tsx                 # Overview: MonthStrip + SummaryWidget + CategoryCards (FR12-FR13, FR16-FR17)
+│       │   ├── Dashboard.tsx                 # Overview: MonthStrip + SummaryWidget + CategoryCards (FR12-FR13, FR16-FR17, FR36-FR40)
 │       │   ├── Categories/
 │       │   │   └── Show.tsx                  # Category drill-down: ColorHeader + SubcategoryRows + TransactionRows (FR14-FR15)
 │       │   ├── Import/
 │       │   │   └── Confirm.tsx               # Import confirmation dialog page (FR34)
+│       │   ├── Recurring/
+│       │   │   └── Index.tsx                 # Recurring transactions page (FR41-FR42)
 │       │   └── Auth/                         # Starter kit auth pages (FR30)
 │       │       ├── Login.tsx
 │       │       ├── Register.tsx
@@ -548,7 +561,7 @@ budget-app/
 │       │   │   ├── sheet.tsx                 # Category correction picker (mobile)
 │       │   │   ├── dialog.tsx                # Import confirmation, import deletion
 │       │   │   └── toast.tsx                 # AI learning acknowledgment
-│       │   ├── CategoryCard.tsx              # Category card for overview
+│       │   ├── CategoryCard.tsx              # Category card for overview (extended: trend indicator)
 │       │   ├── MonthStrip.tsx                # Horizontal month navigation
 │       │   ├── SummaryWidget.tsx             # Income/Expenses cards
 │       │   ├── TransactionRow.tsx            # Transaction in drill-down
@@ -556,13 +569,17 @@ budget-app/
 │       │   ├── ColorHeader.tsx               # Category drill-down header
 │       │   ├── ImportDropZone.tsx            # Drag-and-drop / file picker
 │       │   ├── EmptyState.tsx                # First-time experience
-│       │   └── CategoryPicker.tsx            # Correction picker (wraps Sheet/DropdownMenu)
+│       │   ├── CategoryPicker.tsx            # Correction picker (wraps Sheet/DropdownMenu)
+│       │   ├── AnimatedNumber.tsx            # Counting transition for amounts (FR38)
+│       │   ├── SearchBar.tsx                 # Transaction search input + results (FR43-FR44)
+│       │   └── RecurringList.tsx             # Recurring transaction view (FR41-FR42)
 │       ├── lib/
 │       │   ├── formatAmount.ts               # Integer cents → "1 234,56 €"
 │       │   ├── formatDate.ts                 # ISO string → "Feb 19"
 │       │   └── types.ts                      # Shared TypeScript types
 │       ├── hooks/
-│       │   └── useViewport.ts                # Mobile/desktop detection for Sheet vs Dropdown
+│       │   ├── useViewport.ts                # Mobile/desktop detection for Sheet vs Dropdown
+│       │   └── useReducedMotion.ts           # Respects prefers-reduced-motion (FR38-FR40)
 │       └── layouts/
 │           └── AppLayout.tsx                 # Main layout (header with account picker)
 │
@@ -626,6 +643,8 @@ budget-app/
 | MCP Access (FR24-FR29) | -- | `BudgetQueryService` | All | -- | -- |
 | Security (FR30-FR33) | Starter kit auth | -- | `User` | `Auth/*` | -- |
 | Import Management (FR34-FR35) | `ImportController` | `CsvImportService` | `Import`, `Transaction` | `Import/Confirm` | `Dialog` |
+| Visual Polish (FR36-FR40) | `DashboardController` | `BudgetQueryService` | `Transaction`, `Category` | `Dashboard` | `CategoryCard` (trend), `AnimatedNumber`, `MonthStrip` |
+| Transaction Discovery (FR41-FR44) | `SearchController`, `RecurringController` | `BudgetQueryService`, `RecurringDetectionService` | `Transaction` | `Dashboard` (search inline), `Recurring/Index` | `SearchBar`, `RecurringList` |
 
 ### Cross-Cutting Concerns Mapping
 
@@ -738,11 +757,12 @@ CSV File → CsvParserFactory → Parser → TransactionData DTO
 2. **Tailwind 4 configuration** -- Tailwind 4 uses CSS-based configuration, not `tailwind.config.ts`. The project tree lists `tailwind.config.ts` for clarity, but the actual implementation may use `@theme` directives in CSS. Resolve during project initialization.
 3. **`BudgetQueryService` output contract** -- The service is shared between web controllers and MCP tools. Controllers transform output to camelCase Inertia props; MCP tools format as snake_case JSON. The service itself should return domain objects (Eloquent models/collections), and transformation happens in the consumer layer.
 
-**Deferred (Post-MVP):**
+**Deferred (Post-Phase 2):**
 - Testing coverage targets
 - CI/CD pipeline (GitHub Actions)
 - Caching layer (Redis)
 - Performance profiling and optimization
+- Phase 3 features (spending ceilings, evolution view, notifications, MCP write access)
 
 ### Architecture Completeness Checklist
 
