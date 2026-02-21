@@ -140,7 +140,7 @@ export default function SearchPage({
                             onChange={handleInputChange}
                             placeholder="Search transactions..."
                             autoFocus
-                            className="w-full rounded-xl bg-surface border border-zinc-800 pl-10 pr-10 py-2.5 text-sm text-white placeholder:text-text-tertiary focus:outline-none focus:border-zinc-600 transition-colors"
+                            className="w-full rounded-xl bg-surface border border-zinc-800 pl-10 pr-10 py-2.5 text-base md:text-sm text-white placeholder:text-text-tertiary focus:outline-none focus:border-zinc-600 transition-colors"
                         />
                         {localQuery && (
                             <button
