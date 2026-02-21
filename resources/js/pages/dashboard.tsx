@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { Repeat, Search, UploadIcon } from 'lucide-react';
+import { UploadIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import CategoryCard from '@/components/CategoryCard';
@@ -18,7 +18,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
-import type { CategoryTotal, DashboardProps, ImportRecord } from '@/types';
+import type { CategoryTotal, DashboardProps } from '@/types';
 
 function formatMonthLabel(month: string): string {
     const [year, m] = month.split('-');
@@ -215,31 +215,11 @@ export default function Dashboard({
                 )}
 
                 {hasAnyData && (
-                    <div className="flex items-center gap-2">
-                        <div className="flex-1 min-w-0">
-                            <MonthStrip
-                                currentMonth={currentMonth}
-                                availableMonths={availableMonths}
-                                onMonthChange={handleMonthChange}
-                            />
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => router.visit(currentAccount ? `/recurring?account=${currentAccount}` : '/recurring')}
-                            aria-label="Recurring transactions"
-                            className="flex items-center justify-center size-11 shrink-0 rounded-lg text-text-tertiary hover:text-white transition-colors"
-                        >
-                            <Repeat className="size-5" />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => router.visit('/search')}
-                            aria-label="Search transactions"
-                            className="flex items-center justify-center size-11 shrink-0 rounded-lg text-text-tertiary hover:text-white transition-colors"
-                        >
-                            <Search className="size-5" />
-                        </button>
-                    </div>
+                    <MonthStrip
+                        currentMonth={currentMonth}
+                        availableMonths={availableMonths}
+                        onMonthChange={handleMonthChange}
+                    />
                 )}
 
                 <SummaryWidget incomeCents={incomeCents} expensesCents={expensesCents} showDashes={isEmptyMonth} />

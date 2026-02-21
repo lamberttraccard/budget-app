@@ -54,7 +54,7 @@ export default function MonthStrip({ currentMonth, availableMonths, onMonthChang
     const months = generateMonthRange(availableMonths, currentMonth);
 
     return (
-        <div className="overflow-x-auto scrollbar-none -mx-4 sm:-mx-8 px-4 sm:px-8">
+        <div className="overflow-x-auto scrollbar-none -mx-4 sm:-mx-8 px-4 sm:px-8" style={{ maskImage: 'linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)' }}>
             <div className="flex gap-2 snap-x snap-mandatory">
                 {months.map((month) => (
                     <button

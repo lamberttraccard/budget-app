@@ -1,5 +1,4 @@
 import { Head, router } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import RecurringMerchantCard from '@/components/RecurringMerchantCard';
 import AppLayout from '@/layouts/app-layout';
@@ -15,14 +14,6 @@ export default function RecurringPage({
         setExpandedMerchant((prev) => (prev === merchantName ? null : merchantName));
     }, []);
 
-    const handleBack = useCallback(() => {
-        if (window.history.length > 1 && document.referrer.includes(window.location.origin)) {
-            window.history.back();
-        } else {
-            router.visit('/dashboard');
-        }
-    }, []);
-
     const handleAccountChange = useCallback((account: string) => {
         router.get('/recurring', { account }, { preserveState: true, replace: true });
     }, []);
@@ -33,23 +24,13 @@ export default function RecurringPage({
 
             <div className="py-6 space-y-4">
                 {/* Header */}
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={handleBack}
-                        aria-label="Go back"
-                        className="flex items-center justify-center size-10 rounded-lg text-text-secondary hover:text-white transition-colors"
-                    >
-                        <ArrowLeft className="size-5" />
-                    </button>
-                    <div>
-                        <h1 className="text-lg font-semibold text-white">Recurring</h1>
-                        {recurringMerchants.length > 0 && (
-                            <p className="text-xs text-text-secondary">
-                                {recurringMerchants.length} recurring transaction{recurringMerchants.length === 1 ? '' : 's'}
-                            </p>
-                        )}
-                    </div>
+                <div>
+                    <h1 className="text-lg font-semibold text-white">Recurring</h1>
+                    {recurringMerchants.length > 0 && (
+                        <p className="text-xs text-text-secondary">
+                            {recurringMerchants.length} recurring transaction{recurringMerchants.length === 1 ? '' : 's'}
+                        </p>
+                    )}
                 </div>
 
                 {/* Recurring merchant list */}

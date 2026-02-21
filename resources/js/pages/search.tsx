@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import CategoryPicker from '@/components/CategoryPicker';
@@ -81,14 +81,6 @@ export default function SearchPage({
         );
     }, [currentAccount]);
 
-    const handleBack = useCallback(() => {
-        if (window.history.length > 1 && document.referrer.includes(window.location.origin)) {
-            window.history.back();
-        } else {
-            router.visit('/dashboard');
-        }
-    }, []);
-
     const handleAccountChange = useCallback((account: string) => {
         router.get('/search', buildSearchParams(localQuery, account), { preserveState: true, replace: true });
     }, [localQuery]);
@@ -138,16 +130,8 @@ export default function SearchPage({
 
             <div className="py-6 space-y-4">
                 {/* Search header */}
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={handleBack}
-                        aria-label="Go back"
-                        className="flex items-center justify-center size-10 rounded-lg text-text-secondary hover:text-white transition-colors"
-                    >
-                        <ArrowLeft className="size-5" />
-                    </button>
-                    <div className="relative flex-1">
+                <div>
+                    <div className="relative w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-text-tertiary pointer-events-none" />
                         <input
                             ref={inputRef}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0A0A0B" rx="0"/>
+  <!-- Wallet icon centered with ~20% safe area padding for maskable -->
+  <g transform="translate(256,256)" stroke="white" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Wallet body -->
+    <rect x="-120" y="-90" width="240" height="180" rx="20"/>
+    <!-- Wallet flap -->
+    <path d="M-120-50 L-120-70 Q-120-90-100-90 L80-90 Q120-90 120-50"/>
+    <!-- Clasp circle -->
+    <circle cx="90" cy="10" r="16" fill="white"/>
+  </g>
+</svg>

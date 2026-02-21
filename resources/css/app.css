@@ -172,6 +172,11 @@
     to { opacity: 1; }
 }
 
+/* Exclude bottom dock from page transitions */
+::view-transition-group(dock) {
+    animation: none;
+}
+
 /* Respect reduced motion for view transitions */
 @media (prefers-reduced-motion: reduce) {
     ::view-transition-group(*),
