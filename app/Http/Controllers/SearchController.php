@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
 use App\Services\BudgetQueryService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -30,23 +29,11 @@ class SearchController extends Controller
             $totalCount = $data['totalCount'];
         }
 
-        $allCategories = Category::whereNull('parent_id')
-            ->orderBy('name')
-            ->get(['id', 'name', 'color', 'icon'])
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'name' => $c->name,
-                'color' => $c->color,
-                'icon' => $c->icon,
-            ])
-            ->toArray();
-
         return Inertia::render('search', [
             'results' => $results,
             'totalCount' => $totalCount,
             'query' => $q,
             'currentAccount' => $account,
-            'allCategories' => $allCategories,
         ]);
     }
 }

@@ -50,9 +50,11 @@ class CategoryControllerTest extends TestCase
                 ->where('category.slug', $category->slug)
                 ->where('category.icon', $category->icon)
                 ->has('subcategories')
-                ->has('transactions', 3)
                 ->where('transactionCount', 3)
                 ->where('currentMonth', '2026-02')
+                ->loadDeferredProps(fn (Assert $page) => $page
+                    ->has('transactions', 3)
+                )
             );
     }
 
@@ -71,9 +73,11 @@ class CategoryControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('categories/show')
-                ->has('transactions', 2)
                 ->where('transactionCount', 2)
                 ->where('currentMonth', '2026-01')
+                ->loadDeferredProps(fn (Assert $page) => $page
+                    ->has('transactions', 2)
+                )
             );
     }
 
@@ -121,11 +125,12 @@ class CategoryControllerTest extends TestCase
                 ->where('subcategories.0.name', 'Groceries')
                 ->where('subcategories.0.amountCents', -5000)
                 ->where('subcategories.0.transactionCount', 1)
-                ->has('transactions', 2)
                 ->where('transactionCount', 2)
-                // Verify categoryId is present on transactions (used for client-side subcategory filtering)
-                ->where('transactions.0.categoryId', $parent->id)
-                ->where('transactions.1.categoryId', $subcategory->id)
+                ->loadDeferredProps(fn (Assert $page) => $page
+                    ->has('transactions', 2)
+                    ->where('transactions.0.categoryId', $parent->id)
+                    ->where('transactions.1.categoryId', $subcategory->id)
+                )
             );
     }
 
@@ -141,9 +146,11 @@ class CategoryControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('categories/show')
                 ->has('subcategories', 0)
-                ->has('transactions', 0)
                 ->where('totalAmountCents', 0)
                 ->where('transactionCount', 0)
+                ->loadDeferredProps(fn (Assert $page) => $page
+                    ->has('transactions', 0)
+                )
             );
     }
 
@@ -193,11 +200,13 @@ class CategoryControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('categories/show')
-                ->has('transactions', 3)
-                // Most recent date first (date DESC)
-                ->where('transactions.0.date', '2026-02-03')
-                ->where('transactions.1.date', '2026-02-02')
-                ->where('transactions.2.date', '2026-02-01')
+                ->loadDeferredProps(fn (Assert $page) => $page
+                    ->has('transactions', 3)
+                    // Most recent date first (date DESC)
+                    ->where('transactions.0.date', '2026-02-03')
+                    ->where('transactions.1.date', '2026-02-02')
+                    ->where('transactions.2.date', '2026-02-01')
+                )
             );
     }
 
@@ -234,8 +243,10 @@ class CategoryControllerTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('categories/show')
                 ->where('currentAccount', 'personal')
-                ->has('transactions', 1)
-                ->where('transactions.0.description', 'Personal food')
+                ->loadDeferredProps(fn (Assert $page) => $page
+                    ->has('transactions', 1)
+                    ->where('transactions.0.description', 'Personal food')
+                )
             );
     }
 
@@ -274,7 +285,7 @@ class CategoryControllerTest extends TestCase
             );
     }
 
-    public function test_show_includes_all_categories_for_picker(): void
+    public function test_show_includes_all_categories_from_shared_props(): void
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();

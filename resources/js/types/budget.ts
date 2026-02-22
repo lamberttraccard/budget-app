@@ -54,6 +54,11 @@ export type AccountContext = {
     label: string;
 };
 
+export type TrendData = {
+    hasPreviousMonthData: boolean;
+    categoryTrends: Record<string, number | null>;
+};
+
 export type CategoryShowProps = {
     category: {
         id: number;
@@ -63,12 +68,11 @@ export type CategoryShowProps = {
         icon: string | null;
     };
     subcategories: SubcategoryTotal[];
-    transactions: TransactionItem[];
+    transactions?: TransactionItem[];
     totalAmountCents: number;
     transactionCount: number;
     currentMonth: string;
     currentAccount: string;
-    allCategories: CategoryOption[];
 };
 
 export type SearchResultItem = {
@@ -87,7 +91,6 @@ export type SearchProps = {
     totalCount: number;
     query: string;
     currentAccount: string | null;
-    allCategories: CategoryOption[];
 };
 
 export type RecurringTransaction = {
@@ -113,7 +116,7 @@ export type RecurringMerchant = {
 };
 
 export type RecurringProps = {
-    recurringMerchants: RecurringMerchant[];
+    recurringMerchants?: RecurringMerchant[];
     currentAccount: string | null;
 };
 
@@ -124,7 +127,11 @@ export type DashboardProps = {
     currentMonth: string;
     currentAccount: string;
     availableMonths: string[];
-    hasPreviousMonthData: boolean;
     importPreview?: ImportPreview | null;
-    imports: ImportRecord[];
+    trendData?: TrendData;
+    imports?: ImportRecord[];
+};
+
+export type SharedProps = {
+    allCategories: CategoryOption[];
 };

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Account;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -55,6 +56,18 @@ class HandleInertiaRequests extends Middleware
                         'label' => ucfirst($a->type),
                     ])
                     ->values()
+                    ->toArray()
+                : [],
+            'allCategories' => fn () => $request->user()
+                ? Category::whereNull('parent_id')
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'color', 'icon'])
+                    ->map(fn ($c) => [
+                        'id' => $c->id,
+                        'name' => $c->name,
+                        'color' => $c->color,
+                        'icon' => $c->icon,
+                    ])
                     ->toArray()
                 : [],
         ];

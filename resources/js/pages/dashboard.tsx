@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Deferred, Head, router, usePage } from '@inertiajs/react';
 import { UploadIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useRef, useState } from 'react';
@@ -59,8 +59,8 @@ export default function Dashboard({
     currentMonth,
     currentAccount,
     availableMonths,
-    hasPreviousMonthData,
     importPreview,
+    trendData,
     imports,
 }: DashboardProps) {
     const { errors } = usePage().props as { errors: Record<string, string> };
@@ -81,7 +81,7 @@ export default function Dashboard({
         router.get('/', { month, account: currentAccount }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'availableMonths', 'hasPreviousMonthData'],
+            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'availableMonths', 'trendData', 'imports'],
         });
     }, [currentAccount]);
 
@@ -90,7 +90,7 @@ export default function Dashboard({
         router.get('/', { month: currentMonth, account }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'currentAccount', 'availableMonths'],
+            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'currentAccount', 'availableMonths', 'trendData', 'imports'],
         });
     }, [currentMonth]);
 
@@ -252,7 +252,7 @@ export default function Dashboard({
                                                 icon={cat.icon}
                                                 amountCents={cat.amountCents}
                                                 transactionCount={cat.transactionCount}
-                                                trendPercentage={hasPreviousMonthData ? cat.trendPercentage : undefined}
+                                                trendPercentage={trendData?.hasPreviousMonthData ? (trendData.categoryTrends[cat.slug] ?? cat.trendPercentage) : undefined}
                                                 currentMonth={currentMonth}
                                                 currentAccount={currentAccount}
                                             />
@@ -275,7 +275,7 @@ export default function Dashboard({
                                                     icon={cat.icon}
                                                     amountCents={cat.amountCents}
                                                     transactionCount={cat.transactionCount}
-                                                    trendPercentage={hasPreviousMonthData ? cat.trendPercentage : undefined}
+                                                    trendPercentage={trendData?.hasPreviousMonthData ? (trendData.categoryTrends[cat.slug] ?? cat.trendPercentage) : undefined}
                                                     currentMonth={currentMonth}
                                                     currentAccount={currentAccount}
                                                 />
@@ -299,9 +299,11 @@ export default function Dashboard({
                     </AnimatePresence>
                 )}
 
-                {imports.length > 0 && (
-                    <ImportHistory imports={imports} />
-                )}
+                <Deferred data="imports" fallback={null}>
+                    {(imports ?? []).length > 0 && (
+                        <ImportHistory imports={imports!} />
+                    )}
+                </Deferred>
             </div>
 
             {/* Desktop drag-and-drop overlay */}

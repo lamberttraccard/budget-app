@@ -47,8 +47,10 @@ class RecurringControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('recurring')
-                ->has('recurringMerchants', 1)
                 ->where('currentAccount', null)
+                ->loadDeferredProps(fn (Assert $page) => $page
+                    ->has('recurringMerchants', 1)
+                )
             );
     }
 
@@ -61,7 +63,9 @@ class RecurringControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('recurring')
-                ->has('recurringMerchants', 0)
+                ->loadDeferredProps(fn (Assert $page) => $page
+                    ->has('recurringMerchants', 0)
+                )
             );
     }
 
@@ -103,8 +107,10 @@ class RecurringControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('recurring')
-                ->has('recurringMerchants', 1)
                 ->where('currentAccount', 'personal')
+                ->loadDeferredProps(fn (Assert $page) => $page
+                    ->has('recurringMerchants', 1)
+                )
             );
     }
 }

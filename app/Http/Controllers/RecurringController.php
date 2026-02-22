@@ -19,10 +19,8 @@ class RecurringController extends Controller
         if ($account !== null && ! in_array($account, ['personal', 'professional'], true)) {
             $account = null;
         }
-        $recurringMerchants = $this->recurringDetectionService->detectRecurring($account);
-
         return Inertia::render('recurring', [
-            'recurringMerchants' => $recurringMerchants,
+            'recurringMerchants' => Inertia::defer(fn () => $this->recurringDetectionService->detectRecurring($account)),
             'currentAccount' => $account,
         ]);
     }

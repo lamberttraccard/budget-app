@@ -378,9 +378,11 @@ class ImportControllerTest extends TestCase
             ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('dashboard')
-                ->has('imports', 1)
-                ->where('imports.0.bank', 'Banque Populaire')
-                ->where('imports.0.transactionCount', 42)
+                ->loadDeferredProps('imports', fn (Assert $page) => $page
+                    ->has('imports', 1)
+                    ->where('imports.0.bank', 'Banque Populaire')
+                    ->where('imports.0.transactionCount', 42)
+                )
             );
     }
 
@@ -439,8 +441,10 @@ class ImportControllerTest extends TestCase
             ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('dashboard')
-                ->has('imports', 1)
-                ->where('imports.0.bank', 'Banque Populaire')
+                ->loadDeferredProps('imports', fn (Assert $page) => $page
+                    ->has('imports', 1)
+                    ->where('imports.0.bank', 'Banque Populaire')
+                )
             );
     }
 }

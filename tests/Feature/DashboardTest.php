@@ -594,7 +594,10 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('categoryTotals.0.trendPercentage', 11)
+                ->where('categoryTotals.0.trendPercentage', null)
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->where('trendData.categoryTrends.food', 11)
+                )
             );
     }
 
@@ -627,7 +630,9 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('categoryTotals.0.trendPercentage', -20)
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->where('trendData.categoryTrends.food', -20)
+                )
             );
     }
 
@@ -659,7 +664,9 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('categoryTotals.0.trendPercentage', 0)
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->where('trendData.categoryTrends.food', 0)
+                )
             );
     }
 
@@ -683,7 +690,9 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('categoryTotals.0.trendPercentage', null)
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->where('trendData.categoryTrends.food', null)
+                )
             );
     }
 
@@ -722,7 +731,9 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('categoryTotals.0.trendPercentage', null)
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->where('trendData.categoryTrends.food', null)
+                )
             );
     }
 
@@ -755,7 +766,9 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home', ['month' => '2026-01']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('categoryTotals.0.trendPercentage', 50)
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->where('trendData.categoryTrends.food', 50)
+                )
             );
     }
 
@@ -797,11 +810,13 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home', ['month' => '2026-02', 'account' => 'personal']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('categoryTotals.0.trendPercentage', 100)
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->where('trendData.categoryTrends.food', 100)
+                )
             );
     }
 
-    public function test_trend_percentage_included_in_category_totals_props()
+    public function test_trend_data_available_as_deferred_prop()
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
@@ -822,6 +837,10 @@ class DashboardTest extends TestCase
             ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('categoryTotals.0.trendPercentage')
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->has('trendData.hasPreviousMonthData')
+                    ->has('trendData.categoryTrends')
+                )
             );
     }
 
@@ -854,7 +873,9 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('categoryTotals.0.trendPercentage', 25)
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->where('trendData.categoryTrends.income', 25)
+                )
             );
     }
 
@@ -884,7 +905,9 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('hasPreviousMonthData', true)
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->where('trendData.hasPreviousMonthData', true)
+                )
             );
     }
 
@@ -908,7 +931,9 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home', ['month' => '2026-02']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('hasPreviousMonthData', false)
+                ->loadDeferredProps('trends', fn (Assert $page) => $page
+                    ->where('trendData.hasPreviousMonthData', false)
+                )
             );
     }
 }

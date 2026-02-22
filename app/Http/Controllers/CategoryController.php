@@ -38,21 +38,11 @@ class CategoryController extends Controller
                 'icon' => $category->icon,
             ],
             'subcategories' => $data['subcategories'],
-            'transactions' => $data['transactions'],
+            'transactions' => Inertia::defer(fn () => $data['transactions']),
             'totalAmountCents' => $data['totalAmountCents'],
             'transactionCount' => $data['transactionCount'],
             'currentMonth' => $monthParam,
             'currentAccount' => $accountParam,
-            'allCategories' => Category::whereNull('parent_id')
-                ->orderBy('name')
-                ->get(['id', 'name', 'color', 'icon'])
-                ->map(fn ($c) => [
-                    'id' => $c->id,
-                    'name' => $c->name,
-                    'color' => $c->color,
-                    'icon' => $c->icon,
-                ])
-                ->toArray(),
         ]);
     }
 }

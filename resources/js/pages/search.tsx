@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -6,7 +6,7 @@ import AmbientCircle from '@/components/AmbientCircle';
 import CategoryPicker from '@/components/CategoryPicker';
 import SearchResultRow from '@/components/SearchResultRow';
 import AppLayout from '@/layouts/app-layout';
-import type { SearchProps } from '@/types';
+import type { SearchProps, SharedProps } from '@/types';
 
 function buildSearchParams(q: string | null, account: string | null): Record<string, string> {
     const params: Record<string, string> = {};
@@ -20,8 +20,8 @@ export default function SearchPage({
     totalCount,
     query: initialQuery,
     currentAccount,
-    allCategories,
 }: SearchProps) {
+    const { allCategories } = usePage<SharedProps>().props;
     const [localQuery, setLocalQuery] = useState(initialQuery);
     const inputRef = useRef<HTMLInputElement>(null);
 

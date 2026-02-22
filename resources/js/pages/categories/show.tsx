@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Deferred, Head, router, usePage } from '@inertiajs/react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -6,18 +6,36 @@ import CategoryPicker from '@/components/CategoryPicker';
 import ColorHeader from '@/components/ColorHeader';
 import SubcategoryRow from '@/components/SubcategoryRow';
 import TransactionRow from '@/components/TransactionRow';
+import { Skeleton } from '@/components/ui/skeleton';
 import AppLayout from '@/layouts/app-layout';
-import type { CategoryShowProps, TransactionItem } from '@/types';
+import type { CategoryShowProps, SharedProps, TransactionItem } from '@/types';
+
+function TransactionListSkeleton() {
+    return (
+        <div className="rounded-xl overflow-hidden bg-surface/80 backdrop-blur-2xl">
+            {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i}>
+                    {i > 0 && <div className="mx-4 border-t border-white/5" />}
+                    <div className="flex items-center gap-3 px-4 py-3">
+                        <Skeleton className="h-3 w-16 shrink-0" />
+                        <Skeleton className="h-3 flex-1" />
+                        <Skeleton className="h-3 w-20 shrink-0" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
 
 export default function CategoryShow({
     category,
     subcategories,
-    transactions,
+    transactions = [],
     totalAmountCents,
     transactionCount,
     currentAccount,
-    allCategories,
 }: CategoryShowProps) {
+    const { allCategories } = usePage<SharedProps>().props;
     const [activeSubcategoryId, setActiveSubcategoryId] = useState<number | null>(null);
     const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
     const [selectedTransactionCategoryId, setSelectedTransactionCategoryId] = useState<number | null>(null);
@@ -127,31 +145,33 @@ export default function CategoryShow({
                     </div>
                 )}
 
-                {visibleTransactions.length > 0 ? (
-                    <div className="rounded-xl overflow-hidden bg-surface/80 backdrop-blur-2xl">
-                        {visibleTransactions.map((t, index) => (
-                            <div key={t.id}>
-                                {index > 0 && (
-                                    <div className="mx-4 border-t border-white/5" />
-                                )}
-                                <TransactionRow
-                                    id={t.id}
-                                    date={t.date}
-                                    description={t.description}
-                                    amountCents={t.amountCents}
-                                    categoryId={t.categoryId}
-                                    onTap={handleTransactionTap}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="py-8 text-center">
-                        <p className="text-sm text-text-tertiary">
-                            No transactions for this category
-                        </p>
-                    </div>
-                )}
+                <Deferred data="transactions" fallback={<TransactionListSkeleton />}>
+                    {visibleTransactions.length > 0 ? (
+                        <div className="rounded-xl overflow-hidden bg-surface/80 backdrop-blur-2xl">
+                            {visibleTransactions.map((t, index) => (
+                                <div key={t.id}>
+                                    {index > 0 && (
+                                        <div className="mx-4 border-t border-white/5" />
+                                    )}
+                                    <TransactionRow
+                                        id={t.id}
+                                        date={t.date}
+                                        description={t.description}
+                                        amountCents={t.amountCents}
+                                        categoryId={t.categoryId}
+                                        onTap={handleTransactionTap}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-8 text-center">
+                            <p className="text-sm text-text-tertiary">
+                                No transactions for this category
+                            </p>
+                        </div>
+                    )}
+                </Deferred>
             </motion.div>
 
             <CategoryPicker
