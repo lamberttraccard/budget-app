@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { TrendingUpDown } from 'lucide-react';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { CategoryIcon } from '@/lib/category-icons';
 import { formatAbsAmount } from '@/lib/formatAmount';
@@ -23,18 +24,15 @@ export default function CategoryCard({ id, name, color, icon, amountCents, trans
         const deltaCents = amountCents - avgAmountCents;
         if (deltaCents !== 0) {
             const isExpense = amountCents < 0;
-            // Color: positive delta is favorable for both (less expense / more income)
-            const isFavorable = deltaCents > 0;
-            const deltaColor = isFavorable ? '#10B981' : '#FB7185';
             // Arrow: for expenses, invert direction (positive delta = spending ↓)
             const arrow = isExpense
                 ? (deltaCents > 0 ? '\u2193' : '\u2191')
                 : (deltaCents > 0 ? '\u2191' : '\u2193');
 
             deltaNode = (
-                <span className="tabular-nums" style={{ color: deltaColor }}>
+                <p className="text-xs text-text-tertiary tabular-nums">
                     {arrow}&thinsp;{formatAbsAmount(deltaCents)}
-                </span>
+                </p>
             );
         }
     }
@@ -53,9 +51,12 @@ export default function CategoryCard({ id, name, color, icon, amountCents, trans
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-normal text-white truncate">{name}</p>
-                <p className="text-xs text-text-secondary">
-                    {transactionCount} transaction{transactionCount !== 1 ? 's' : ''}
-                </p>
+                {showAvg && (
+                    <p className="flex items-center gap-1 text-xs text-text-tertiary">
+                        <TrendingUpDown className="size-3" />
+                        {formatAbsAmount(avgAmountCents)}
+                    </p>
+                )}
             </div>
             <div className="ml-auto flex flex-col items-end">
                 <AnimatedNumber
@@ -63,11 +64,7 @@ export default function CategoryCard({ id, name, color, icon, amountCents, trans
                     className="text-2xl font-semibold tabular-nums"
                     style={{ color }}
                 />
-                {showAvg && (
-                    <p className="text-xs text-text-tertiary">
-                        Avg: {formatAbsAmount(avgAmountCents)} {deltaNode}
-                    </p>
-                )}
+                {deltaNode}
             </div>
         </Link>
     );

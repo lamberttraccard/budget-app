@@ -9,17 +9,15 @@ type Props = {
     showDashes?: boolean;
 };
 
-function DeltaIndicator({ deltaCents, favorableWhenPositive }: { deltaCents: number; favorableWhenPositive: boolean }) {
+function DeltaIndicator({ deltaCents }: { deltaCents: number }) {
     if (deltaCents === 0) return null;
 
-    const isFavorable = favorableWhenPositive ? deltaCents > 0 : deltaCents < 0;
     const arrow = deltaCents > 0 ? '\u2191' : '\u2193';
-    const color = isFavorable ? '#10B981' : '#FB7185';
 
     return (
-        <span className="tabular-nums" style={{ color }}>
+        <p className="text-xs text-text-tertiary tabular-nums mt-0.5">
             {arrow}&thinsp;{formatAbsAmount(deltaCents)}
-        </span>
+        </p>
     );
 }
 
@@ -41,10 +39,7 @@ export default function SummaryWidget({ incomeCents, expensesCents, avgIncomeCen
                     />
                 )}
                 {incomeAvgLine && !showDashes && (
-                    <p className="text-xs text-text-tertiary mt-1">
-                        Avg: {formatAmount(avgIncomeCents)}{' '}
-                        <DeltaIndicator deltaCents={incomeCents - avgIncomeCents} favorableWhenPositive={true} />
-                    </p>
+                    <DeltaIndicator deltaCents={incomeCents - avgIncomeCents} />
                 )}
             </div>
             <div className="flex-1 rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
@@ -59,10 +54,7 @@ export default function SummaryWidget({ incomeCents, expensesCents, avgIncomeCen
                     />
                 )}
                 {expenseAvgLine && !showDashes && (
-                    <p className="text-xs text-text-tertiary mt-1">
-                        Avg: {formatAbsAmount(avgExpensesCents)}{' '}
-                        <DeltaIndicator deltaCents={expensesCents - avgExpensesCents} favorableWhenPositive={false} />
-                    </p>
+                    <DeltaIndicator deltaCents={expensesCents - avgExpensesCents} />
                 )}
             </div>
         </div>
