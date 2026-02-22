@@ -29,50 +29,28 @@ class DashboardController extends Controller
 
         $data = $this->budgetQueryService->getMonthlyData($year, $month, $accountParam);
 
-        $categoryTotals = array_map(function ($category) {
-            $category['trendPercentage'] = null;
-
-            return $category;
-        }, $data['categoryTotals']);
-
         return Inertia::render('dashboard', [
-            'categoryTotals' => $categoryTotals,
+            'categoryTotals' => $data['categoryTotals'],
             'incomeCents' => $data['incomeCents'],
             'expensesCents' => $data['expensesCents'],
             'currentMonth' => $monthParam,
             'currentAccount' => $accountParam,
             'availableMonths' => $this->budgetQueryService->getAvailableMonths($accountParam),
             'importPreview' => session('importPreview'),
-            'trendData' => Inertia::defer(fn () => $this->computeTrendData($year, $month, $accountParam, $data['categoryTotals']), 'trends'),
+            'averageData' => Inertia::defer(fn () => $this->computeAverageData($accountParam), 'averages'),
             'imports' => Inertia::defer(fn () => $this->getImportRecords(), 'imports'),
         ]);
     }
 
-    private function computeTrendData(int $year, int $month, string $account, array $currentTotals): array
+    private function computeAverageData(string $accountType): ?array
     {
-        $prevMonth = $month === 1 ? 12 : $month - 1;
-        $prevYear = $month === 1 ? $year - 1 : $year;
-        $previousData = $this->budgetQueryService->getMonthlyData($prevYear, $prevMonth, $account);
+        $averages = $this->budgetQueryService->getMonthlyAverages($accountType);
 
-        $hasPreviousMonthData = count($previousData['categoryTotals']) > 0;
-
-        $previousAmounts = collect($previousData['categoryTotals'])
-            ->keyBy('slug')
-            ->map(fn ($cat) => $cat['amountCents']);
-
-        $categoryTrends = [];
-        foreach ($currentTotals as $category) {
-            $prevAmount = $previousAmounts->get($category['slug']);
-            $categoryTrends[$category['slug']] = $this->calculateTrendPercentage(
-                $category['amountCents'],
-                $prevAmount
-            );
+        if ($averages['completeMonthCount'] < 2) {
+            return null;
         }
 
-        return [
-            'hasPreviousMonthData' => $hasPreviousMonthData,
-            'categoryTrends' => $categoryTrends,
-        ];
+        return $averages;
     }
 
     private function getImportRecords(): array
@@ -92,19 +70,4 @@ class DashboardController extends Controller
             ->toArray();
     }
 
-    private function calculateTrendPercentage(int $currentCents, ?int $previousCents): ?int
-    {
-        if ($previousCents === null) {
-            return null;
-        }
-
-        if ($previousCents === 0) {
-            return null;
-        }
-
-        $currentAbs = abs($currentCents);
-        $previousAbs = abs($previousCents);
-
-        return (int) round((($currentAbs - $previousAbs) / $previousAbs) * 100);
-    }
 }

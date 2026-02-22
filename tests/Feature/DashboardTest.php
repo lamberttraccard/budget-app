@@ -563,260 +563,61 @@ class DashboardTest extends TestCase
             );
     }
 
-    // --- Trend Percentage Tests (Story 6.1) ---
+    // --- Average Data Tests ---
 
-    public function test_trend_percentage_positive_when_spending_increased()
+    public function test_average_data_deferred_prop_returns_correct_structure()
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
         $account = Account::factory()->personal()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
+        $income = Category::where('slug', 'income')->first();
 
-        // January: Food = -38000 (abs: 38000)
-        Transaction::factory()->create([
-            'amount_cents' => -38000,
-            'date' => '2026-01-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-        // February: Food = -42000 (abs: 42000, spending increased)
-        Transaction::factory()->create([
-            'amount_cents' => -42000,
-            'date' => '2026-02-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
+        // Seed 3 past months
+        foreach (['2025-10-15', '2025-11-15', '2025-12-15'] as $date) {
+            Transaction::factory()->create(['amount_cents' => -30000, 'date' => $date, 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+            Transaction::factory()->create(['amount_cents' => 150000, 'date' => $date, 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        }
 
-        // ((42000 - 38000) / 38000) * 100 = (4000/38000)*100 = 10.526... ≈ 11
         $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-02']))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('categoryTotals.0.trendPercentage', null)
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->where('trendData.categoryTrends.food', 11)
+                ->loadDeferredProps('averages', fn (Assert $page) => $page
+                    ->has('averageData.avgIncomeCents')
+                    ->has('averageData.avgExpensesCents')
+                    ->has('averageData.categoryAverages')
+                    ->has('averageData.completeMonthCount')
                 )
             );
     }
 
-    public function test_trend_percentage_negative_when_spending_decreased()
+    public function test_average_data_includes_per_category_averages()
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
         $account = Account::factory()->personal()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
+        $transport = Category::where('slug', 'transport')->first();
 
-        // January: Food = -50000 (abs: 50000)
-        Transaction::factory()->create([
-            'amount_cents' => -50000,
-            'date' => '2026-01-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-        // February: Food = -40000 (abs: 40000, spending decreased)
-        Transaction::factory()->create([
-            'amount_cents' => -40000,
-            'date' => '2026-02-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
+        // 2 past months of data
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -50000, 'date' => '2025-11-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -20000, 'date' => '2025-10-15', 'category_id' => $transport->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -40000, 'date' => '2025-11-15', 'category_id' => $transport->id, 'account_id' => $account->id, 'import_id' => $import->id]);
 
-        // ((40000 - 50000) / 50000) * 100 = (-10000/50000)*100 = -20
         $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-02']))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->where('trendData.categoryTrends.food', -20)
+                ->loadDeferredProps('averages', fn (Assert $page) => $page
+                    ->where('averageData.categoryAverages.food.avgAmountCents', -40000)
+                    ->where('averageData.categoryAverages.transport.avgAmountCents', -30000)
                 )
             );
     }
 
-    public function test_trend_percentage_zero_when_spending_unchanged()
-    {
-        $this->seed(CategorySeeder::class);
-        $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
-        $import = Import::factory()->completed()->create();
-        $food = Category::where('slug', 'food')->first();
-
-        // January: Food = -15000
-        Transaction::factory()->create([
-            'amount_cents' => -15000,
-            'date' => '2026-01-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-        // February: Food = -15000
-        Transaction::factory()->create([
-            'amount_cents' => -15000,
-            'date' => '2026-02-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-
-        $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-02']))
-            ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->where('trendData.categoryTrends.food', 0)
-                )
-            );
-    }
-
-    public function test_trend_percentage_null_when_category_not_in_previous_month()
-    {
-        $this->seed(CategorySeeder::class);
-        $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
-        $import = Import::factory()->completed()->create();
-        $food = Category::where('slug', 'food')->first();
-
-        // Only February data, no January
-        Transaction::factory()->create([
-            'amount_cents' => -30000,
-            'date' => '2026-02-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-
-        $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-02']))
-            ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->where('trendData.categoryTrends.food', null)
-                )
-            );
-    }
-
-    public function test_trend_percentage_null_when_previous_month_amount_is_zero()
-    {
-        $this->seed(CategorySeeder::class);
-        $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
-        $import = Import::factory()->completed()->create();
-        $food = Category::where('slug', 'food')->first();
-
-        // January: Food = 0 (two transactions that cancel out)
-        Transaction::factory()->create([
-            'amount_cents' => -10000,
-            'date' => '2026-01-10',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-        Transaction::factory()->create([
-            'amount_cents' => 10000,
-            'date' => '2026-01-20',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-        // February: Food = -5000
-        Transaction::factory()->create([
-            'amount_cents' => -5000,
-            'date' => '2026-02-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-
-        $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-02']))
-            ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->where('trendData.categoryTrends.food', null)
-                )
-            );
-    }
-
-    public function test_trend_percentage_january_uses_december_previous_year()
-    {
-        $this->seed(CategorySeeder::class);
-        $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
-        $import = Import::factory()->completed()->create();
-        $food = Category::where('slug', 'food')->first();
-
-        // December 2025: Food = -20000
-        Transaction::factory()->create([
-            'amount_cents' => -20000,
-            'date' => '2025-12-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-        // January 2026: Food = -30000
-        Transaction::factory()->create([
-            'amount_cents' => -30000,
-            'date' => '2026-01-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-
-        // abs: ((30000 - 20000) / 20000) * 100 = (10000/20000)*100 = 50
-        $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-01']))
-            ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->where('trendData.categoryTrends.food', 50)
-                )
-            );
-    }
-
-    public function test_trend_percentage_account_filter_applies_to_both_months()
-    {
-        $this->seed(CategorySeeder::class);
-        $user = User::factory()->create();
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
-        $import = Import::factory()->completed()->create();
-        $food = Category::where('slug', 'food')->first();
-
-        // January: Personal Food = -10000, Professional Food = -50000
-        Transaction::factory()->create([
-            'amount_cents' => -10000,
-            'date' => '2026-01-15',
-            'category_id' => $food->id,
-            'account_id' => $personalAccount->id,
-            'import_id' => $import->id,
-        ]);
-        Transaction::factory()->create([
-            'amount_cents' => -50000,
-            'date' => '2026-01-15',
-            'category_id' => $food->id,
-            'account_id' => $professionalAccount->id,
-            'import_id' => $import->id,
-        ]);
-        // February: Personal Food = -20000
-        Transaction::factory()->create([
-            'amount_cents' => -20000,
-            'date' => '2026-02-15',
-            'category_id' => $food->id,
-            'account_id' => $personalAccount->id,
-            'import_id' => $import->id,
-        ]);
-
-        // Personal account abs: ((20000 - 10000) / 10000) * 100 = (10000/10000)*100 = 100
-        // Should NOT use the professional January amount
-        $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-02', 'account' => 'personal']))
-            ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->where('trendData.categoryTrends.food', 100)
-                )
-            );
-    }
-
-    public function test_trend_data_available_as_deferred_prop()
+    public function test_average_data_excludes_current_month()
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
@@ -825,61 +626,51 @@ class DashboardTest extends TestCase
         $food = Category::where('slug', 'food')->first();
         $now = now()->format('Y-m');
 
-        Transaction::factory()->create([
-            'amount_cents' => -10000,
-            'date' => "{$now}-15",
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
+        // 2 past months
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-11-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+
+        // Current month (should be excluded from average)
+        Transaction::factory()->create(['amount_cents' => -999999, 'date' => "{$now}-15", 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
 
         $this->actingAs($user)
             ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->has('categoryTotals.0.trendPercentage')
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->has('trendData.hasPreviousMonthData')
-                    ->has('trendData.categoryTrends')
+                ->loadDeferredProps('averages', fn (Assert $page) => $page
+                    ->where('averageData.completeMonthCount', 2)
+                    ->where('averageData.categoryAverages.food.avgAmountCents', -30000)
                 )
             );
     }
 
-    public function test_trend_percentage_correct_for_income_category_with_positive_amounts()
+    public function test_average_data_respects_account_filter()
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
         $import = Import::factory()->completed()->create();
-        $income = Category::where('slug', 'income')->first();
+        $food = Category::where('slug', 'food')->first();
 
-        // January: Income = 200000
-        Transaction::factory()->create([
-            'amount_cents' => 200000,
-            'date' => '2026-01-15',
-            'category_id' => $income->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-        // February: Income = 250000
-        Transaction::factory()->create([
-            'amount_cents' => 250000,
-            'date' => '2026-02-15',
-            'category_id' => $income->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
+        // Personal: 2 months
+        Transaction::factory()->create(['amount_cents' => -10000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $personalAccount->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -20000, 'date' => '2025-11-15', 'category_id' => $food->id, 'account_id' => $personalAccount->id, 'import_id' => $import->id]);
 
-        // ((250000 - 200000) / 200000) * 100 = 25
+        // Professional: 2 months (should not affect personal)
+        Transaction::factory()->create(['amount_cents' => -50000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $professionalAccount->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -60000, 'date' => '2025-11-15', 'category_id' => $food->id, 'account_id' => $professionalAccount->id, 'import_id' => $import->id]);
+
+        // Personal avg: (-10000 + -20000) / 2 = -15000
         $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-02']))
+            ->get(route('home', ['account' => 'personal']))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->where('trendData.categoryTrends.income', 25)
+                ->loadDeferredProps('averages', fn (Assert $page) => $page
+                    ->where('averageData.categoryAverages.food.avgAmountCents', -15000)
                 )
             );
     }
 
-    public function test_has_previous_month_data_true_when_previous_month_has_transactions()
+    public function test_average_data_null_when_fewer_than_two_months()
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
@@ -887,53 +678,60 @@ class DashboardTest extends TestCase
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
-        Transaction::factory()->create([
-            'amount_cents' => -10000,
-            'date' => '2026-01-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
-        Transaction::factory()->create([
-            'amount_cents' => -20000,
-            'date' => '2026-02-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
+        // Only 1 past month
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
 
         $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-02']))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->where('trendData.hasPreviousMonthData', true)
+                ->loadDeferredProps('averages', fn (Assert $page) => $page
+                    ->where('averageData', null)
                 )
             );
     }
 
-    public function test_has_previous_month_data_false_when_previous_month_is_empty()
+    public function test_average_data_absent_for_category_only_in_current_month()
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
         $account = Account::factory()->personal()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
+        $transport = Category::where('slug', 'transport')->first();
+        $now = now()->format('Y-m');
 
-        // Only February data, no January
-        Transaction::factory()->create([
-            'amount_cents' => -20000,
-            'date' => '2026-02-15',
-            'category_id' => $food->id,
-            'account_id' => $account->id,
-            'import_id' => $import->id,
-        ]);
+        // Food in 2 past months (will have an average)
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-11-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+
+        // Transport ONLY in current month (should have no average)
+        Transaction::factory()->create(['amount_cents' => -15000, 'date' => "{$now}-10", 'category_id' => $transport->id, 'account_id' => $account->id, 'import_id' => $import->id]);
 
         $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-02']))
+            ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->loadDeferredProps('trends', fn (Assert $page) => $page
-                    ->where('trendData.hasPreviousMonthData', false)
+                ->loadDeferredProps('averages', fn (Assert $page) => $page
+                    ->has('averageData.categoryAverages.food')
+                    ->missing('averageData.categoryAverages.transport')
                 )
+            );
+    }
+
+    public function test_category_totals_no_longer_include_trend_percentage()
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $now = now()->format('Y-m');
+
+        Transaction::factory()->create(['amount_cents' => -10000, 'date' => "{$now}-15", 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+
+        $this->actingAs($user)
+            ->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page->component('dashboard')
+                ->missing('categoryTotals.0.trendPercentage')
             );
     }
 }

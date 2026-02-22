@@ -60,7 +60,7 @@ export default function Dashboard({
     currentAccount,
     availableMonths,
     importPreview,
-    trendData,
+    averageData,
     imports,
 }: DashboardProps) {
     const { errors } = usePage().props as { errors: Record<string, string> };
@@ -81,7 +81,7 @@ export default function Dashboard({
         router.get('/', { month, account: currentAccount }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'availableMonths', 'trendData', 'imports'],
+            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'availableMonths', 'averageData', 'imports'],
         });
     }, [currentAccount]);
 
@@ -90,7 +90,7 @@ export default function Dashboard({
         router.get('/', { month: currentMonth, account }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'currentAccount', 'availableMonths', 'trendData', 'imports'],
+            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'currentAccount', 'availableMonths', 'averageData', 'imports'],
         });
     }, [currentMonth]);
 
@@ -221,7 +221,13 @@ export default function Dashboard({
                     />
                 )}
 
-                <SummaryWidget incomeCents={incomeCents} expensesCents={expensesCents} showDashes={isEmptyMonth} />
+                <SummaryWidget
+                    incomeCents={incomeCents}
+                    expensesCents={expensesCents}
+                    avgIncomeCents={averageData?.avgIncomeCents}
+                    avgExpensesCents={averageData?.avgExpensesCents}
+                    showDashes={isEmptyMonth}
+                />
 
                 {isEmptyMonth ? (
                     <div className="py-12 text-center">
@@ -252,7 +258,7 @@ export default function Dashboard({
                                                 icon={cat.icon}
                                                 amountCents={cat.amountCents}
                                                 transactionCount={cat.transactionCount}
-                                                trendPercentage={trendData?.hasPreviousMonthData ? (trendData.categoryTrends[cat.slug] ?? cat.trendPercentage) : undefined}
+                                                avgAmountCents={averageData?.categoryAverages[cat.slug]?.avgAmountCents}
                                                 currentMonth={currentMonth}
                                                 currentAccount={currentAccount}
                                             />
@@ -275,7 +281,7 @@ export default function Dashboard({
                                                     icon={cat.icon}
                                                     amountCents={cat.amountCents}
                                                     transactionCount={cat.transactionCount}
-                                                    trendPercentage={trendData?.hasPreviousMonthData ? (trendData.categoryTrends[cat.slug] ?? cat.trendPercentage) : undefined}
+                                                    avgAmountCents={averageData?.categoryAverages[cat.slug]?.avgAmountCents}
                                                     currentMonth={currentMonth}
                                                     currentAccount={currentAccount}
                                                 />

@@ -6,7 +6,6 @@ export type CategoryTotal = {
     icon: string | null;
     amountCents: number;
     transactionCount: number;
-    trendPercentage: number | null;
 };
 
 export type ImportPreview = {
@@ -54,9 +53,11 @@ export type AccountContext = {
     label: string;
 };
 
-export type TrendData = {
-    hasPreviousMonthData: boolean;
-    categoryTrends: Record<string, number | null>;
+export type AverageData = {
+    avgIncomeCents: number;
+    avgExpensesCents: number;
+    categoryAverages: Record<string, { avgAmountCents: number }>;
+    completeMonthCount: number;
 };
 
 export type CategoryShowProps = {
@@ -128,7 +129,7 @@ export type DashboardProps = {
     currentAccount: string;
     availableMonths: string[];
     importPreview?: ImportPreview | null;
-    trendData?: TrendData;
+    averageData?: AverageData;
     imports?: ImportRecord[];
 };
 

@@ -222,6 +222,75 @@ class BudgetQueryService
     }
 
     /**
+     * Calculate average monthly amounts across all complete months (excluding current month).
+     *
+     * @return array{avgIncomeCents: int, avgExpensesCents: int, categoryAverages: array<string, array{avgAmountCents: int}>, completeMonthCount: int}
+     */
+    public function getMonthlyAverages(?string $accountType = null): array
+    {
+        $currentMonth = now()->format('Y-m');
+
+        $query = Transaction::query()
+            ->select([
+                DB::raw('COALESCE(parent_cat.slug, categories.slug) as slug'),
+                DB::raw('SUM(transactions.amount_cents) as total_amount'),
+            ])
+            ->join('categories', 'transactions.category_id', '=', 'categories.id')
+            ->leftJoin('categories as parent_cat', 'categories.parent_id', '=', 'parent_cat.id')
+            ->whereRaw("TO_CHAR(transactions.date, 'YYYY-MM') != ?", [$currentMonth])
+            ->groupBy(DB::raw('COALESCE(parent_cat.slug, categories.slug)'));
+
+        if ($accountType !== null) {
+            $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+                ->where('accounts.type', $accountType);
+        }
+
+        $rows = $query->get();
+
+        $completeMonthCount = (int) Transaction::query()
+            ->when($accountType !== null, fn ($q) => $q
+                ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+                ->where('accounts.type', $accountType)
+            )
+            ->whereRaw("TO_CHAR(transactions.date, 'YYYY-MM') != ?", [$currentMonth])
+            ->selectRaw("COUNT(DISTINCT TO_CHAR(transactions.date, 'YYYY-MM')) as cnt")
+            ->value('cnt');
+
+        if ($completeMonthCount < 2) {
+            return [
+                'avgIncomeCents' => 0,
+                'avgExpensesCents' => 0,
+                'categoryAverages' => [],
+                'completeMonthCount' => $completeMonthCount,
+            ];
+        }
+
+        $categoryAverages = [];
+        $totalIncome = 0;
+        $totalExpenses = 0;
+
+        foreach ($rows as $row) {
+            $totalAmount = (int) $row->total_amount;
+            $avgAmountCents = (int) round($totalAmount / $completeMonthCount);
+
+            $categoryAverages[$row->slug] = ['avgAmountCents' => $avgAmountCents];
+
+            if ($row->slug === 'income') {
+                $totalIncome = $totalAmount;
+            } else {
+                $totalExpenses += $totalAmount;
+            }
+        }
+
+        return [
+            'avgIncomeCents' => (int) round($totalIncome / $completeMonthCount),
+            'avgExpensesCents' => (int) round(abs($totalExpenses) / $completeMonthCount),
+            'categoryAverages' => $categoryAverages,
+            'completeMonthCount' => $completeMonthCount,
+        ];
+    }
+
+    /**
      * Compare category spending between two months with absolute and percentage deltas.
      */
     public function getMonthlyComparison(

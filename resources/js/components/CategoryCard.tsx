@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { CategoryIcon } from '@/lib/category-icons';
+import { formatAbsAmount } from '@/lib/formatAmount';
 
 type Props = {
     id: number;
@@ -9,25 +10,35 @@ type Props = {
     icon: string | null;
     amountCents: number;
     transactionCount: number;
-    trendPercentage?: number | null;
+    avgAmountCents?: number;
     currentMonth: string;
     currentAccount: string;
 };
 
-function TrendIndicator({ value }: { value: number | null }) {
-    if (value === null) {
-        return <span className="text-xs text-text-tertiary">new</span>;
-    }
-    if (value === 0) {
-        return <span className="text-xs text-text-tertiary">&mdash;</span>;
-    }
-    if (value < 0) {
-        return <span className="text-xs" style={{ color: '#10B981' }}>↓{Math.abs(value)}%</span>;
-    }
-    return <span className="text-xs" style={{ color: '#FB7185' }}>↑{value}%</span>;
-}
+export default function CategoryCard({ id, name, color, icon, amountCents, transactionCount, avgAmountCents, currentMonth, currentAccount }: Props) {
+    const showAvg = avgAmountCents !== undefined;
 
-export default function CategoryCard({ id, name, color, icon, amountCents, transactionCount, trendPercentage, currentMonth, currentAccount }: Props) {
+    let deltaNode = null;
+    if (showAvg) {
+        const deltaCents = amountCents - avgAmountCents;
+        if (deltaCents !== 0) {
+            const isExpense = amountCents < 0;
+            // Color: positive delta is favorable for both (less expense / more income)
+            const isFavorable = deltaCents > 0;
+            const deltaColor = isFavorable ? '#10B981' : '#FB7185';
+            // Arrow: for expenses, invert direction (positive delta = spending ↓)
+            const arrow = isExpense
+                ? (deltaCents > 0 ? '\u2193' : '\u2191')
+                : (deltaCents > 0 ? '\u2191' : '\u2193');
+
+            deltaNode = (
+                <span className="tabular-nums" style={{ color: deltaColor }}>
+                    {arrow}&thinsp;{formatAbsAmount(deltaCents)}
+                </span>
+            );
+        }
+    }
+
     return (
         <Link
             href={`/categories/${id}?month=${currentMonth}&account=${currentAccount}`}
@@ -52,7 +63,11 @@ export default function CategoryCard({ id, name, color, icon, amountCents, trans
                     className="text-2xl font-semibold tabular-nums"
                     style={{ color }}
                 />
-                {trendPercentage !== undefined && <TrendIndicator value={trendPercentage} />}
+                {showAvg && (
+                    <p className="text-xs text-text-tertiary">
+                        Avg: {formatAbsAmount(avgAmountCents)} {deltaNode}
+                    </p>
+                )}
             </div>
         </Link>
     );
