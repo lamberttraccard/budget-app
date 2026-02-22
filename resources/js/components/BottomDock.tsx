@@ -12,7 +12,6 @@ export default function BottomDock({ currentAccount }: BottomDockProps) {
         <nav
             aria-label="Bottom navigation"
             className="fixed bottom-0 inset-x-0 z-50 bg-background/80 backdrop-blur-lg border-t border-white/5 pb-[env(safe-area-inset-bottom)] lg:hidden"
-            style={{ viewTransitionName: 'dock' }}
         >
             <div className="flex items-center justify-around h-14">
                 {items.map((item) => (

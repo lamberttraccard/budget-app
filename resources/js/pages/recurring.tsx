@@ -37,7 +37,11 @@ export default function RecurringPage({
     }, []);
 
     const handleAccountChange = useCallback((account: string) => {
-        router.get('/recurring', { account }, { preserveState: true, replace: true });
+        router.get('/recurring', { account }, {
+            preserveState: true,
+            replace: true,
+            only: ['recurringMerchants', 'currentAccount'],
+        });
     }, []);
 
     const merchants = recurringMerchants ?? [];

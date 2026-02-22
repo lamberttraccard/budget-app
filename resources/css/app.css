@@ -152,38 +152,6 @@
     }
 }
 
-/* Drill-down page transitions (View Transitions API) */
-::view-transition-old(root) {
-    animation: page-fade-out 0.25s ease-out forwards;
-}
-
-::view-transition-new(root) {
-    animation: page-fade-in 0.25s ease-in forwards;
-}
-
-@keyframes page-fade-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-
-@keyframes page-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Exclude bottom dock from page transitions */
-::view-transition-group(dock) {
-    animation: none;
-}
-
-/* Respect reduced motion for view transitions */
-@media (prefers-reduced-motion: reduce) {
-    ::view-transition-group(*),
-    ::view-transition-old(*),
-    ::view-transition-new(*) {
-        animation-duration: 0s !important;
-    }
-}
 
 /* Block landscape on mobile */
 @media (max-width: 1023px) and (orientation: landscape) {

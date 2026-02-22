@@ -31,7 +31,7 @@ createInertiaApp({
     },
     defaults: {
         visitOptions: () => ({
-            viewTransition: true,
+            viewTransition: false,
         }),
     },
 });
