@@ -8,7 +8,7 @@ export default function AmbientCircle() {
 
     return (
         <div
-            className="absolute inset-0 -mx-4 sm:-mx-8 pointer-events-none overflow-hidden"
+            className="fixed inset-0 pointer-events-none overflow-hidden"
             aria-hidden="true"
         >
             <motion.div
