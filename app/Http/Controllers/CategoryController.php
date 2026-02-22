@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Services\BudgetQueryService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,6 +30,15 @@ class CategoryController extends Controller
 
         $data = $this->budgetQueryService->getCategoryDetail($category->id, $year, $month, $accountParam);
 
+        $chartMonth = $request->query('chart_month', $monthParam);
+        if (! preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $chartMonth)) {
+            $chartMonth = $monthParam;
+        }
+
+        [$chartYear, $chartMo] = array_map('intval', explode('-', $chartMonth));
+        $fromMonth = Carbon::create($chartYear, $chartMo, 1)->subMonths(11)->format('Y-m');
+        $monthlyTotals = $this->budgetQueryService->getCategoryMonthlyTotals($category->id, $fromMonth, $chartMonth, $accountParam);
+
         return Inertia::render('categories/show', [
             'category' => [
                 'id' => $category->id,
@@ -43,6 +53,8 @@ class CategoryController extends Controller
             'transactionCount' => $data['transactionCount'],
             'currentMonth' => $monthParam,
             'currentAccount' => $accountParam,
+            'monthlyTotals' => $monthlyTotals,
+            'chartMonth' => $chartMonth,
         ]);
     }
 }

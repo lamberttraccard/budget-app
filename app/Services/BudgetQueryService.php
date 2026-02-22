@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class BudgetQueryService
@@ -399,6 +400,41 @@ class BudgetQueryService
             'totalIncomeCents' => (int) $rows->sum('income_cents'),
             'totalExpensesCents' => (int) $rows->sum('expenses_cents'),
         ];
+    }
+
+    /**
+     * Get monthly totals for a category (including subcategories) over a date range.
+     *
+     * @return array<int, array{month: string, amountCents: int}>
+     */
+    public function getCategoryMonthlyTotals(int $categoryId, string $fromMonth, string $toMonth, ?string $accountType = null): array
+    {
+        $subcategoryIds = Category::where('parent_id', $categoryId)->pluck('id');
+        $allCategoryIds = collect([$categoryId])->merge($subcategoryIds);
+
+        $query = Transaction::query()
+            ->select([
+                DB::raw("TO_CHAR(transactions.date, 'YYYY-MM') as month"),
+                DB::raw('SUM(transactions.amount_cents) as total_amount'),
+            ])
+            ->whereIn('transactions.category_id', $allCategoryIds)
+            ->where('transactions.date', '>=', Carbon::createFromFormat('Y-m', $fromMonth)->startOfMonth())
+            ->where('transactions.date', '<=', Carbon::createFromFormat('Y-m', $toMonth)->endOfMonth())
+            ->groupBy(DB::raw("TO_CHAR(transactions.date, 'YYYY-MM')"))
+            ->orderBy('month');
+
+        if ($accountType !== null) {
+            $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+                ->where('accounts.type', $accountType);
+        }
+
+        return $query->get()
+            ->map(fn ($row) => [
+                'month' => $row->month,
+                'amountCents' => (int) $row->total_amount,
+            ])
+            ->values()
+            ->toArray();
     }
 
     /**

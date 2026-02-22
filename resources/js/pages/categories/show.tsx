@@ -2,6 +2,7 @@ import { Deferred, Head, router, usePage } from '@inertiajs/react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import CategoryMonthlyChart from '@/components/CategoryMonthlyChart';
 import CategoryPicker from '@/components/CategoryPicker';
 import ColorHeader from '@/components/ColorHeader';
 import SubcategoryRow from '@/components/SubcategoryRow';
@@ -33,7 +34,10 @@ export default function CategoryShow({
     transactions = [],
     totalAmountCents,
     transactionCount,
+    currentMonth,
     currentAccount,
+    monthlyTotals,
+    chartMonth,
 }: CategoryShowProps) {
     const { allCategories } = usePage<SharedProps>().props;
     const [activeSubcategoryId, setActiveSubcategoryId] = useState<number | null>(null);
@@ -126,6 +130,15 @@ export default function CategoryShow({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, ease: 'easeOut', delay: 0.15 }}
             >
+                <CategoryMonthlyChart
+                    monthlyTotals={monthlyTotals}
+                    currentMonth={currentMonth}
+                    accentColor={category.color}
+                    categoryId={category.id}
+                    currentAccount={currentAccount}
+                    chartMonth={chartMonth}
+                />
+
                 {subcategories.length > 0 && (
                     <div className="rounded-xl overflow-hidden bg-surface/80 backdrop-blur-2xl">
                         {subcategories.map((sub, index) => (

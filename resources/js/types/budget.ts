@@ -63,6 +63,11 @@ export type AverageData = {
     completeMonthCount: number;
 };
 
+export type MonthlyTotal = {
+    month: string;
+    amountCents: number;
+};
+
 export type CategoryShowProps = {
     category: {
         id: number;
@@ -77,6 +82,8 @@ export type CategoryShowProps = {
     transactionCount: number;
     currentMonth: string;
     currentAccount: string;
+    monthlyTotals: MonthlyTotal[];
+    chartMonth: string;
 };
 
 export type SearchResultItem = {

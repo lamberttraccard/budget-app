@@ -314,4 +314,219 @@ class CategoryControllerTest extends TestCase
                 )
             );
     }
+
+    public function test_show_includes_monthly_totals(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $category = Category::where('slug', 'food')->first();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2025-12-15',
+            'amount_cents' => -2000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-01-10',
+            'amount_cents' => -3000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-05',
+            'amount_cents' => -5000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('categories.show', ['category' => $category->id, 'month' => '2026-02']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('monthlyTotals', 3)
+                ->where('monthlyTotals.0.month', '2025-12')
+                ->where('monthlyTotals.0.amountCents', -2000)
+                ->where('monthlyTotals.1.month', '2026-01')
+                ->where('monthlyTotals.1.amountCents', -3000)
+                ->where('monthlyTotals.2.month', '2026-02')
+                ->where('monthlyTotals.2.amountCents', -5000)
+            );
+    }
+
+    public function test_monthly_totals_respects_12_month_window(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $category = Category::where('slug', 'food')->first();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+
+        // Transaction outside 12-month window (should be excluded: 2025-02 < fromMonth 2025-03)
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2025-02-15',
+            'amount_cents' => -1000,
+        ]);
+
+        // Transaction at start of 12-month window (should be included: 2025-03 = fromMonth)
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2025-03-15',
+            'amount_cents' => -2000,
+        ]);
+
+        // Transaction in viewed month (should be included)
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-05',
+            'amount_cents' => -3000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('categories.show', ['category' => $category->id, 'month' => '2026-02']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('monthlyTotals', 2)
+                ->where('monthlyTotals.0.month', '2025-03')
+                ->where('monthlyTotals.1.month', '2026-02')
+            );
+    }
+
+    public function test_monthly_totals_respects_account_filter(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $category = Category::where('slug', 'food')->first();
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id' => $personalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-10',
+            'amount_cents' => -5000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id' => $professionalAccount->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-15',
+            'amount_cents' => -9000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('categories.show', ['category' => $category->id, 'month' => '2026-02', 'account' => 'personal']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('monthlyTotals', 1)
+                ->where('monthlyTotals.0.amountCents', -5000)
+            );
+    }
+
+    public function test_monthly_totals_includes_subcategory_amounts(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $parent = Category::where('slug', 'food')->first();
+
+        $subcategory = Category::create([
+            'name' => 'Groceries Monthly',
+            'slug' => 'groceries-monthly',
+            'color' => '#A3E635',
+            'parent_id' => $parent->id,
+        ]);
+
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+
+        Transaction::factory()->create([
+            'category_id' => $parent->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-05',
+            'amount_cents' => -3000,
+        ]);
+        Transaction::factory()->create([
+            'category_id' => $subcategory->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-10',
+            'amount_cents' => -7000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('categories.show', ['category' => $parent->id, 'month' => '2026-02']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('monthlyTotals', 1)
+                ->where('monthlyTotals.0.month', '2026-02')
+                ->where('monthlyTotals.0.amountCents', -10000)
+            );
+    }
+
+    public function test_chart_month_anchors_monthly_totals_window(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $category = Category::where('slug', 'food')->first();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+
+        // Transaction in Feb 2026 (inside chart_month=2026-02 window, outside month=2025-10 window)
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2026-02-10',
+            'amount_cents' => -4000,
+        ]);
+        // Transaction in Oct 2025 (inside both windows)
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'date' => '2025-10-15',
+            'amount_cents' => -2000,
+        ]);
+
+        // Viewing Oct 2025 but chart anchored to Feb 2026 — should see both months
+        $this->actingAs($user)
+            ->get(route('categories.show', ['category' => $category->id, 'month' => '2025-10', 'chart_month' => '2026-02']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('currentMonth', '2025-10')
+                ->where('chartMonth', '2026-02')
+                ->has('monthlyTotals', 2)
+                ->where('monthlyTotals.0.month', '2025-10')
+                ->where('monthlyTotals.1.month', '2026-02')
+            );
+    }
+
+    public function test_monthly_totals_empty_for_category_with_no_history(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $user = User::factory()->create();
+        $category = Category::where('slug', 'transport')->first();
+
+        $this->actingAs($user)
+            ->get(route('categories.show', ['category' => $category->id, 'month' => '2026-02']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('monthlyTotals', 0)
+            );
+    }
 }
