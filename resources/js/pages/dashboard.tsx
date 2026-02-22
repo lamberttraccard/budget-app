@@ -273,10 +273,19 @@ export default function Dashboard({
                 />
 
                 {isEmptyMonth ? (
-                    <div className="py-12 text-center">
+                    <div className="py-12 text-center space-y-4">
                         <p className="text-sm text-text-tertiary">
                             No transactions for {formatMonthLabel(currentMonth)}
                         </p>
+                        <button
+                            type="button"
+                            onClick={triggerFileInput}
+                            disabled={isUploading}
+                            className="inline-flex items-center gap-2 rounded-xl bg-surface/80 backdrop-blur-2xl px-4 py-2.5 text-sm text-text-secondary transition-colors hover:bg-surface-elevated/80 hover:text-white disabled:opacity-50"
+                        >
+                            <UploadIcon className="size-4" />
+                            {isUploading ? 'Uploading...' : 'Import CSV'}
+                        </button>
                     </div>
                 ) : (
                     <AnimatePresence mode="wait">
@@ -334,15 +343,17 @@ export default function Dashboard({
                                 )}
 
                                 {/* Inline import button for subsequent imports */}
+                                <div className="mt-5 flex justify-center">
                                 <button
                                     type="button"
                                     onClick={triggerFileInput}
                                     disabled={isUploading}
-                                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-surface/80 backdrop-blur-2xl p-3 text-sm text-text-secondary transition-colors hover:bg-surface-elevated/80 hover:text-white disabled:opacity-50"
+                                    className="inline-flex items-center gap-2 rounded-xl bg-surface/80 backdrop-blur-2xl px-4 py-2.5 text-sm text-text-secondary transition-colors hover:bg-surface-elevated/80 hover:text-white disabled:opacity-50"
                                 >
                                     <UploadIcon className="size-4" />
                                     {isUploading ? 'Uploading...' : 'Import CSV'}
                                 </button>
+                                </div>
                             </div>
                         )}
                     </AnimatePresence>

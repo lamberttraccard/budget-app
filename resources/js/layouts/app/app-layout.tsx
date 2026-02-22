@@ -15,7 +15,9 @@ export default function AppLayout({ children, currentAccount, onAccountChange, a
             <header className="relative z-20 px-4 sm:px-8 py-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
                 <div className="max-w-[480px] lg:max-w-[960px] mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <AppLogoIcon className="size-8 rounded-lg" />
+                        <Link href="/" aria-label="Go to dashboard">
+                            <AppLogoIcon className="size-8 rounded-lg" />
+                        </Link>
                         <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
                             {navItems.map((item) => (
                                 <Link
