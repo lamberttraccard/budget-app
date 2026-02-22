@@ -11,7 +11,7 @@ export default function AppLayout({ children, currentAccount, onAccountChange, a
     const navItems = useNavItems(currentAccount);
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background overflow-x-hidden">
             <header className="relative z-20 px-4 sm:px-8 py-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
                 <div className="max-w-[480px] lg:max-w-[960px] mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">

@@ -121,7 +121,7 @@ export default function CategoryPicker({
                             key={cat.id}
                             onClick={() => !isCurrent && onSelect(cat.id)}
                             disabled={isCurrent}
-                            className={`flex items-center gap-3 min-h-[36px] ${
+                            className={`flex items-center gap-3 min-h-[36px] focus:bg-white/5 focus:text-white ${
                                 isCurrent ? 'opacity-40' : ''
                             }`}
                         >
