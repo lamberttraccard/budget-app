@@ -2,6 +2,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { UploadIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useRef, useState } from 'react';
+import AmbientCircle from '@/components/AmbientCircle';
 import CategoryCard from '@/components/CategoryCard';
 import EmptyState from '@/components/EmptyState';
 import ImportDropZone from '@/components/ImportDropZone';
@@ -195,9 +196,11 @@ export default function Dashboard({
                 onChange={handleInputChange}
             />
 
+            <AmbientCircle />
+
             {/* Drag-and-drop zone wraps the entire page content */}
             <div
-                className="py-6 space-y-5"
+                className="relative py-6 space-y-5"
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
@@ -286,7 +289,7 @@ export default function Dashboard({
                                     type="button"
                                     onClick={triggerFileInput}
                                     disabled={isUploading}
-                                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-surface p-3 text-sm text-text-secondary transition-colors hover:border-zinc-600 hover:text-white disabled:opacity-50"
+                                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-surface/80 backdrop-blur-2xl p-3 text-sm text-text-secondary transition-colors hover:bg-surface-elevated/80 hover:text-white disabled:opacity-50"
                                 >
                                     <UploadIcon className="size-4" />
                                     {isUploading ? 'Uploading...' : 'Import CSV'}

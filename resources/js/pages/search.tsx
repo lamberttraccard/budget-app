@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import AmbientCircle from '@/components/AmbientCircle';
 import CategoryPicker from '@/components/CategoryPicker';
 import SearchResultRow from '@/components/SearchResultRow';
 import AppLayout from '@/layouts/app-layout';
@@ -128,7 +129,9 @@ export default function SearchPage({
         <AppLayout currentAccount={currentAccount ?? undefined} onAccountChange={handleAccountChange}>
             <Head title="Search" />
 
-            <div className="py-6 space-y-4">
+            <AmbientCircle />
+
+            <div className="relative py-6 space-y-4">
                 {/* Search header */}
                 <div>
                     <div className="relative w-full">
@@ -140,7 +143,7 @@ export default function SearchPage({
                             onChange={handleInputChange}
                             placeholder="Search transactions..."
                             autoFocus
-                            className="w-full rounded-xl bg-surface border border-zinc-800 pl-10 pr-10 py-2.5 text-base md:text-sm text-white placeholder:text-text-tertiary focus:outline-none focus:border-zinc-600 transition-colors"
+                            className="w-full rounded-xl bg-surface/80 backdrop-blur-2xl border border-zinc-800 pl-10 pr-10 py-2.5 text-base md:text-sm text-white placeholder:text-text-tertiary focus:outline-none focus:border-zinc-600 transition-colors"
                         />
                         {localQuery && (
                             <button
@@ -177,7 +180,7 @@ export default function SearchPage({
 
                 {/* Results list */}
                 {results.length > 0 && (
-                    <div className="bg-surface rounded-xl overflow-hidden">
+                    <div className="bg-surface/80 backdrop-blur-2xl border border-white/[0.06] rounded-xl overflow-hidden">
                         {results.map((result, index) => (
                             <div key={result.id}>
                                 {index > 0 && (

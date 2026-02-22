@@ -69,7 +69,7 @@ export default function MonthStrip({ currentMonth, availableMonths, onMonthChang
                         onClick={() => onMonthChange(month)}
                         className={`flex-none snap-center rounded-full px-3 py-3 text-sm whitespace-nowrap transition-colors ${
                             month === currentMonth
-                                ? 'bg-surface-elevated text-white font-medium'
+                                ? 'bg-surface/80 backdrop-blur-2xl text-white font-medium'
                                 : 'text-text-secondary hover:text-white'
                         }`}
                     >

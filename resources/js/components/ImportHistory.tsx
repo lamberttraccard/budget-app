@@ -49,7 +49,7 @@ export default function ImportHistory({ imports }: { imports: ImportRecord[] }) 
 
     return (
         <>
-            <div className="mt-6 rounded-xl bg-[#1C1C1E] p-4">
+            <div className="mt-6 rounded-xl bg-surface/80 backdrop-blur-2xl border border-white/[0.06] p-4">
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}

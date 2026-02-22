@@ -29,7 +29,7 @@ export default function RecurringMerchantCard({
     onToggle,
 }: Props) {
     return (
-        <div className="bg-[#1C1C1E] rounded-xl overflow-hidden">
+        <div className="bg-surface/80 backdrop-blur-2xl border border-white/[0.06] rounded-xl overflow-hidden">
             <button
                 type="button"
                 onClick={onToggle}

@@ -31,7 +31,7 @@ export default function CategoryCard({ id, name, color, icon, amountCents, trans
     return (
         <Link
             href={`/categories/${id}?month=${currentMonth}&account=${currentAccount}`}
-            className="flex items-center gap-4 bg-surface rounded-xl p-4 transition-colors hover:bg-surface-elevated"
+            className="flex items-center gap-4 rounded-xl p-4 bg-surface/80 backdrop-blur-2xl border border-white/[0.06] transition-colors hover:bg-surface-elevated/80"
         >
             <div
                 className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center"

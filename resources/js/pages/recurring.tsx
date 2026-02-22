@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
+import AmbientCircle from '@/components/AmbientCircle';
 import RecurringMerchantCard from '@/components/RecurringMerchantCard';
 import AppLayout from '@/layouts/app-layout';
 import type { RecurringProps } from '@/types';
@@ -22,7 +23,9 @@ export default function RecurringPage({
         <AppLayout currentAccount={currentAccount ?? undefined} onAccountChange={handleAccountChange}>
             <Head title="Recurring" />
 
-            <div className="py-6 space-y-4">
+            <AmbientCircle />
+
+            <div className="relative py-6 space-y-4">
                 {/* Header */}
                 <div>
                     <h1 className="text-lg font-semibold text-white">Recurring</h1>

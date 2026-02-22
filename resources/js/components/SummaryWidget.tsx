@@ -10,7 +10,7 @@ type Props = {
 export default function SummaryWidget({ incomeCents, expensesCents, showDashes = false }: Props) {
     return (
         <div className="flex gap-3">
-            <div className="flex-1 bg-surface rounded-xl p-4">
+            <div className="flex-1 rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
                 <p className="text-xs text-text-secondary mb-1">Income</p>
                 {showDashes ? (
                     <p className="text-lg font-semibold tabular-nums text-[#10B981]">{'\u2014'}</p>
@@ -22,7 +22,7 @@ export default function SummaryWidget({ incomeCents, expensesCents, showDashes =
                     />
                 )}
             </div>
-            <div className="flex-1 bg-surface rounded-xl p-4">
+            <div className="flex-1 rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
                 <p className="text-xs text-text-secondary mb-1">Expenses</p>
                 {showDashes ? (
                     <p className="text-lg font-semibold tabular-nums text-[#FB7185]">{'\u2014'}</p>

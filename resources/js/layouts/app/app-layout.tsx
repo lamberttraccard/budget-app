@@ -22,9 +22,11 @@ export default function AppLayout({ children, currentAccount, onAccountChange, a
                                     key={item.label}
                                     href={item.href}
                                     aria-current={item.isActive ? 'page' : undefined}
-                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none ${
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none backdrop-blur-2xl ${
                                         item.isActive
-                                            ? 'bg-surface-elevated'
+                                            ? accentColor
+                                                ? 'bg-black/65'
+                                                : 'bg-surface/80'
                                             : accentColor
                                                 ? 'text-black/70 hover:text-black/90'
                                                 : 'text-text-tertiary hover:text-white'
