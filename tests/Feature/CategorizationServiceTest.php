@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Events\TransactionCategorized;
-use App\Jobs\CategorizeTransactions;
+use App\Jobs\CategorizeTransactionChunk;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Import;
@@ -11,8 +11,8 @@ use App\Models\MerchantRule;
 use App\Models\Transaction;
 use App\Services\CategorizationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class CategorizationServiceTest extends TestCase
@@ -63,31 +63,30 @@ class CategorizationServiceTest extends TestCase
         ]);
         $transaction = $this->createUncategorizedTransaction('CARREFOUR CITY');
 
-        Queue::fake();
+        Bus::fake([CategorizeTransactionChunk::class]);
         Event::fake([TransactionCategorized::class]);
 
         $this->service->categorize($this->import);
 
         $this->assertSame($this->categories['food']->id, $transaction->fresh()->category_id);
-        Queue::assertNotPushed(CategorizeTransactions::class);
         Event::assertDispatched(TransactionCategorized::class, 1);
     }
 
-    public function test_unmatched_transactions_trigger_categorize_job_dispatch(): void
+    public function test_unmatched_transactions_trigger_batch_dispatch(): void
     {
         $this->createUncategorizedTransaction('UNKNOWN MERCHANT');
 
-        Queue::fake();
+        Bus::fake([CategorizeTransactionChunk::class]);
         Event::fake([TransactionCategorized::class]);
 
         $this->service->categorize($this->import);
 
-        Queue::assertPushed(CategorizeTransactions::class, function (CategorizeTransactions $job) {
-            return $job->import->id === $this->import->id;
+        Bus::assertBatched(function ($batch) {
+            return $batch->jobs->count() === 1;
         });
     }
 
-    public function test_hybrid_flow_some_instant_some_queued(): void
+    public function test_hybrid_flow_some_instant_some_batched(): void
     {
         MerchantRule::factory()->create([
             'merchant_pattern' => 'CARREFOUR CITY',
@@ -96,17 +95,19 @@ class CategorizationServiceTest extends TestCase
         $matched = $this->createUncategorizedTransaction('CARREFOUR CITY');
         $unmatched = $this->createUncategorizedTransaction('UNKNOWN SHOP');
 
-        Queue::fake();
+        Bus::fake([CategorizeTransactionChunk::class]);
         Event::fake([TransactionCategorized::class]);
 
         $this->service->categorize($this->import);
 
         $this->assertSame($this->categories['food']->id, $matched->fresh()->category_id);
         $this->assertNull($unmatched->fresh()->category_id);
-        Queue::assertPushed(CategorizeTransactions::class);
+        Bus::assertBatched(function ($batch) {
+            return $batch->jobs->count() === 1;
+        });
     }
 
-    public function test_no_job_dispatched_when_all_matched_by_merchant_rules(): void
+    public function test_no_batch_dispatched_when_all_matched_by_merchant_rules(): void
     {
         MerchantRule::factory()->create([
             'merchant_pattern' => 'CARREFOUR CITY',
@@ -119,12 +120,28 @@ class CategorizationServiceTest extends TestCase
         $this->createUncategorizedTransaction('CARREFOUR CITY');
         $this->createUncategorizedTransaction('PHARMACIE CENTRALE');
 
-        Queue::fake();
+        Bus::fake([CategorizeTransactionChunk::class]);
         Event::fake([TransactionCategorized::class]);
 
         $this->service->categorize($this->import);
 
-        Queue::assertNotPushed(CategorizeTransactions::class);
+        Bus::assertNothingBatched();
+    }
+
+    public function test_all_matched_sets_import_status_to_categorized(): void
+    {
+        MerchantRule::factory()->create([
+            'merchant_pattern' => 'CARREFOUR CITY',
+            'category_id' => $this->categories['food']->id,
+        ]);
+        $this->createUncategorizedTransaction('CARREFOUR CITY');
+
+        Bus::fake([CategorizeTransactionChunk::class]);
+        Event::fake([TransactionCategorized::class]);
+
+        $this->service->categorize($this->import);
+
+        $this->assertSame('categorized', $this->import->fresh()->status);
     }
 
     public function test_transaction_categorized_event_fires_for_each_instant_match(): void
@@ -140,7 +157,7 @@ class CategorizationServiceTest extends TestCase
         $this->createUncategorizedTransaction('CARREFOUR CITY');
         $this->createUncategorizedTransaction('PHARMACIE CENTRALE');
 
-        Queue::fake();
+        Bus::fake([CategorizeTransactionChunk::class]);
         Event::fake([TransactionCategorized::class]);
 
         $this->service->categorize($this->import);

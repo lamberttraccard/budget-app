@@ -2,6 +2,8 @@ import { router } from '@inertiajs/react';
 import { Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+
+import CategorizationProgress from '@/components/CategorizationProgress';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -14,7 +16,7 @@ import {
 import type { ImportRecord } from '@/types';
 
 export default function ImportHistory({ imports }: { imports: ImportRecord[] }) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(() => imports.some((i) => i.status === 'categorizing'));
     const [deletingImportId, setDeletingImportId] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -80,6 +82,7 @@ export default function ImportHistory({ imports }: { imports: ImportRecord[] }) 
                                             <> &middot; {formatRange(imp.dateFrom, imp.dateTo)}</>
                                         )}
                                     </p>
+                                    <CategorizationProgress import={imp} />
                                 </div>
                                 <Button
                                     variant="ghost"

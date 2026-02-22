@@ -7,9 +7,9 @@ return [
     | Fallback Category
     |--------------------------------------------------------------------------
     |
-    | The slug of the category to assign when AI categorization has low
-    | confidence or fails entirely. This ensures transactions are never
-    | left without a category after processing.
+    | The slug of the category to assign when AI categorization returns
+    | a result with low confidence. On chunk failure, transactions remain
+    | with category_id = null so they can be re-categorized later.
     |
     */
 

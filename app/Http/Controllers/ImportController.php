@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\CsvParseException;
 use App\Exceptions\UnrecognizedCsvFormatException;
+use App\Jobs\CategorizeTransactions;
 use App\Models\Account;
 use App\Models\Import;
 use App\Parsers\CsvParserFactory;
 use App\Services\CsvImportService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Bus;
 
 class ImportController extends Controller
 {
@@ -81,8 +84,42 @@ class ImportController extends Controller
         return redirect()->route('home');
     }
 
+    public function status(Import $import): JsonResponse
+    {
+        $data = ['status' => $import->status];
+
+        if ($import->batch_id) {
+            $batch = Bus::findBatch($import->batch_id);
+
+            if ($batch) {
+                $data['progress'] = $batch->progress();
+                $data['processedJobs'] = $batch->processedJobs();
+                $data['totalJobs'] = $batch->totalJobs;
+                $data['failedJobs'] = $batch->failedJobs;
+                $data['finishedAt'] = $batch->finishedAt?->toISOString();
+            }
+        }
+
+        return response()->json($data);
+    }
+
+    public function recategorize(Import $import): RedirectResponse
+    {
+        if ($import->isCategorizing()) {
+            return back();
+        }
+
+        CategorizeTransactions::dispatch($import);
+
+        return back();
+    }
+
     public function destroy(Import $import): RedirectResponse
     {
+        if ($import->batch_id) {
+            Bus::findBatch($import->batch_id)?->cancel();
+        }
+
         $import->delete();
 
         return back();

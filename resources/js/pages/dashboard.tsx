@@ -1,7 +1,8 @@
 import { Deferred, Head, router, usePage } from '@inertiajs/react';
 import { UploadIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import AmbientCircle from '@/components/AmbientCircle';
 import CategoryCard from '@/components/CategoryCard';
 import EmptyState from '@/components/EmptyState';
@@ -75,6 +76,47 @@ export default function Dashboard({
 
     const hasAnyData = availableMonths.length > 0;
     const isEmptyMonth = hasAnyData && categoryTotals.length === 0;
+    const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Poll categorizing imports via fetch() to avoid Inertia reload resetting Deferred state
+    useEffect(() => {
+        const categorizingImports = (imports ?? []).filter((i) => i.status === 'categorizing');
+
+        if (categorizingImports.length === 0) {
+            if (pollingRef.current) {
+                clearInterval(pollingRef.current);
+                pollingRef.current = null;
+            }
+            return;
+        }
+
+        if (pollingRef.current) return; // already polling
+
+        pollingRef.current = setInterval(async () => {
+            const results = await Promise.all(
+                categorizingImports.map((imp) =>
+                    fetch(`/imports/${imp.id}/status`)
+                        .then((r) => r.json())
+                        .catch(() => null),
+                ),
+            );
+
+            const anyCompleted = results.some((r) => r?.status === 'categorized');
+            if (anyCompleted) {
+                toast.success('Categorization complete');
+                router.reload({
+                    only: ['imports', 'categoryTotals', 'incomeCents', 'expensesCents', 'availableMonths'],
+                });
+            }
+        }, 3000);
+
+        return () => {
+            if (pollingRef.current) {
+                clearInterval(pollingRef.current);
+                pollingRef.current = null;
+            }
+        };
+    }, [imports]);
 
     const handleMonthChange = useCallback((month: string) => {
         setShouldCascade(false);
@@ -136,6 +178,7 @@ export default function Dashboard({
                 setIsUploading(false);
                 setImportAccountType('personal');
                 setShouldCascade(true);
+                toast('Categorizing transactions...');
             },
             onError: () => {
                 setShowConfirmation(false);

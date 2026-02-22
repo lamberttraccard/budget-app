@@ -55,7 +55,8 @@ class DashboardController extends Controller
 
     private function getImportRecords(): array
     {
-        return Import::where('status', 'completed')
+        return Import::whereIn('status', ['completed', 'categorizing', 'categorized'])
+            ->withCount(['transactions as uncategorized_count' => fn ($q) => $q->whereNull('category_id')])
             ->orderByDesc('imported_at')
             ->get()
             ->map(fn (Import $import) => [
@@ -66,8 +67,10 @@ class DashboardController extends Controller
                 'dateFrom' => $import->date_from?->toDateString(),
                 'dateTo' => $import->date_to?->toDateString(),
                 'importedAt' => $import->imported_at?->toDateString(),
+                'status' => $import->status,
+                'uncategorizedCount' => $import->uncategorized_count,
+                'batchId' => $import->batch_id,
             ])
             ->toArray();
     }
-
 }

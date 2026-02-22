@@ -2,7 +2,7 @@
 title: 'Batch Categorization with Progress Tracking'
 slug: 'batch-categorization-progress'
 created: '2026-02-22'
-status: 'ready-for-dev'
+status: 'completed'
 stepsCompleted: [1, 2, 3, 4]
 tech_stack: ['Laravel 12', 'Bus::batch()', 'React 19', 'Inertia.js 2', 'sonner (toast)', 'motion/react']
 files_to_modify: ['app/Jobs/CategorizeTransactions.php', 'app/Jobs/CategorizeTransactionChunk.php (new)', 'app/Services/CategorizationService.php', 'app/Http/Controllers/ImportController.php', 'app/Http/Controllers/DashboardController.php', 'app/Models/Import.php', 'database/migrations/xxxx_add_batch_id_to_imports_table.php (new)', 'database/factories/ImportFactory.php', 'routes/web.php', 'resources/js/pages/dashboard.tsx', 'resources/js/components/ImportHistory.tsx', 'resources/js/components/CategorizationProgress.tsx (new)', 'resources/js/types/budget.ts', 'config/categorization.php', 'tests/Feature/CategorizeTransactionsTest.php', 'tests/Feature/CategorizationServiceTest.php', 'tests/Feature/ImportControllerTest.php']
@@ -89,22 +89,22 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
 
 ### Tasks
 
-- [ ] **Task 1: Migration — add `batch_id` to imports**
+- [x] **Task 1: Migration — add `batch_id` to imports**
   - File: `database/migrations/2026_02_22_000000_add_batch_id_to_imports_table.php` (new)
   - Action: Add nullable `string` column `batch_id` after `status`. No foreign key (batch IDs are UUIDs stored in `job_batches`).
   - Notes: Timestamp prefix follows existing convention (`2026_02_20_*`).
 
-- [ ] **Task 2: Update Import model**
+- [x] **Task 2: Update Import model**
   - File: `app/Models/Import.php`
   - Action: Add `batch_id` to `$fillable`. Add helper methods: `isCategorizing(): bool` (status === 'categorizing'), `isCategorized(): bool` (status === 'categorized'), `hasUncategorizedTransactions(): bool` (query count of `category_id = null`).
   - Notes: No enum cast needed — status stays as plain string, consistent with existing pattern.
 
-- [ ] **Task 3: Update ImportFactory**
+- [x] **Task 3: Update ImportFactory**
   - File: `database/factories/ImportFactory.php`
   - Action: Add `categorizing()` and `categorized()` factory states. Update the `randomElement` in `definition()` to include new statuses.
   - Notes: `categorizing()` should set a fake batch_id UUID.
 
-- [ ] **Task 4: Create `CategorizeTransactionChunk` job**
+- [x] **Task 4: Create `CategorizeTransactionChunk` job**
   - File: `app/Jobs/CategorizeTransactionChunk.php` (new)
   - Action: New job implementing `ShouldQueue` + `Batchable`. Constructor receives `array $transactionIds` (not model instances). `handle()` method:
     1. Fetch transactions by IDs where `category_id IS NULL`
@@ -116,7 +116,7 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
   - Properties: `public int $tries = 3`, `public array $backoff = [30, 60, 120]`, `public int $timeout = 75`.
   - Notes: Uses `Batchable` trait for `Bus::batch()` awareness. Each job processes exactly one chunk. Transaction IDs are plain integers, not serialized models. Job is idempotent because of `whereNull('category_id')` filter.
 
-- [ ] **Task 5: Refactor `CategorizeTransactions` into batch orchestrator**
+- [x] **Task 5: Refactor `CategorizeTransactions` into batch orchestrator**
   - File: `app/Jobs/CategorizeTransactions.php`
   - Action: Remove `ShouldQueue` and related traits. Convert to a plain class with a static method `dispatch(Import $import): void` that:
     1. Query uncategorized transactions for the import: `Transaction::where('import_id', $import->id)->whereNull('category_id')->pluck('id')`
@@ -129,14 +129,14 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
     8. Store the batch ID on the import: `$import->update(['batch_id' => $batch->id, 'status' => 'categorizing'])`
   - Notes: The class name stays `CategorizeTransactions` for backwards compatibility in tests. It's no longer a queued job — it runs synchronously to set up the batch, then the individual chunk jobs run async.
 
-- [ ] **Task 6: Update `CategorizationService`**
+- [x] **Task 6: Update `CategorizationService`**
   - File: `app/Services/CategorizationService.php`
   - Action: After merchant matching:
     - If remaining uncategorized count > 0: call `CategorizeTransactions::dispatch($import)` (same as current, but now creates a batch)
     - If all matched (remaining = 0): set `$import->update(['status' => 'categorized'])` — skip batch entirely
   - Notes: The service interface doesn't change, only the internal dispatch behavior.
 
-- [ ] **Task 7: Add polling endpoint and re-categorize endpoint**
+- [x] **Task 7: Add polling endpoint and re-categorize endpoint**
   - File: `app/Http/Controllers/ImportController.php`
   - Action: Add two new methods:
     1. `status(Import $import): JsonResponse` — returns JSON with import status, and if `batch_id` exists: fetch batch via `Bus::findBatch()` and return `{ status, progress, processedJobs, totalJobs, failedJobs, finishedAt }`. If batch not found or no batch_id, return just import status.
@@ -144,14 +144,14 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
   - Update `destroy()`: Before deleting, check if `$import->batch_id` exists. If so, attempt `Bus::findBatch($import->batch_id)?->cancel()`. Then delete as normal.
   - Notes: `status()` returns JSON (not Inertia) since it's called via `fetch()` from the frontend polling.
 
-- [ ] **Task 8: Add routes**
+- [x] **Task 8: Add routes**
   - File: `routes/web.php`
   - Action: Add three routes:
     - `GET /imports/{import}/status` → `ImportController::status` (name: `imports.status`)
     - `POST /imports/{import}/recategorize` → `ImportController::recategorize` (name: `imports.recategorize`)
   - Notes: Both require `auth` + `verified` middleware, consistent with existing routes.
 
-- [ ] **Task 9: Update `DashboardController`**
+- [x] **Task 9: Update `DashboardController`**
   - File: `app/Http/Controllers/DashboardController.php`
   - Action: Update `getImportRecords()`:
     - Change filter from `where('status', 'completed')` to `whereIn('status', ['completed', 'categorizing', 'categorized'])`
@@ -160,7 +160,7 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
     - Add `batchId` field (nullable) for frontend to know which imports are trackable
   - Notes: The `uncategorizedCount` is computed per-import. For the deferred prop context this is acceptable since it's a lazy-loaded list.
 
-- [ ] **Task 10: Update TypeScript types**
+- [x] **Task 10: Update TypeScript types**
   - File: `resources/js/types/budget.ts`
   - Action: Update `ImportRecord` type:
     ```typescript
@@ -189,7 +189,7 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
     };
     ```
 
-- [ ] **Task 11: Create `CategorizationProgress` component**
+- [x] **Task 11: Create `CategorizationProgress` component**
   - File: `resources/js/components/CategorizationProgress.tsx` (new)
   - Action: Create a component that displays categorization progress for a single import. Shows:
     - Import bank name + transaction count
@@ -200,7 +200,7 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
   - Style: Match existing `ImportHistory` card style (bg-surface/80, backdrop-blur, rounded-xl, border).
   - Notes: This component is rendered inside `ImportHistory` for each import that is `categorizing` or has `uncategorizedCount > 0`.
 
-- [ ] **Task 12: Update `ImportHistory` component**
+- [x] **Task 12: Update `ImportHistory` component**
   - File: `resources/js/components/ImportHistory.tsx`
   - Action:
     - For each import in the list, show status indicator:
@@ -210,7 +210,7 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
     - Add re-categorize handler: `router.post(\`/imports/${id}/recategorize\`)` with toast feedback
   - Notes: Keep the existing delete functionality unchanged.
 
-- [ ] **Task 13: Update `dashboard.tsx` — polling + toast**
+- [x] **Task 13: Update `dashboard.tsx` — polling + toast**
   - File: `resources/js/pages/dashboard.tsx`
   - Action:
     1. After successful import (`handleConfirmImport` → `onSuccess`), show a toast: `toast('Categorizing transactions...')` using sonner.
@@ -218,11 +218,11 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
     3. When polling detects a previously-categorizing import has become `categorized`, show a toast: `toast.success('Categorization complete')` and trigger a full data reload (`router.reload()`) to refresh category totals.
   - Notes: Use `useEffect` + `useRef` for the polling interval. Inertia's `router.reload({ only: ['imports'] })` is lightweight — it only refreshes the deferred imports prop.
 
-- [ ] **Task 14: Update `config/categorization.php`**
+- [x] **Task 14: Update `config/categorization.php`**
   - File: `config/categorization.php`
   - Action: Update the `fallback_category_slug` comment to reflect that it's now only used for low-confidence results, not failures. On failure, transactions stay null.
 
-- [ ] **Task 15: Update tests — `CategorizeTransactionsTest`**
+- [x] **Task 15: Update tests — `CategorizeTransactionsTest`**
   - File: `tests/Feature/CategorizeTransactionsTest.php`
   - Action: Refactor tests for the new architecture:
     - Test that `CategorizeTransactions::dispatch()` creates a batch with correct number of chunk jobs
@@ -236,14 +236,14 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
       - Test chunk dispatches TransactionCategorized events
       - Test timeout configuration is 75s
 
-- [ ] **Task 16: Update tests — `CategorizationServiceTest`**
+- [x] **Task 16: Update tests — `CategorizationServiceTest`**
   - File: `tests/Feature/CategorizationServiceTest.php`
   - Action: Update assertions:
     - `test_unmatched_transactions_trigger_categorize_job_dispatch`: Change to assert batch is dispatched (use `Bus::fake()`)
     - `test_no_job_dispatched_when_all_matched_by_merchant_rules`: Assert import status set to `categorized` directly
     - Add: `test_all_matched_sets_import_status_to_categorized`
 
-- [ ] **Task 17: Update tests — `ImportControllerTest`**
+- [x] **Task 17: Update tests — `ImportControllerTest`**
   - File: `tests/Feature/ImportControllerTest.php`
   - Action: Add tests:
     - `test_status_endpoint_returns_batch_progress`: Create import with batch_id, assert JSON response
@@ -253,17 +253,17 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
 
 ### Acceptance Criteria
 
-- [ ] **AC 1:** Given a CSV import with 200 transactions, when the import completes, then a batch of 4 chunk jobs (50 each) is dispatched and import status is set to `categorizing`.
-- [ ] **AC 2:** Given a batch is running, when a chunk job completes, then transactions in that chunk are categorized and the batch progress updates.
-- [ ] **AC 3:** Given a chunk job fails after 3 retries, when the batch finishes, then failed transactions remain with `category_id = null` (no fallback assigned) and import status is `categorized`.
-- [ ] **AC 4:** Given an import with `status = categorizing`, when the user visits the dashboard, then they see an inline progress indicator with the categorization progress.
-- [ ] **AC 5:** Given a CSV was just imported, when the import succeeds, then a toast notification appears saying categorization has started.
-- [ ] **AC 6:** Given imports are being categorized, when the dashboard polls every 3 seconds, then the progress indicator updates in real-time. When categorization completes, a success toast appears and dashboard data refreshes.
-- [ ] **AC 7:** Given an import with `status = categorized` and uncategorized transactions remaining, when the user clicks "Re-categorize", then a new batch is dispatched for the remaining transactions.
-- [ ] **AC 8:** Given an import is being categorized, when the user deletes that import, then the active batch is cancelled and the import is deleted.
-- [ ] **AC 9:** Given all transactions in an import are matched by merchant rules, when categorization runs, then no batch is dispatched and the import status goes directly to `categorized`.
-- [ ] **AC 10:** Given a single chunk job, when it runs, then it completes within the 75-second timeout (under the 90s `retry_after`).
-- [ ] **AC 11:** Given the polling endpoint is called for an import, when the import has an active batch, then the response includes `progress`, `processedJobs`, `totalJobs`, `failedJobs`.
+- [x] **AC 1:** Given a CSV import with 200 transactions, when the import completes, then a batch of 4 chunk jobs (50 each) is dispatched and import status is set to `categorizing`.
+- [x] **AC 2:** Given a batch is running, when a chunk job completes, then transactions in that chunk are categorized and the batch progress updates.
+- [x] **AC 3:** Given a chunk job fails after 3 retries, when the batch finishes, then failed transactions remain with `category_id = null` (no fallback assigned) and import status is `categorized`.
+- [x] **AC 4:** Given an import with `status = categorizing`, when the user visits the dashboard, then they see an inline progress indicator with the categorization progress.
+- [x] **AC 5:** Given a CSV was just imported, when the import succeeds, then a toast notification appears saying categorization has started.
+- [x] **AC 6:** Given imports are being categorized, when the dashboard polls every 3 seconds, then the progress indicator updates in real-time. When categorization completes, a success toast appears and dashboard data refreshes.
+- [x] **AC 7:** Given an import with `status = categorized` and uncategorized transactions remaining, when the user clicks "Re-categorize", then a new batch is dispatched for the remaining transactions.
+- [x] **AC 8:** Given an import is being categorized, when the user deletes that import, then the active batch is cancelled and the import is deleted.
+- [x] **AC 9:** Given all transactions in an import are matched by merchant rules, when categorization runs, then no batch is dispatched and the import status goes directly to `categorized`.
+- [x] **AC 10:** Given a single chunk job, when it runs, then it completes within the 75-second timeout (under the 90s `retry_after`).
+- [x] **AC 11:** Given the polling endpoint is called for an import, when the import has an active batch, then the response includes `progress`, `processedJobs`, `totalJobs`, `failedJobs`.
 
 ## Additional Context
 
@@ -301,3 +301,11 @@ Replace the monolithic `CategorizeTransactions` job with Laravel's `Bus::batch()
 - `ImportRecord` TypeScript type gains `status`, `uncategorizedCount`, `batchId` fields.
 - The `Batchable` trait on `CategorizeTransactionChunk` gives it batch awareness (`$this->batch()`, `$this->batch()->cancelled()`).
 - Consider checking `$this->batch()->cancelled()` at the start of each chunk job to short-circuit if the import was deleted.
+
+## Review Notes
+
+- Adversarial review completed
+- Findings: 12 total, 6 fixed, 6 skipped
+- Resolution approach: auto-fix
+- **Fixed:** F1 (removed dead `then()` callback), F3 (set `categorizing` before dispatch), F4 (N+1 → `withCount`), F5 (`router.reload()` with `only` constraint), F6 (removed unused `CategorizationStatus` type), F8 (guard against double dispatch)
+- **Skipped:** F2 (single-user app, matches existing pattern), F7 (spinner is the indicator per spec), F9 (standard React pattern), F10 (intentional null render for `completed`), F11 (`hasUncategorizedTransactions` is spec'd helper), F12 (inherent to `Bus::batch()` architecture)

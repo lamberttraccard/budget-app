@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Events\ImportCompleted;
+use App\Jobs\CategorizeTransactionChunk;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Import;
@@ -12,6 +13,7 @@ use App\Models\User;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -444,6 +446,157 @@ class ImportControllerTest extends TestCase
                 ->loadDeferredProps('imports', fn (Assert $page) => $page
                     ->has('imports', 1)
                     ->where('imports.0.bank', 'Banque Populaire')
+                )
+            );
+    }
+
+    public function test_dashboard_includes_categorizing_and_categorized_imports(): void
+    {
+        $user = User::factory()->create();
+        Import::factory()->completed()->create(['bank' => 'Banque Populaire']);
+        Import::factory()->categorizing()->create(['bank' => 'Revolut']);
+        Import::factory()->categorized()->create(['bank' => 'N26']);
+        Import::factory()->pending()->create(['bank' => 'Boursorama']);
+
+        $this->actingAs($user)
+            ->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('dashboard')
+                ->loadDeferredProps('imports', fn (Assert $page) => $page
+                    ->has('imports', 3)
+                )
+            );
+    }
+
+    public function test_status_endpoint_returns_import_status_without_batch(): void
+    {
+        $user = User::factory()->create();
+        $import = Import::factory()->completed()->create();
+
+        $response = $this->actingAs($user)
+            ->get(route('imports.status', $import));
+
+        $response->assertOk()
+            ->assertJson(['status' => 'completed']);
+
+        $this->assertArrayNotHasKey('progress', $response->json());
+    }
+
+    public function test_status_endpoint_returns_batch_progress(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+
+        Transaction::factory()->count(3)->create([
+            'import_id' => $import->id,
+            'account_id' => $account->id,
+            'category_id' => null,
+        ]);
+
+        // Create a real batch so we can test the endpoint
+        $batch = Bus::batch([
+            new CategorizeTransactionChunk([1]),
+        ])->allowFailures()->dispatch();
+
+        $import->update([
+            'batch_id' => $batch->id,
+            'status' => 'categorizing',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('imports.status', $import));
+
+        $response->assertOk()
+            ->assertJsonStructure(['status', 'progress', 'processedJobs', 'totalJobs', 'failedJobs', 'finishedAt']);
+    }
+
+    public function test_status_endpoint_requires_authentication(): void
+    {
+        $import = Import::factory()->completed()->create();
+
+        $this->get(route('imports.status', $import))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_recategorize_dispatches_new_batch(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->categorized()->create();
+
+        Transaction::factory()->count(3)->create([
+            'import_id' => $import->id,
+            'account_id' => $account->id,
+            'category_id' => null,
+        ]);
+
+        Bus::fake([CategorizeTransactionChunk::class]);
+
+        $response = $this->actingAs($user)
+            ->post(route('imports.recategorize', $import));
+
+        $response->assertRedirect();
+
+        Bus::assertBatched(function ($batch) {
+            return $batch->jobs->count() === 1;
+        });
+    }
+
+    public function test_recategorize_requires_authentication(): void
+    {
+        $import = Import::factory()->categorized()->create();
+
+        $this->post(route('imports.recategorize', $import))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_destroy_cancels_active_batch(): void
+    {
+        $user = User::factory()->create();
+
+        // Create a real batch
+        $batch = Bus::batch([
+            new CategorizeTransactionChunk([1]),
+        ])->allowFailures()->dispatch();
+
+        $import = Import::factory()->categorizing()->create([
+            'batch_id' => $batch->id,
+        ]);
+
+        $this->actingAs($user)
+            ->delete("/imports/{$import->id}");
+
+        $this->assertDatabaseMissing('imports', ['id' => $import->id]);
+
+        // Verify batch was cancelled
+        $updatedBatch = Bus::findBatch($batch->id);
+        $this->assertTrue($updatedBatch->cancelled());
+    }
+
+    public function test_imports_include_status_and_uncategorized_count(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->categorized()->create([
+            'bank' => 'Banque Populaire',
+            'transaction_count' => 10,
+        ]);
+
+        Transaction::factory()->count(3)->create([
+            'import_id' => $import->id,
+            'account_id' => $account->id,
+            'category_id' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('dashboard')
+                ->loadDeferredProps('imports', fn (Assert $page) => $page
+                    ->has('imports', 1)
+                    ->where('imports.0.status', 'categorized')
+                    ->where('imports.0.uncategorizedCount', 3)
                 )
             );
     }

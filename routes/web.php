@@ -25,6 +25,14 @@ Route::delete('imports/{import}', [ImportController::class, 'destroy'])
     ->middleware(['auth', 'verified'])
     ->name('imports.destroy');
 
+Route::get('imports/{import}/status', [ImportController::class, 'status'])
+    ->middleware(['auth', 'verified'])
+    ->name('imports.status');
+
+Route::post('imports/{import}/recategorize', [ImportController::class, 'recategorize'])
+    ->middleware(['auth', 'verified'])
+    ->name('imports.recategorize');
+
 Route::get('search', [SearchController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('search');

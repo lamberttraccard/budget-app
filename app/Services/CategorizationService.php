@@ -45,6 +45,8 @@ class CategorizationService
 
         if ($remainingCount > 0) {
             CategorizeTransactions::dispatch($import);
+        } else {
+            $import->update(['status' => 'categorized']);
         }
     }
 }

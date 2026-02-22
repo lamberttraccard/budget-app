@@ -2,15 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Ai\Agents\TransactionCategorizer;
-use App\Events\TransactionCategorized;
+use App\Jobs\CategorizeTransactionChunk;
 use App\Jobs\CategorizeTransactions;
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\Import;
 use App\Models\Transaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class CategorizeTransactionsTest extends TestCase
@@ -21,205 +19,91 @@ class CategorizeTransactionsTest extends TestCase
 
     private Import $import;
 
-    private array $categories;
-
     protected function setUp(): void
     {
         parent::setUp();
         $this->account = Account::factory()->personal()->create();
         $this->import = Import::factory()->completed()->create();
-        $this->seedCategories();
     }
 
-    private function seedCategories(): void
+    private function createUncategorizedTransactions(int $count): void
     {
-        $slugs = ['food', 'restaurants', 'transport', 'housing', 'entertainment', 'shopping', 'health', 'education', 'travel', 'insurance', 'income', 'professional', 'other'];
-        $this->categories = [];
-        foreach ($slugs as $slug) {
-            $this->categories[$slug] = Category::factory()->create(['slug' => $slug, 'name' => ucfirst($slug)]);
-        }
-    }
-
-    private function createUncategorizedTransaction(string $description, int $amountCents = -5000): Transaction
-    {
-        return Transaction::factory()->create([
-            'description' => $description,
-            'amount_cents' => $amountCents,
+        Transaction::factory()->count($count)->create([
             'account_id' => $this->account->id,
             'import_id' => $this->import->id,
             'category_id' => null,
         ]);
     }
 
-    public function test_job_processes_uncategorized_transactions_and_assigns_categories(): void
+    public function test_dispatch_creates_batch_with_correct_number_of_chunk_jobs(): void
     {
-        $t1 = $this->createUncategorizedTransaction('CARREFOUR CITY');
-        $t2 = $this->createUncategorizedTransaction('NETFLIX.COM');
+        Bus::fake([CategorizeTransactionChunk::class]);
 
-        TransactionCategorizer::fake([
-            [
-                'results' => [
-                    ['index' => 1, 'description' => 'CARREFOUR CITY', 'category_slug' => 'food', 'confidence' => 0.95],
-                    ['index' => 2, 'description' => 'NETFLIX.COM', 'category_slug' => 'entertainment', 'confidence' => 0.99],
-                ],
-            ],
-        ]);
+        $this->createUncategorizedTransactions(120);
 
-        Event::fake([TransactionCategorized::class]);
+        CategorizeTransactions::dispatch($this->import);
 
-        (new CategorizeTransactions($this->import))->handle();
-
-        $this->assertSame($this->categories['food']->id, $t1->fresh()->category_id);
-        $this->assertSame($this->categories['entertainment']->id, $t2->fresh()->category_id);
-    }
-
-    public function test_job_assigns_other_category_when_confidence_below_threshold(): void
-    {
-        $t1 = $this->createUncategorizedTransaction('AMBIGUOUS MERCHANT');
-
-        TransactionCategorizer::fake([
-            [
-                'results' => [
-                    ['index' => 1, 'description' => 'AMBIGUOUS MERCHANT', 'category_slug' => 'shopping', 'confidence' => 0.3],
-                ],
-            ],
-        ]);
-
-        Event::fake([TransactionCategorized::class]);
-
-        (new CategorizeTransactions($this->import))->handle();
-
-        $this->assertSame($this->categories['other']->id, $t1->fresh()->category_id);
-    }
-
-    public function test_job_leaves_transactions_uncategorized_when_agent_throws_exception(): void
-    {
-        $t1 = $this->createUncategorizedTransaction('SOME MERCHANT');
-        $t2 = $this->createUncategorizedTransaction('ANOTHER MERCHANT');
-
-        TransactionCategorizer::fake(function () {
-            throw new \RuntimeException('API error');
+        Bus::assertBatched(function ($batch) {
+            return $batch->jobs->count() === 3; // 120 / 50 = 2.4 → 3 chunks
         });
-
-        Event::fake([TransactionCategorized::class]);
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('API error');
-
-        (new CategorizeTransactions($this->import))->handle();
-
-        $this->assertNull($t1->fresh()->category_id);
-        $this->assertNull($t2->fresh()->category_id);
-        Event::assertNotDispatched(TransactionCategorized::class);
     }
 
-    public function test_job_dispatches_transaction_categorized_event_for_each_transaction(): void
+    public function test_dispatch_respects_configured_batch_size(): void
     {
-        $t1 = $this->createUncategorizedTransaction('CARREFOUR CITY');
-        $t2 = $this->createUncategorizedTransaction('NETFLIX.COM');
+        Bus::fake([CategorizeTransactionChunk::class]);
+        config(['categorization.batch_size' => 25]);
 
-        TransactionCategorizer::fake([
-            [
-                'results' => [
-                    ['index' => 1, 'description' => 'CARREFOUR CITY', 'category_slug' => 'food', 'confidence' => 0.95],
-                    ['index' => 2, 'description' => 'NETFLIX.COM', 'category_slug' => 'entertainment', 'confidence' => 0.99],
-                ],
-            ],
-        ]);
+        $this->createUncategorizedTransactions(100);
 
-        Event::fake([TransactionCategorized::class]);
+        CategorizeTransactions::dispatch($this->import);
 
-        (new CategorizeTransactions($this->import))->handle();
-
-        Event::assertDispatched(TransactionCategorized::class, 2);
+        Bus::assertBatched(function ($batch) {
+            return $batch->jobs->count() === 4; // 100 / 25 = 4 chunks
+        });
     }
 
-    public function test_job_handles_empty_import_without_errors(): void
+    public function test_dispatch_sets_import_status_to_categorizing_with_batch_id(): void
     {
-        TransactionCategorizer::fake([]);
+        Bus::fake([CategorizeTransactionChunk::class]);
 
-        (new CategorizeTransactions($this->import))->handle();
+        $this->createUncategorizedTransactions(10);
 
-        $this->assertDatabaseCount('transactions', 0);
+        CategorizeTransactions::dispatch($this->import);
+
+        $this->import->refresh();
+        $this->assertSame('categorizing', $this->import->status);
+        $this->assertNotNull($this->import->batch_id);
     }
 
-    public function test_job_only_processes_transactions_for_given_import(): void
+    public function test_dispatch_with_no_uncategorized_sets_status_to_categorized(): void
     {
-        $otherImport = Import::factory()->completed()->create();
-        $ourTransaction = $this->createUncategorizedTransaction('CARREFOUR CITY');
-        $otherTransaction = Transaction::factory()->create([
-            'description' => 'LIDL',
-            'account_id' => $this->account->id,
-            'import_id' => $otherImport->id,
-            'category_id' => null,
-        ]);
+        Bus::fake([CategorizeTransactionChunk::class]);
 
-        TransactionCategorizer::fake([
-            [
-                'results' => [
-                    ['index' => 1, 'description' => 'CARREFOUR CITY', 'category_slug' => 'food', 'confidence' => 0.95],
-                ],
-            ],
-        ]);
+        CategorizeTransactions::dispatch($this->import);
 
-        Event::fake([TransactionCategorized::class]);
-
-        (new CategorizeTransactions($this->import))->handle();
-
-        $this->assertSame($this->categories['food']->id, $ourTransaction->fresh()->category_id);
-        $this->assertNull($otherTransaction->fresh()->category_id);
+        $this->import->refresh();
+        $this->assertSame('categorized', $this->import->status);
+        Bus::assertNothingBatched();
     }
 
-    public function test_job_retry_configuration(): void
+    public function test_chunk_jobs_contain_correct_transaction_ids(): void
     {
-        $job = new CategorizeTransactions($this->import);
+        Bus::fake([CategorizeTransactionChunk::class]);
+        config(['categorization.batch_size' => 2]);
 
-        $this->assertSame(3, $job->tries);
-        $this->assertSame([30, 60, 120], $job->backoff);
-    }
+        $this->createUncategorizedTransactions(3);
+        $allIds = Transaction::pluck('id')->sort()->values()->all();
 
-    public function test_job_handles_duplicate_descriptions_in_same_batch(): void
-    {
-        $t1 = $this->createUncategorizedTransaction('CARREFOUR CITY', -3000);
-        $t2 = $this->createUncategorizedTransaction('CARREFOUR CITY', -5000);
+        CategorizeTransactions::dispatch($this->import);
 
-        TransactionCategorizer::fake([
-            [
-                'results' => [
-                    ['index' => 1, 'description' => 'CARREFOUR CITY', 'category_slug' => 'food', 'confidence' => 0.95],
-                    ['index' => 2, 'description' => 'CARREFOUR CITY', 'category_slug' => 'food', 'confidence' => 0.92],
-                ],
-            ],
-        ]);
+        Bus::assertBatched(function ($batch) use ($allIds) {
+            $batchedIds = $batch->jobs
+                ->flatMap(fn ($job) => $job->transactionIds)
+                ->sort()
+                ->values()
+                ->all();
 
-        Event::fake([TransactionCategorized::class]);
-
-        (new CategorizeTransactions($this->import))->handle();
-
-        $this->assertSame($this->categories['food']->id, $t1->fresh()->category_id);
-        $this->assertSame($this->categories['food']->id, $t2->fresh()->category_id);
-        Event::assertDispatched(TransactionCategorized::class, 2);
-    }
-
-    public function test_agent_is_prompted_with_transaction_descriptions(): void
-    {
-        $this->createUncategorizedTransaction('CARREFOUR CITY', -5042);
-
-        TransactionCategorizer::fake([
-            [
-                'results' => [
-                    ['index' => 1, 'description' => 'CARREFOUR CITY', 'category_slug' => 'food', 'confidence' => 0.95],
-                ],
-            ],
-        ]);
-
-        Event::fake([TransactionCategorized::class]);
-
-        (new CategorizeTransactions($this->import))->handle();
-
-        TransactionCategorizer::assertPrompted(function ($prompt) {
-            return str_contains($prompt->prompt, 'CARREFOUR CITY')
-                && str_contains($prompt->prompt, '-5042');
+            return $batchedIds === $allIds;
         });
     }
 }

@@ -46,6 +46,9 @@ export type ImportRecord = {
     dateFrom: string | null;
     dateTo: string | null;
     importedAt: string | null;
+    status: 'completed' | 'categorizing' | 'categorized';
+    uncategorizedCount: number;
+    batchId: string | null;
 };
 
 export type AccountContext = {

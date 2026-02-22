@@ -4,15 +4,15 @@ namespace Tests\Feature;
 
 use App\Events\ImportCompleted;
 use App\Events\TransactionCategorized;
-use App\Jobs\CategorizeTransactions;
+use App\Jobs\CategorizeTransactionChunk;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Import;
 use App\Models\MerchantRule;
 use App\Models\Transaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class CategorizationPipelineTest extends TestCase
@@ -62,7 +62,7 @@ class CategorizationPipelineTest extends TestCase
             'category_id' => null,
         ]);
 
-        Queue::fake();
+        Bus::fake([CategorizeTransactionChunk::class]);
         Event::fake([TransactionCategorized::class]);
 
         ImportCompleted::dispatch($this->import);
@@ -70,8 +70,8 @@ class CategorizationPipelineTest extends TestCase
         $this->assertSame($this->categories['food']->id, $matched->fresh()->category_id);
         $this->assertNull($unmatched->fresh()->category_id);
 
-        Queue::assertPushed(CategorizeTransactions::class, function (CategorizeTransactions $job) {
-            return $job->import->id === $this->import->id;
+        Bus::assertBatched(function ($batch) {
+            return $batch->jobs->count() === 1;
         });
 
         Event::assertDispatched(TransactionCategorized::class, 1);
@@ -101,12 +101,12 @@ class CategorizationPipelineTest extends TestCase
             'category_id' => null,
         ]);
 
-        Queue::fake();
+        Bus::fake([CategorizeTransactionChunk::class]);
         Event::fake([TransactionCategorized::class]);
 
         ImportCompleted::dispatch($this->import);
 
-        Queue::assertNotPushed(CategorizeTransactions::class);
+        Bus::assertNothingBatched();
         Event::assertDispatched(TransactionCategorized::class, 2);
     }
 
@@ -119,12 +119,12 @@ class CategorizationPipelineTest extends TestCase
             'category_id' => $this->categories['food']->id,
         ]);
 
-        Queue::fake();
+        Bus::fake([CategorizeTransactionChunk::class]);
         Event::fake([TransactionCategorized::class]);
 
         ImportCompleted::dispatch($this->import);
 
-        Queue::assertNotPushed(CategorizeTransactions::class);
+        Bus::assertNothingBatched();
         Event::assertNotDispatched(TransactionCategorized::class);
     }
 }

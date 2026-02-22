@@ -14,7 +14,7 @@ class ImportFactory extends Factory
         return [
             'file_name' => fake()->randomElement(['export', 'releve', 'transactions']).'_'.fake()->date('Y_m').'.csv',
             'bank' => fake()->randomElement(['Banque Populaire', 'Revolut']),
-            'status' => fake()->randomElement(['pending', 'completed']),
+            'status' => fake()->randomElement(['pending', 'completed', 'categorizing', 'categorized']),
             'transaction_count' => fake()->numberBetween(0, 200),
             'imported_at' => fake()->optional(0.8)->dateTimeBetween('first day of January this year', 'now'),
         ];
@@ -33,6 +33,23 @@ class ImportFactory extends Factory
         return $this->state([
             'status' => 'pending',
             'imported_at' => null,
+        ]);
+    }
+
+    public function categorizing(): static
+    {
+        return $this->state([
+            'status' => 'categorizing',
+            'batch_id' => fake()->uuid(),
+            'imported_at' => fake()->dateTimeBetween('first day of January this year', 'now'),
+        ]);
+    }
+
+    public function categorized(): static
+    {
+        return $this->state([
+            'status' => 'categorized',
+            'imported_at' => fake()->dateTimeBetween('first day of January this year', 'now'),
         ]);
     }
 }
