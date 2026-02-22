@@ -1,4 +1,5 @@
 import { ArrowLeftIcon } from 'lucide-react';
+import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { CategoryIcon } from '@/lib/category-icons';
 
@@ -16,38 +17,79 @@ function isLightColor(hex: string): boolean {
     const r = parseInt(hex.slice(1, 3), 16) / 255;
     const g = parseInt(hex.slice(3, 5), 16) / 255;
     const b = parseInt(hex.slice(5, 7), 16) / 255;
-    // Relative luminance (WCAG formula)
     const luminance =
         0.2126 * (r <= 0.03928 ? r / 12.92 : ((r + 0.055) / 1.055) ** 2.4) +
         0.7152 * (g <= 0.03928 ? g / 12.92 : ((g + 0.055) / 1.055) ** 2.4) +
         0.0722 * (b <= 0.03928 ? b / 12.92 : ((b + 0.055) / 1.055) ** 2.4);
-    return luminance > 0.35;
+    return luminance > 0.15;
 }
 
 export default function ColorHeader({ name, color, icon, totalAmountCents, transactionCount, onBack }: Props) {
     const light = isLightColor(color);
     const textPrimary = light ? 'text-black/90' : 'text-white/90';
-    const textSecondary = light ? 'text-black/60' : 'text-white/60';
+    const textSecondary = light ? 'text-black/50' : 'text-white/50';
     const textBack = light ? 'text-black/70 hover:text-black' : 'text-white/70 hover:text-white';
 
+    const shouldReduceMotion = useReducedMotion();
+    const { scrollY } = useScroll();
+    const contentOpacity = useTransform(scrollY, [0, 250], shouldReduceMotion ? [1, 1] : [1, 0]);
+    const circleY = useTransform(scrollY, [0, 500], shouldReduceMotion ? [0, 0] : [0, 80]);
+    const circleScale = useTransform(scrollY, [0, 500], shouldReduceMotion ? [1, 1] : [1, 1.08]);
+
     return (
-        <div className="relative -mx-4 sm:-mx-8 px-4 sm:px-8 pt-4 pb-8" style={{ backgroundColor: color }}>
+        <div
+            className="relative -mx-4 sm:-mx-8 px-4 sm:px-8 pt-4 pb-16"
+            style={{ clipPath: 'inset(-100vh -100vw -100vw -100vw)' }}
+        >
+            {/* Colored circle — curved background with parallax */}
+            <motion.div
+                className="absolute left-1/2 -translate-x-1/2 rounded-full pointer-events-none"
+                style={{
+                    width: 'max(1000px, 120vw)',
+                    aspectRatio: '1',
+                    top: 'calc(45vh - max(1000px, 120vw))',
+                    background: color,
+                    y: circleY,
+                    scale: circleScale,
+                }}
+                aria-hidden="true"
+            />
+
+            {/* Soft highlight for depth */}
+            <motion.div
+                className="absolute left-1/2 -translate-x-1/2 rounded-full pointer-events-none"
+                style={{
+                    width: 'max(350px, 50%)',
+                    aspectRatio: '1',
+                    top: '5%',
+                    background: `radial-gradient(circle, ${light ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'} 0%, transparent 70%)`,
+                    y: circleY,
+                    scale: circleScale,
+                }}
+                aria-hidden="true"
+            />
+
+            {/* Back button */}
             <button
                 type="button"
                 onClick={onBack}
-                className={`absolute top-4 left-4 sm:left-8 flex items-center gap-1 text-sm font-medium ${textBack}`}
+                className={`relative z-10 flex items-center gap-1 text-sm font-medium ${textBack}`}
             >
                 <ArrowLeftIcon className="size-5" />
                 Back
             </button>
 
-            <div className="flex flex-col items-center pt-8">
+            {/* Content — fades out as content scrolls over the header */}
+            <motion.div className="relative z-10 flex flex-col items-center pt-8" style={{ opacity: contentOpacity }}>
                 <div
-                    className="w-16 h-16 rounded-2xl mb-4 flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}
-                    aria-hidden="true"
+                    className="w-20 h-20 rounded-full mb-4 flex items-center justify-center shadow-lg"
+                    style={{
+                        backgroundColor: light ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                    }}
                 >
-                    <CategoryIcon name={icon} className={`size-8 ${textSecondary}`} />
+                    <CategoryIcon name={icon} className={`size-9 ${textPrimary}`} />
                 </div>
 
                 <h1 className={`text-xl font-semibold ${textPrimary}`}>{name}</h1>
@@ -60,7 +102,7 @@ export default function ColorHeader({ name, color, icon, totalAmountCents, trans
                 <p className={`mt-1 text-sm ${textSecondary}`}>
                     {transactionCount} transaction{transactionCount !== 1 ? 's' : ''}
                 </p>
-            </div>
+            </motion.div>
         </div>
     );
 }

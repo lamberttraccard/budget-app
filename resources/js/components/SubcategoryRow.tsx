@@ -14,7 +14,7 @@ export default function SubcategoryRow({ name, amountCents, transactionCount, is
         <button
             type="button"
             onClick={onClick}
-            className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-elevated ${isActive ? 'bg-surface-elevated' : ''}`}
+            className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5 ${isActive ? 'bg-white/5' : ''}`}
         >
             <div className="flex-1 min-w-0">
                 <p className="text-[15px] font-medium text-white truncate">{name}</p>

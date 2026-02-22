@@ -11,14 +11,17 @@ type Props = {
     currentAccount: string;
     accountContexts: AccountContext[];
     onAccountChange: (account: string) => void;
+    dark?: boolean;
 };
 
-export default function AccountPicker({ currentAccount, accountContexts, onAccountChange }: Props) {
+export default function AccountPicker({ currentAccount, accountContexts, onAccountChange, dark }: Props) {
     const currentLabel = accountContexts.find(c => c.value === currentAccount)?.label ?? 'Personal';
+    const textClass = dark ? 'text-black/70' : 'text-text-secondary';
+    const hoverClass = dark ? 'hover:text-black/90' : 'hover:text-white';
 
     if (accountContexts.length <= 1) {
         return (
-            <span className="text-sm font-medium text-text-secondary">
+            <span className={`text-sm font-medium ${textClass}`}>
                 {currentLabel}
             </span>
         );
@@ -26,7 +29,7 @@ export default function AccountPicker({ currentAccount, accountContexts, onAccou
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 text-sm font-medium text-text-secondary hover:text-white transition-colors outline-none">
+            <DropdownMenuTrigger className={`flex items-center gap-1 text-sm font-medium ${textClass} ${hoverClass} transition-colors outline-none`}>
                 {currentLabel}
                 <ChevronDownIcon className="size-4" />
             </DropdownMenuTrigger>

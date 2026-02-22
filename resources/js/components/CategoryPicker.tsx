@@ -37,7 +37,7 @@ function CategoryItem({ category, isCurrent, onSelect }: {
             className={`flex items-center gap-3 w-full px-4 py-3 min-h-[44px] rounded-lg transition-colors text-left ${
                 isCurrent
                     ? 'opacity-40 cursor-default'
-                    : 'hover:bg-surface-elevated cursor-pointer'
+                    : 'hover:bg-white/5 cursor-pointer'
             }`}
         >
             <span
@@ -67,7 +67,15 @@ export default function CategoryPicker({
     if (isMobile) {
         return (
             <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-                <SheetContent side="bottom" className="bg-surface rounded-t-2xl">
+                <SheetContent
+                    side="bottom"
+                    className="rounded-t-2xl border-t-white/10"
+                    style={{
+                        backgroundColor: 'rgba(28, 28, 30, 0.75)',
+                        backdropFilter: 'blur(40px)',
+                        WebkitBackdropFilter: 'blur(40px)',
+                    }}
+                >
                     <SheetHeader>
                         <SheetTitle className="text-white text-base">
                             Choose Category
@@ -99,7 +107,12 @@ export default function CategoryPicker({
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 align="end"
-                className="w-64 max-h-[400px] overflow-y-auto"
+                className="w-64 max-h-[400px] overflow-y-auto border-white/10"
+                style={{
+                    backgroundColor: 'rgba(28, 28, 30, 0.75)',
+                    backdropFilter: 'blur(40px)',
+                    WebkitBackdropFilter: 'blur(40px)',
+                }}
             >
                 {categories.map((cat) => {
                     const isCurrent = cat.id === currentCategoryId;

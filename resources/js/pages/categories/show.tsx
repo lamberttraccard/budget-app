@@ -83,12 +83,13 @@ export default function CategoryShow({
         : transactions;
 
     return (
-        <AppLayout currentAccount={currentAccount} onAccountChange={handleAccountChange}>
+        <AppLayout currentAccount={currentAccount} onAccountChange={handleAccountChange} accentColor={category.color}>
             <Head title={category.name} />
 
             <motion.div
-                initial={shouldReduceMotion ? false : { opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
+                className="sticky top-0 z-0"
+                initial={shouldReduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
             >
                 <ColorHeader
@@ -102,13 +103,13 @@ export default function CategoryShow({
             </motion.div>
 
             <motion.div
-                className="py-5 space-y-4"
+                className="relative z-10 py-5 space-y-4"
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, ease: 'easeOut', delay: 0.15 }}
             >
                 {subcategories.length > 0 && (
-                    <div className="bg-surface rounded-xl overflow-hidden">
+                    <div className="rounded-xl overflow-hidden bg-surface/80 backdrop-blur-2xl">
                         {subcategories.map((sub, index) => (
                             <div key={sub.id}>
                                 {index > 0 && (
@@ -127,7 +128,7 @@ export default function CategoryShow({
                 )}
 
                 {visibleTransactions.length > 0 ? (
-                    <div className="bg-surface rounded-xl overflow-hidden">
+                    <div className="rounded-xl overflow-hidden bg-surface/80 backdrop-blur-2xl">
                         {visibleTransactions.map((t, index) => (
                             <div key={t.id}>
                                 {index > 0 && (

@@ -16,7 +16,7 @@ export default function TransactionRow({ id, date, description, amountCents, cat
             type="button"
             onClick={(e) => onTap?.(id, categoryId, e.currentTarget)}
             className="flex w-full items-center gap-3 px-4 py-2.5 min-h-[44px] text-left
-                       hover:bg-surface-elevated rounded-lg transition-colors cursor-pointer"
+                       hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
         >
             <span className="w-12 flex-shrink-0 text-xs text-text-tertiary">
                 {formatDate(date)}
