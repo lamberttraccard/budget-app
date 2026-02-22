@@ -1,4 +1,3 @@
-import { ArrowLeftIcon } from 'lucide-react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { CategoryIcon } from '@/lib/category-icons';
@@ -9,7 +8,6 @@ type Props = {
     icon: string | null;
     totalAmountCents: number;
     transactionCount: number;
-    onBack: () => void;
 };
 
 /** Returns true if the hex color is light enough for dark text. */
@@ -24,11 +22,10 @@ function isLightColor(hex: string): boolean {
     return luminance > 0.15;
 }
 
-export default function ColorHeader({ name, color, icon, totalAmountCents, transactionCount, onBack }: Props) {
+export default function ColorHeader({ name, color, icon, totalAmountCents, transactionCount }: Props) {
     const light = isLightColor(color);
     const textPrimary = light ? 'text-black/90' : 'text-white/90';
     const textSecondary = light ? 'text-black/50' : 'text-white/50';
-    const textBack = light ? 'text-black/70 hover:text-black' : 'text-white/70 hover:text-white';
 
     const shouldReduceMotion = useReducedMotion();
     const { scrollY } = useScroll();
@@ -69,18 +66,8 @@ export default function ColorHeader({ name, color, icon, totalAmountCents, trans
                 aria-hidden="true"
             />
 
-            {/* Back button */}
-            <button
-                type="button"
-                onClick={onBack}
-                className={`relative z-10 flex items-center gap-1 text-sm font-medium ${textBack}`}
-            >
-                <ArrowLeftIcon className="size-5" />
-                Back
-            </button>
-
             {/* Content — fades out as content scrolls over the header */}
-            <motion.div className="relative z-10 flex flex-col items-center pt-8" style={{ opacity: contentOpacity }}>
+            <motion.div className="relative z-10 flex flex-col items-center pt-4" style={{ opacity: contentOpacity }}>
                 <div
                     className="w-20 h-20 rounded-full mb-4 flex items-center justify-center shadow-lg"
                     style={{

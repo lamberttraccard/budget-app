@@ -46,16 +46,6 @@ export default function CategoryShow({
     const [isPatching, setIsPatching] = useState(false);
     const pickerTriggerRef = useRef<HTMLSpanElement>(null);
 
-    const handleBack = () => {
-        // Use history.back() for scroll preservation when navigating from Dashboard;
-        // fall back to router.visit if the user arrived directly (no in-app history)
-        if (window.history.length > 1 && document.referrer.includes(window.location.origin)) {
-            window.history.back();
-        } else {
-            router.visit('/');
-        }
-    };
-
     const handleAccountChange = useCallback((account: string) => {
         router.get('/', { account });
     }, []);
@@ -120,7 +110,6 @@ export default function CategoryShow({
                     icon={category.icon}
                     totalAmountCents={totalAmountCents}
                     transactionCount={transactionCount}
-                    onBack={handleBack}
                 />
             </motion.div>
 
