@@ -14,7 +14,7 @@ type Props = {
 };
 
 function DeltaIndicator({ deltaCents }: { deltaCents: number }) {
-    if (deltaCents === 0) return null;
+    if (deltaCents === 0) return <p className="text-xs mt-0.5 invisible">&nbsp;</p>;
 
     const arrow = deltaCents > 0 ? '\u2191' : '\u2193';
 
@@ -44,8 +44,12 @@ export default function SummaryWidget({ incomeCents, expensesCents, avgIncomeCen
                         className="text-lg font-semibold tabular-nums text-[#10B981]"
                     />
                 )}
-                {incomeAvgLine && !showDashes && (
-                    <DeltaIndicator deltaCents={incomeCents - avgIncomeCents} />
+                {!showDashes && (
+                    incomeAvgLine ? (
+                        <DeltaIndicator deltaCents={incomeCents - avgIncomeCents} />
+                    ) : (
+                        <p className="text-xs mt-0.5 invisible">&nbsp;</p>
+                    )
                 )}
                 <MiniSparkline values={incomeValues} color="#10B981" />
             </div>
@@ -60,8 +64,12 @@ export default function SummaryWidget({ incomeCents, expensesCents, avgIncomeCen
                         className="text-lg font-semibold tabular-nums text-[#FB7185]"
                     />
                 )}
-                {expenseAvgLine && !showDashes && (
-                    <DeltaIndicator deltaCents={expensesCents - avgExpensesCents} />
+                {!showDashes && (
+                    expenseAvgLine ? (
+                        <DeltaIndicator deltaCents={expensesCents - avgExpensesCents} />
+                    ) : (
+                        <p className="text-xs mt-0.5 invisible">&nbsp;</p>
+                    )
                 )}
                 <MiniSparkline values={expenseValues} color="#FB7185" />
             </div>

@@ -50,11 +50,13 @@ export default function CategoryCard({ id, name, color, icon, amountCents, avgAm
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-normal text-white truncate">{name}</p>
-                {showAvg && (
+                {showAvg ? (
                     <p className="flex items-center gap-1 text-xs text-text-tertiary">
                         <TrendingUpDown className="size-3" />
                         {formatAbsAmount(avgAmountCents)}
                     </p>
+                ) : (
+                    <p className="text-xs invisible">&nbsp;</p>
                 )}
             </div>
             <div className="ml-auto flex flex-col items-end">
@@ -63,7 +65,7 @@ export default function CategoryCard({ id, name, color, icon, amountCents, avgAm
                     className="text-2xl font-semibold tabular-nums"
                     style={{ color }}
                 />
-                {deltaNode}
+                {deltaNode ?? <p className="text-xs invisible">&nbsp;</p>}
             </div>
         </Link>
     );
