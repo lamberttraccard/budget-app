@@ -127,6 +127,7 @@ export type RecurringMerchant = {
     lastSeenMonth: string;
     monthCount: number;
     amountVaries: boolean;
+    isActive: boolean;
     minAmountCents: number;
     maxAmountCents: number;
     transactions: RecurringTransaction[];

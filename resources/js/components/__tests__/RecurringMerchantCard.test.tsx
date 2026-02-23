@@ -12,6 +12,7 @@ const defaultProps = {
     lastSeenMonth: '2026-02',
     monthCount: 4,
     amountVaries: false,
+    isActive: true,
     minAmountCents: -1599,
     maxAmountCents: -1599,
     transactions: [

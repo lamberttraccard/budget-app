@@ -13,6 +13,9 @@ class RecurringDetectionService
 
     private const MAX_AMOUNT_VARIATION = 0.20;
 
+    /** A merchant is "active" if last seen within this many months from today. */
+    private const ACTIVE_WITHIN_MONTHS = 1;
+
     /**
      * Detect recurring transactions (subscriptions) by finding merchants with
      * consistent monthly charges: same amount, one charge per month, 3+ consecutive months.
@@ -29,6 +32,7 @@ class RecurringDetectionService
      *     lastSeenMonth: string,
      *     monthCount: int,
      *     amountVaries: bool,
+     *     isActive: bool,
      *     minAmountCents: int,
      *     maxAmountCents: int,
      *     transactions: array,
@@ -208,6 +212,7 @@ class RecurringDetectionService
     private function buildResult(array $recurringMerchants, Collection $allTransactions): array
     {
         $transactionsByMerchant = $allTransactions->groupBy('normalized_merchant');
+        $activeThreshold = Carbon::now()->subMonths(self::ACTIVE_WITHIN_MONTHS)->format('Y-m');
         $result = [];
 
         foreach ($recurringMerchants as $merchant) {
@@ -229,6 +234,8 @@ class RecurringDetectionService
             // UI hint: flag if amounts aren't all identical (user sees min–max range)
             $amountVaries = $absAmounts->min() !== $absAmounts->max();
 
+            $lastSeenMonth = Carbon::parse($mostRecent->date)->format('Y-m');
+
             $result[] = [
                 'merchantName' => $merchant['displayMerchant'],
                 'categoryId' => $mostRecent->category_id,
@@ -236,9 +243,10 @@ class RecurringDetectionService
                 'categoryColor' => $mostRecent->category_color ?? '#6B7280',
                 'typicalAmountCents' => (int) $mostRecent->amount_cents,
                 'frequency' => 'Monthly',
-                'lastSeenMonth' => Carbon::parse($mostRecent->date)->format('Y-m'),
+                'lastSeenMonth' => $lastSeenMonth,
                 'monthCount' => $merchant['monthCount'],
                 'amountVaries' => $amountVaries,
+                'isActive' => $lastSeenMonth >= $activeThreshold,
                 'minAmountCents' => (int) $minAmount,
                 'maxAmountCents' => (int) $maxAmount,
                 'transactions' => $merchantTransactions->map(fn ($t) => [

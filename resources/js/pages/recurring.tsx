@@ -1,10 +1,20 @@
 import { Deferred, Head, router } from '@inertiajs/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import AmbientCircle from '@/components/AmbientCircle';
 import RecurringMerchantCard from '@/components/RecurringMerchantCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import AppLayout from '@/layouts/app-layout';
-import type { RecurringProps } from '@/types';
+import type { RecurringMerchant, RecurringProps } from '@/types';
+
+type StatusFilter = 'all' | 'active' | 'inactive';
+
+const EMPTY_MERCHANTS: RecurringMerchant[] = [];
+
+const filterOptions: { value: StatusFilter; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' },
+];
 
 function RecurringPageSkeleton() {
     return (
@@ -31,6 +41,7 @@ export default function RecurringPage({
     selectedAccountIds,
 }: RecurringProps) {
     const [expandedMerchant, setExpandedMerchant] = useState<string | null>(null);
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
     const toggleMerchant = useCallback((merchantName: string) => {
         setExpandedMerchant((prev) => (prev === merchantName ? null : merchantName));
@@ -44,7 +55,14 @@ export default function RecurringPage({
         });
     }, []);
 
-    const merchants = recurringMerchants ?? [];
+    const merchants = recurringMerchants ?? EMPTY_MERCHANTS;
+
+    const filteredMerchants = useMemo(() => {
+        if (statusFilter === 'all') return merchants;
+        return merchants.filter((m) =>
+            statusFilter === 'active' ? m.isActive : !m.isActive,
+        );
+    }, [merchants, statusFilter]);
 
     return (
         <AppLayout onAccountsChange={handleAccountsChange}>
@@ -54,20 +72,38 @@ export default function RecurringPage({
 
             <div className="relative py-6 space-y-4">
                 {/* Header */}
-                <div>
+                <div className="flex items-center justify-between gap-3">
                     <h1 className="text-lg font-semibold text-white">Recurring</h1>
+                    <div role="radiogroup" aria-label="Filter by status" className="flex rounded-lg bg-surface-elevated/60 p-0.5">
+                        {filterOptions.map((option) => (
+                            <button
+                                key={option.value}
+                                type="button"
+                                role="radio"
+                                aria-checked={statusFilter === option.value}
+                                onClick={() => setStatusFilter(option.value)}
+                                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                                    statusFilter === option.value
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-text-tertiary hover:text-text-secondary'
+                                }`}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Recurring merchant list */}
                 <Deferred data="recurringMerchants" fallback={<RecurringPageSkeleton />}>
-                    {merchants.length > 0 && (
+                    {filteredMerchants.length > 0 && (
                         <p className="text-xs text-text-secondary -mt-2">
-                            {merchants.length} recurring transaction{merchants.length === 1 ? '' : 's'}
+                            {filteredMerchants.length} recurring transaction{filteredMerchants.length === 1 ? '' : 's'}
                         </p>
                     )}
-                    {merchants.length > 0 ? (
+                    {filteredMerchants.length > 0 ? (
                         <div className="space-y-3">
-                            {merchants.map((merchant) => (
+                            {filteredMerchants.map((merchant) => (
                                 <RecurringMerchantCard
                                     key={merchant.merchantName}
                                     {...merchant}
@@ -79,7 +115,9 @@ export default function RecurringPage({
                     ) : (
                         <div className="py-12 text-center">
                             <p className="text-sm text-text-tertiary">
-                                No recurring transactions detected yet
+                                {statusFilter === 'all'
+                                    ? 'No recurring transactions detected yet'
+                                    : `No ${statusFilter} recurring transactions`}
                             </p>
                         </div>
                     )}

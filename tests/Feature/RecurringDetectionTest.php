@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Import;
 use App\Models\Transaction;
 use App\Services\RecurringDetectionService;
+use Carbon\Carbon;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -265,6 +266,42 @@ class RecurringDetectionTest extends TestCase
 
         // Only Jan and Mar are single-tx months — not consecutive, so rejected
         $this->assertCount(0, $result);
+    }
+
+    public function test_marks_recent_merchant_as_active(): void
+    {
+        $now = Carbon::create(2026, 3, 15);
+        Carbon::setTestNow($now);
+
+        // Last seen in Feb 2026 (previous month) — should be active
+        $this->createTransaction('Netflix', '2026-01-15', -1599);
+        $this->createTransaction('Netflix', '2026-02-15', -1599);
+        $this->createTransaction('Netflix', '2026-03-15', -1599);
+
+        $result = $this->service->detectRecurring();
+
+        $this->assertCount(1, $result);
+        $this->assertTrue($result[0]['isActive']);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_marks_old_merchant_as_inactive(): void
+    {
+        $now = Carbon::create(2026, 6, 15);
+        Carbon::setTestNow($now);
+
+        // Last seen in Mar 2026 — 3 months ago, should be inactive
+        $this->createTransaction('Netflix', '2026-01-15', -1599);
+        $this->createTransaction('Netflix', '2026-02-15', -1599);
+        $this->createTransaction('Netflix', '2026-03-15', -1599);
+
+        $result = $this->service->detectRecurring();
+
+        $this->assertCount(1, $result);
+        $this->assertFalse($result[0]['isActive']);
+
+        Carbon::setTestNow();
     }
 
     public function test_enough_single_tx_months_but_longest_run_too_short(): void
