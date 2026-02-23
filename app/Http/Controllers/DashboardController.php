@@ -38,6 +38,7 @@ class DashboardController extends Controller
             'availableMonths' => $this->budgetQueryService->getAvailableMonths($accountParam),
             'importPreview' => session('importPreview'),
             'averageData' => Inertia::defer(fn () => $this->computeAverageData($accountParam), 'averages'),
+            'sparklineData' => Inertia::defer(fn () => $this->budgetQueryService->getMonthlyExpenseAndIncomeTotals($accountParam), 'averages'),
             'imports' => Inertia::defer(fn () => $this->getImportRecords(), 'imports'),
         ]);
     }
