@@ -6,8 +6,8 @@ type Props = {
 };
 
 const VIEW_W = 100;
-const VIEW_H = 32;
-const PAD_Y = 4;
+const VIEW_H = 20;
+const PAD_Y = 3;
 
 export default function MiniSparkline({ values, color }: Props) {
     const gradientId = useId();
@@ -43,7 +43,7 @@ export default function MiniSparkline({ values, color }: Props) {
     const fillPath = `${linePath} L ${points[points.length - 1].x},${VIEW_H} L ${points[0].x},${VIEW_H} Z`;
 
     return (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: 32 }}>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: 20 }}>
             <svg
                 viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
                 preserveAspectRatio="none"
