@@ -68,6 +68,11 @@ export type MonthlyTotal = {
     amountCents: number;
 };
 
+export type SparklineData = {
+    monthlyIncomeTotals: MonthlyTotal[];
+    monthlyExpenseTotals: MonthlyTotal[];
+};
+
 export type CategoryShowProps = {
     category: {
         id: number;
@@ -140,6 +145,7 @@ export type DashboardProps = {
     availableMonths: string[];
     importPreview?: ImportPreview | null;
     averageData?: AverageData;
+    sparklineData?: SparklineData;
     imports?: ImportRecord[];
 };
 
