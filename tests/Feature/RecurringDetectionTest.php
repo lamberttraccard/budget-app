@@ -28,7 +28,7 @@ class RecurringDetectionTest extends TestCase
         parent::setUp();
         $this->seed(CategorySeeder::class);
         $this->service = app(RecurringDetectionService::class);
-        $this->account = Account::factory()->personal()->create();
+        $this->account = Account::factory()->create();
         $this->import = Import::factory()->completed()->create();
         $this->food = Category::where('slug', 'food')->first();
     }
@@ -154,9 +154,9 @@ class RecurringDetectionTest extends TestCase
         $this->assertFalse($result[0]['amountVaries']);
     }
 
-    public function test_filters_by_account_type(): void
+    public function test_filters_by_account(): void
     {
-        $proAccount = Account::factory()->professional()->create();
+        $proAccount = Account::factory()->create();
 
         // Personal recurring
         $this->createTransaction('Netflix', '2026-01-15', -1599);
@@ -167,8 +167,8 @@ class RecurringDetectionTest extends TestCase
         $this->createTransaction('Office 365', '2026-02-15', -2200, null, $proAccount);
         $this->createTransaction('Office 365', '2026-03-15', -2200, null, $proAccount);
 
-        $personalResult = $this->service->detectRecurring('personal');
-        $proResult = $this->service->detectRecurring('professional');
+        $personalResult = $this->service->detectRecurring([$this->account->id]);
+        $proResult = $this->service->detectRecurring([$proAccount->id]);
 
         $this->assertCount(1, $personalResult);
         $this->assertEqualsIgnoringCase('netflix', strtolower($personalResult[0]['merchantName']));

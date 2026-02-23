@@ -66,7 +66,6 @@ trait FormatsResponse
             'account_id' => $account['id'],
             'account_name' => $account['name'],
             'account_bank' => $account['bank'],
-            'account_type' => $account['type'],
             'income_cents' => $account['incomeCents'],
             'expenses_cents' => $account['expensesCents'],
             'net_cents' => $account['netCents'],

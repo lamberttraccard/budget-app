@@ -18,7 +18,7 @@ class CategoryControllerTest extends TestCase
 
     private function createTransactionsForCategory(Category $category, int $count = 3, string $month = '2026-02'): void
     {
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         for ($i = 0; $i < $count; $i++) {
@@ -95,7 +95,7 @@ class CategoryControllerTest extends TestCase
             'parent_id' => $parent->id,
         ]);
 
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         // Transactions on the subcategory
@@ -210,14 +210,14 @@ class CategoryControllerTest extends TestCase
             );
     }
 
-    public function test_show_filters_by_account_type(): void
+    public function test_show_filters_by_account_ids(): void
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
         $category = Category::where('slug', 'food')->first();
 
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         Transaction::factory()->create([
@@ -238,11 +238,11 @@ class CategoryControllerTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('categories.show', ['category' => $category->id, 'month' => '2026-02', 'account' => 'personal']))
+            ->get(route('categories.show', ['category' => $category->id, 'month' => '2026-02', 'accounts' => $personalAccount->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('categories/show')
-                ->where('currentAccount', 'personal')
+                ->where('selectedAccountIds', [$personalAccount->id])
                 ->loadDeferredProps(fn (Assert $page) => $page
                     ->has('transactions', 1)
                     ->where('transactions.0.description', 'Personal food')
@@ -256,7 +256,7 @@ class CategoryControllerTest extends TestCase
         $user = User::factory()->create();
         $category = Category::where('slug', 'restaurants')->first();
 
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         Transaction::factory()->create([
@@ -290,7 +290,7 @@ class CategoryControllerTest extends TestCase
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
         $category = Category::where('slug', 'food')->first();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         Transaction::factory()->create([
@@ -320,7 +320,7 @@ class CategoryControllerTest extends TestCase
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
         $category = Category::where('slug', 'food')->first();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         Transaction::factory()->create([
@@ -364,7 +364,7 @@ class CategoryControllerTest extends TestCase
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
         $category = Category::where('slug', 'food')->first();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         // Transaction outside 12-month window (should be excluded: 2025-02 < fromMonth 2025-03)
@@ -409,8 +409,8 @@ class CategoryControllerTest extends TestCase
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
         $category = Category::where('slug', 'food')->first();
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         Transaction::factory()->create([
@@ -429,7 +429,7 @@ class CategoryControllerTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('categories.show', ['category' => $category->id, 'month' => '2026-02', 'account' => 'personal']))
+            ->get(route('categories.show', ['category' => $category->id, 'month' => '2026-02', 'accounts' => $personalAccount->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->has('monthlyTotals', 1)
@@ -450,7 +450,7 @@ class CategoryControllerTest extends TestCase
             'parent_id' => $parent->id,
         ]);
 
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         Transaction::factory()->create([
@@ -483,7 +483,7 @@ class CategoryControllerTest extends TestCase
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
         $category = Category::where('slug', 'food')->first();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         // Transaction in Feb 2026 (inside chart_month=2026-02 window, outside month=2025-10 window)

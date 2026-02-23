@@ -42,7 +42,7 @@ class DashboardTest extends TestCase
                 ->has('incomeCents')
                 ->has('expensesCents')
                 ->has('currentMonth')
-                ->has('currentAccount')
+                ->has('selectedAccountIds')
                 ->has('availableMonths')
             );
     }
@@ -51,7 +51,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         $food = Category::where('slug', 'food')->first();
@@ -95,7 +95,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $income = Category::where('slug', 'income')->first();
         $now = now()->format('Y-m');
@@ -126,7 +126,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $transport = Category::where('slug', 'transport')->first();
@@ -167,7 +167,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -200,7 +200,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -261,7 +261,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -304,7 +304,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -333,12 +333,12 @@ class DashboardTest extends TestCase
             );
     }
 
-    public function test_dashboard_defaults_to_personal_account()
+    public function test_dashboard_defaults_to_all_accounts()
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $now = now()->format('Y-m');
@@ -361,9 +361,9 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('home'))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('currentAccount', 'personal')
+                ->where('selectedAccountIds', [])
                 ->has('categoryTotals', 1)
-                ->where('categoryTotals.0.amountCents', -5000)
+                ->where('categoryTotals.0.amountCents', -14000)
             );
     }
 
@@ -371,8 +371,8 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $now = now()->format('Y-m');
@@ -393,9 +393,9 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('home', ['account' => 'professional']))
+            ->get(route('home', ['accounts' => $professionalAccount->id]))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('currentAccount', 'professional')
+                ->where('selectedAccountIds', [$professionalAccount->id])
                 ->has('categoryTotals', 1)
                 ->where('categoryTotals.0.amountCents', -9000)
             );
@@ -405,8 +405,8 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $now = now()->format('Y-m');
@@ -427,22 +427,22 @@ class DashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('home', ['account' => 'personal']))
+            ->get(route('home', ['accounts' => $personalAccount->id]))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('categoryTotals', 1)
                 ->where('categoryTotals.0.amountCents', -5000)
             );
     }
 
-    public function test_dashboard_invalid_account_defaults_to_personal()
+    public function test_dashboard_invalid_accounts_defaults_to_all()
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get(route('home', ['account' => 'invalid']))
+            ->get(route('home', ['accounts' => 'invalid']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
-                ->where('currentAccount', 'personal')
+                ->where('selectedAccountIds', [])
             );
     }
 
@@ -450,8 +450,8 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -479,10 +479,10 @@ class DashboardTest extends TestCase
 
         // January + Professional = only the 9000 transaction
         $this->actingAs($user)
-            ->get(route('home', ['month' => '2026-01', 'account' => 'professional']))
+            ->get(route('home', ['month' => '2026-01', 'accounts' => $professionalAccount->id]))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->where('currentMonth', '2026-01')
-                ->where('currentAccount', 'professional')
+                ->where('selectedAccountIds', [$professionalAccount->id])
                 ->has('categoryTotals', 1)
                 ->where('categoryTotals.0.amountCents', -9000)
             );
@@ -492,8 +492,8 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -514,7 +514,7 @@ class DashboardTest extends TestCase
 
         // Personal view should only see January
         $this->actingAs($user)
-            ->get(route('home', ['account' => 'personal']))
+            ->get(route('home', ['accounts' => $personalAccount->id]))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->has('availableMonths', 1)
                 ->where('availableMonths.0', '2026-01')
@@ -524,8 +524,8 @@ class DashboardTest extends TestCase
     public function test_shared_props_include_account_contexts()
     {
         $user = User::factory()->create();
-        Account::factory()->personal()->create();
-        Account::factory()->professional()->create();
+        Account::factory()->create();
+        Account::factory()->create();
 
         $this->actingAs($user)
             ->get(route('home'))
@@ -538,7 +538,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -569,7 +569,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $income = Category::where('slug', 'income')->first();
@@ -596,7 +596,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $transport = Category::where('slug', 'transport')->first();
@@ -621,7 +621,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $now = now()->format('Y-m');
@@ -647,8 +647,8 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -662,7 +662,7 @@ class DashboardTest extends TestCase
 
         // Personal avg: (-10000 + -20000) / 2 = -15000
         $this->actingAs($user)
-            ->get(route('home', ['account' => 'personal']))
+            ->get(route('home', ['accounts' => $personalAccount->id]))
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')
                 ->loadDeferredProps('averages', fn (Assert $page) => $page
                     ->where('averageData.categoryAverages.food.avgAmountCents', -15000)
@@ -674,7 +674,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -694,7 +694,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $transport = Category::where('slug', 'transport')->first();
@@ -721,7 +721,7 @@ class DashboardTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $now = now()->format('Y-m');

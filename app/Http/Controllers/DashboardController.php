@@ -20,32 +20,29 @@ class DashboardController extends Controller
             $monthParam = now()->format('Y-m');
         }
 
-        $accountParam = $request->query('account', 'personal');
-        if (! in_array($accountParam, ['personal', 'professional'], true)) {
-            $accountParam = 'personal';
-        }
+        $accountIds = $this->parseAccountIds($request);
 
         [$year, $month] = array_map('intval', explode('-', $monthParam));
 
-        $data = $this->budgetQueryService->getMonthlyData($year, $month, $accountParam);
+        $data = $this->budgetQueryService->getMonthlyData($year, $month, $accountIds);
 
         return Inertia::render('dashboard', [
             'categoryTotals' => $data['categoryTotals'],
             'incomeCents' => $data['incomeCents'],
             'expensesCents' => $data['expensesCents'],
             'currentMonth' => $monthParam,
-            'currentAccount' => $accountParam,
-            'availableMonths' => $this->budgetQueryService->getAvailableMonths($accountParam),
+            'selectedAccountIds' => $accountIds ?? [],
+            'availableMonths' => $this->budgetQueryService->getAvailableMonths($accountIds),
             'importPreview' => session('importPreview'),
-            'averageData' => Inertia::defer(fn () => $this->computeAverageData($accountParam), 'averages'),
-            'sparklineData' => Inertia::defer(fn () => $this->budgetQueryService->getMonthlyExpenseAndIncomeTotals($accountParam), 'averages'),
+            'averageData' => Inertia::defer(fn () => $this->computeAverageData($accountIds), 'averages'),
+            'sparklineData' => Inertia::defer(fn () => $this->budgetQueryService->getMonthlyExpenseAndIncomeTotals($accountIds), 'averages'),
             'imports' => Inertia::defer(fn () => $this->getImportRecords(), 'imports'),
         ]);
     }
 
-    private function computeAverageData(string $accountType): ?array
+    private function computeAverageData(?array $accountIds): ?array
     {
-        $averages = $this->budgetQueryService->getMonthlyAverages($accountType);
+        $averages = $this->budgetQueryService->getMonthlyAverages($accountIds);
 
         if ($averages['completeMonthCount'] < 2) {
             return null;

@@ -35,7 +35,7 @@ export default function CategoryShow({
     totalAmountCents,
     transactionCount,
     currentMonth,
-    currentAccount,
+    selectedAccountIds,
     monthlyTotals,
     chartMonth,
 }: CategoryShowProps) {
@@ -46,9 +46,15 @@ export default function CategoryShow({
     const [isPatching, setIsPatching] = useState(false);
     const pickerTriggerRef = useRef<HTMLSpanElement>(null);
 
-    const handleAccountChange = useCallback((account: string) => {
-        router.get('/', { account });
-    }, []);
+    const handleAccountsChange = useCallback((accountIds: number[]) => {
+        const params: Record<string, string> = { month: currentMonth };
+        if (chartMonth) params.chart_month = chartMonth;
+        if (accountIds.length > 0) params.accounts = accountIds.join(',');
+        router.get(window.location.pathname, params, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    }, [currentMonth, chartMonth]);
 
     const handleSubcategoryClick = (subcategoryId: number) => {
         setActiveSubcategoryId(
@@ -95,7 +101,7 @@ export default function CategoryShow({
         : transactions;
 
     return (
-        <AppLayout currentAccount={currentAccount} onAccountChange={handleAccountChange} accentColor={category.color}>
+        <AppLayout selectedAccountIds={selectedAccountIds} onAccountsChange={handleAccountsChange} accentColor={category.color}>
             <Head title={category.name} />
 
             <motion.div
@@ -124,7 +130,7 @@ export default function CategoryShow({
                     currentMonth={currentMonth}
                     accentColor={category.color}
                     categoryId={category.id}
-                    currentAccount={currentAccount}
+                    selectedAccountIds={selectedAccountIds}
                     chartMonth={chartMonth}
                 />
 

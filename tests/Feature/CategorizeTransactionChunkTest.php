@@ -26,7 +26,7 @@ class CategorizeTransactionChunkTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->account = Account::factory()->personal()->create();
+        $this->account = Account::factory()->create();
         $this->import = Import::factory()->completed()->create();
         $this->seedCategories();
     }

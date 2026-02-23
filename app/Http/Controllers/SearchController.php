@@ -14,7 +14,7 @@ class SearchController extends Controller
     public function index(Request $request): Response
     {
         $q = $request->string('q')->trim()->toString();
-        $account = $request->string('account')->toString() ?: null;
+        $accountIds = $this->parseAccountIds($request);
 
         $results = [];
         $totalCount = 0;
@@ -22,7 +22,7 @@ class SearchController extends Controller
         if (strlen($q) >= 2) {
             $data = $this->budgetQueryService->queryTransactions([
                 'q' => $q,
-                'account_type' => $account,
+                'account_ids' => $accountIds,
                 'limit' => 50,
             ]);
             $results = $data['transactions'];
@@ -33,7 +33,7 @@ class SearchController extends Controller
             'results' => $results,
             'totalCount' => $totalCount,
             'query' => $q,
-            'currentAccount' => $account,
+            'selectedAccountIds' => $accountIds ?? [],
         ]);
     }
 }

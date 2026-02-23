@@ -26,7 +26,7 @@ const defaultProps = {
     currentMonth: '2026-02',
     accentColor: '#3B82F6',
     categoryId: 1,
-    currentAccount: 'personal',
+    selectedAccountIds: [1],
     chartMonth: '2026-02',
 };
 
@@ -94,7 +94,7 @@ describe('CategoryMonthlyChart', () => {
 
         expect(router.get).toHaveBeenCalledWith(
             '/categories/1',
-            { month: '2026-01', account: 'personal', chart_month: '2026-02' },
+            { month: '2026-01', accounts: '1', chart_month: '2026-02' },
             expect.objectContaining({
                 preserveState: true,
                 preserveScroll: true,
@@ -138,7 +138,7 @@ describe('CategoryMonthlyChart', () => {
 
         expect(router.get).toHaveBeenCalledWith(
             '/categories/1',
-            { month: '2026-01', account: 'personal', chart_month: '2026-02' },
+            { month: '2026-01', accounts: '1', chart_month: '2026-02' },
             expect.objectContaining({ preserveState: true }),
         );
     });

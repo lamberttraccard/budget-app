@@ -29,7 +29,7 @@ class GetCategoryTotals extends Tool
         return [
             'year' => $schema->integer()->required()->description('Year (e.g. 2026)'),
             'month' => $schema->integer()->required()->min(1)->max(12)->description('Month number (1-12)'),
-            'account_type' => $schema->string()->nullable()->enum(['personal', 'professional'])->description('Filter by account type'),
+            'account_ids' => $schema->array()->nullable()->items($schema->integer())->description('Filter by account IDs. Omit for all accounts.'),
         ];
     }
 
@@ -37,15 +37,15 @@ class GetCategoryTotals extends Tool
     {
         $year = (int) $request->get('year');
         $month = (int) $request->get('month');
-        $accountType = $request->get('account_type');
+        $accountIds = $request->get('account_ids');
 
-        $data = $this->queryService->getMonthlyData($year, $month, $accountType);
+        $data = $this->queryService->getMonthlyData($year, $month, $accountIds);
 
         $formatted = array_map([$this, 'formatCategoryItem'], $data['categoryTotals']);
 
         $meta = [
             'period' => sprintf('%d-%02d', $year, $month),
-            'account' => $accountType ?? 'all',
+            'account_ids' => $accountIds,
             'total_count' => count($formatted),
             'income_cents' => $data['incomeCents'],
             'expenses_cents' => $data['expensesCents'],

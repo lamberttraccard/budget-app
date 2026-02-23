@@ -29,7 +29,7 @@ class GetAccountSummary extends Tool
         return [
             'year' => $schema->integer()->nullable()->description('Filter to a specific year (e.g. 2026)'),
             'month' => $schema->integer()->nullable()->min(1)->max(12)->description('Filter to a specific month (1-12), requires year'),
-            'account_type' => $schema->string()->nullable()->enum(['personal', 'professional'])->description('Filter by account type'),
+            'account_ids' => $schema->array()->nullable()->items($schema->integer())->description('Filter by account IDs. Omit for all accounts.'),
         ];
     }
 
@@ -37,7 +37,7 @@ class GetAccountSummary extends Tool
     {
         $year = $request->get('year') !== null ? (int) $request->get('year') : null;
         $month = $request->get('month') !== null ? (int) $request->get('month') : null;
-        $accountType = $request->get('account_type');
+        $accountIds = $request->get('account_ids');
 
         if ($month !== null && $year === null) {
             return Response::error('The month parameter requires year to be specified.');
@@ -46,8 +46,8 @@ class GetAccountSummary extends Tool
         $data = $this->queryService->getAccountSummary($year, $month);
 
         $accounts = $data['accounts'];
-        if ($accountType !== null) {
-            $accounts = array_values(array_filter($accounts, fn ($a) => $a['type'] === $accountType));
+        if ($accountIds !== null) {
+            $accounts = array_values(array_filter($accounts, fn ($a) => in_array($a['id'], $accountIds)));
         }
 
         $formatted = array_map([$this, 'formatAccountItem'], $accounts);
@@ -59,10 +59,10 @@ class GetAccountSummary extends Tool
         $meta = [
             'period' => $period,
             'total_count' => count($formatted),
-            'total_income_cents' => $accountType !== null
+            'total_income_cents' => $accountIds !== null
                 ? array_sum(array_column($accounts, 'incomeCents'))
                 : $data['totalIncomeCents'],
-            'total_expenses_cents' => $accountType !== null
+            'total_expenses_cents' => $accountIds !== null
                 ? array_sum(array_column($accounts, 'expensesCents'))
                 : $data['totalExpensesCents'],
         ];

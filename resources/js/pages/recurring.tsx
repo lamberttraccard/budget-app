@@ -28,7 +28,7 @@ function RecurringPageSkeleton() {
 
 export default function RecurringPage({
     recurringMerchants,
-    currentAccount,
+    selectedAccountIds,
 }: RecurringProps) {
     const [expandedMerchant, setExpandedMerchant] = useState<string | null>(null);
 
@@ -36,18 +36,18 @@ export default function RecurringPage({
         setExpandedMerchant((prev) => (prev === merchantName ? null : merchantName));
     }, []);
 
-    const handleAccountChange = useCallback((account: string) => {
-        router.get('/recurring', { account }, {
+    const handleAccountsChange = useCallback((accountIds: number[]) => {
+        router.get('/recurring', accountIds.length > 0 ? { accounts: accountIds.join(',') } : {}, {
             preserveState: true,
             replace: true,
-            only: ['recurringMerchants', 'currentAccount'],
+            only: ['recurringMerchants', 'selectedAccountIds'],
         });
     }, []);
 
     const merchants = recurringMerchants ?? [];
 
     return (
-        <AppLayout currentAccount={currentAccount ?? undefined} onAccountChange={handleAccountChange}>
+        <AppLayout selectedAccountIds={selectedAccountIds} onAccountsChange={handleAccountsChange}>
             <Head title="Recurring" />
 
             <AmbientCircle />

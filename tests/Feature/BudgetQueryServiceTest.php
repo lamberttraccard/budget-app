@@ -38,7 +38,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_category_totals_include_required_fields()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -68,7 +68,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_categories_with_no_transactions_are_excluded()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -90,7 +90,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_income_cents_correctly_sums_income_category()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $income = Category::where('slug', 'income')->first();
 
@@ -117,7 +117,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_expenses_cents_is_absolute_value_of_non_income_sums()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $transport = Category::where('slug', 'transport')->first();
@@ -153,7 +153,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_sorting_by_highest_absolute_amount_first()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $transport = Category::where('slug', 'transport')->first();
@@ -189,11 +189,11 @@ class BudgetQueryServiceTest extends TestCase
         $this->assertEquals('food', $result['categoryTotals'][2]['slug']);
     }
 
-    public function test_get_monthly_data_filters_by_account_type()
+    public function test_get_monthly_data_filters_by_account_ids()
     {
         $this->seed(CategorySeeder::class);
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -212,20 +212,30 @@ class BudgetQueryServiceTest extends TestCase
             'import_id' => $import->id,
         ]);
 
-        $personalResult = $this->service->getMonthlyData(2026, 2, 'personal');
+        $personalResult = $this->service->getMonthlyData(2026, 2, [$personalAccount->id]);
         $this->assertCount(1, $personalResult['categoryTotals']);
         $this->assertEquals(-5000, $personalResult['categoryTotals'][0]['amountCents']);
 
-        $professionalResult = $this->service->getMonthlyData(2026, 2, 'professional');
+        $professionalResult = $this->service->getMonthlyData(2026, 2, [$professionalAccount->id]);
         $this->assertCount(1, $professionalResult['categoryTotals']);
         $this->assertEquals(-9000, $professionalResult['categoryTotals'][0]['amountCents']);
+
+        // Multi-account filter
+        $bothResult = $this->service->getMonthlyData(2026, 2, [$personalAccount->id, $professionalAccount->id]);
+        $this->assertCount(1, $bothResult['categoryTotals']);
+        $this->assertEquals(-14000, $bothResult['categoryTotals'][0]['amountCents']);
+
+        // Null = all accounts
+        $allResult = $this->service->getMonthlyData(2026, 2);
+        $this->assertCount(1, $allResult['categoryTotals']);
+        $this->assertEquals(-14000, $allResult['categoryTotals'][0]['amountCents']);
     }
 
-    public function test_get_available_months_filters_by_account_type()
+    public function test_get_available_months_filters_by_account_ids()
     {
         $this->seed(CategorySeeder::class);
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -244,11 +254,11 @@ class BudgetQueryServiceTest extends TestCase
             'amount_cents' => -9000,
         ]);
 
-        $personalMonths = $this->service->getAvailableMonths('personal');
+        $personalMonths = $this->service->getAvailableMonths([$personalAccount->id]);
         $this->assertCount(1, $personalMonths);
         $this->assertEquals('2026-01', $personalMonths[0]);
 
-        $professionalMonths = $this->service->getAvailableMonths('professional');
+        $professionalMonths = $this->service->getAvailableMonths([$professionalAccount->id]);
         $this->assertCount(1, $professionalMonths);
         $this->assertEquals('2026-02', $professionalMonths[0]);
 
@@ -257,11 +267,11 @@ class BudgetQueryServiceTest extends TestCase
         $this->assertCount(2, $allMonths);
     }
 
-    public function test_get_category_detail_filters_by_account_type()
+    public function test_get_category_detail_filters_by_account_ids()
     {
         $this->seed(CategorySeeder::class);
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -282,12 +292,12 @@ class BudgetQueryServiceTest extends TestCase
             'description' => 'Professional food',
         ]);
 
-        $personalResult = $this->service->getCategoryDetail($food->id, 2026, 2, 'personal');
+        $personalResult = $this->service->getCategoryDetail($food->id, 2026, 2, [$personalAccount->id]);
         $this->assertCount(1, $personalResult['transactions']);
         $this->assertEquals('Personal food', $personalResult['transactions'][0]['description']);
         $this->assertEquals(-5000, $personalResult['totalAmountCents']);
 
-        $professionalResult = $this->service->getCategoryDetail($food->id, 2026, 2, 'professional');
+        $professionalResult = $this->service->getCategoryDetail($food->id, 2026, 2, [$professionalAccount->id]);
         $this->assertCount(1, $professionalResult['transactions']);
         $this->assertEquals('Professional food', $professionalResult['transactions'][0]['description']);
         $this->assertEquals(-9000, $professionalResult['totalAmountCents']);
@@ -296,7 +306,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_subcategory_transactions_roll_up_to_parent()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $fuel = Category::where('slug', 'transport-fuel')->first();
 
@@ -322,7 +332,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_parent_and_subcategory_transactions_aggregate_together()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $transport = Category::where('slug', 'transport')->first();
         $fuel = Category::where('slug', 'transport-fuel')->first();
@@ -354,7 +364,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_income_subcategory_transactions_roll_up_to_income_total()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $salary = Category::where('slug', 'income-salary')->first();
 
@@ -378,7 +388,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_monthly_averages_returns_correct_structure()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -408,7 +418,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_monthly_averages_calculates_correct_values()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $income = Category::where('slug', 'income')->first();
@@ -437,7 +447,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_monthly_averages_excludes_current_month()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -457,11 +467,11 @@ class BudgetQueryServiceTest extends TestCase
         $this->assertEquals(-30000, $result['categoryAverages']['food']['avgAmountCents']);
     }
 
-    public function test_monthly_averages_filters_by_account_type()
+    public function test_monthly_averages_filters_by_account_ids()
     {
         $this->seed(CategorySeeder::class);
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -473,17 +483,17 @@ class BudgetQueryServiceTest extends TestCase
         Transaction::factory()->create(['amount_cents' => -50000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $professionalAccount->id, 'import_id' => $import->id]);
         Transaction::factory()->create(['amount_cents' => -60000, 'date' => '2025-11-15', 'category_id' => $food->id, 'account_id' => $professionalAccount->id, 'import_id' => $import->id]);
 
-        $personal = $this->service->getMonthlyAverages('personal');
+        $personal = $this->service->getMonthlyAverages([$personalAccount->id]);
         $this->assertEquals(-15000, $personal['categoryAverages']['food']['avgAmountCents']);
 
-        $professional = $this->service->getMonthlyAverages('professional');
+        $professional = $this->service->getMonthlyAverages([$professionalAccount->id]);
         $this->assertEquals(-55000, $professional['categoryAverages']['food']['avgAmountCents']);
     }
 
     public function test_monthly_averages_returns_empty_when_insufficient_data()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -501,7 +511,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_monthly_averages_rolls_up_subcategories()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $fuel = Category::where('slug', 'transport-fuel')->first();
         $transport = Category::where('slug', 'transport')->first();
@@ -525,7 +535,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_month_filtering_only_includes_specified_month()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -561,7 +571,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_sparkline_data_returns_correct_structure()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $income = Category::where('slug', 'income')->first();
@@ -569,7 +579,7 @@ class BudgetQueryServiceTest extends TestCase
         Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
         Transaction::factory()->create(['amount_cents' => 150000, 'date' => '2025-10-05', 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
 
-        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals([$account->id]);
 
         $this->assertArrayHasKey('monthlyIncomeTotals', $result);
         $this->assertArrayHasKey('monthlyExpenseTotals', $result);
@@ -580,7 +590,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_sparkline_data_separates_income_and_expenses()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $transport = Category::where('slug', 'transport')->first();
@@ -595,7 +605,7 @@ class BudgetQueryServiceTest extends TestCase
         Transaction::factory()->create(['amount_cents' => 200000, 'date' => '2025-11-05', 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
         Transaction::factory()->create(['amount_cents' => -40000, 'date' => '2025-11-10', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
 
-        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals([$account->id]);
 
         $this->assertCount(2, $result['monthlyIncomeTotals']);
         $this->assertEquals('2025-10', $result['monthlyIncomeTotals'][0]['month']);
@@ -613,7 +623,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_sparkline_data_caps_at_12_months()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -623,32 +633,32 @@ class BudgetQueryServiceTest extends TestCase
             Transaction::factory()->create(['amount_cents' => -10000, 'date' => $date, 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
         }
 
-        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals([$account->id]);
 
         $this->assertLessThanOrEqual(12, count($result['monthlyExpenseTotals']));
     }
 
-    public function test_sparkline_data_filters_by_account_type()
+    public function test_sparkline_data_filters_by_account_ids()
     {
         $this->seed(CategorySeeder::class);
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
         Transaction::factory()->create(['amount_cents' => -10000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $personalAccount->id, 'import_id' => $import->id]);
         Transaction::factory()->create(['amount_cents' => -50000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $professionalAccount->id, 'import_id' => $import->id]);
 
-        $personal = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+        $personal = $this->service->getMonthlyExpenseAndIncomeTotals([$personalAccount->id]);
         $this->assertEquals(10000, $personal['monthlyExpenseTotals'][0]['amountCents']);
 
-        $professional = $this->service->getMonthlyExpenseAndIncomeTotals('professional');
+        $professional = $this->service->getMonthlyExpenseAndIncomeTotals([$professionalAccount->id]);
         $this->assertEquals(50000, $professional['monthlyExpenseTotals'][0]['amountCents']);
     }
 
     public function test_sparkline_data_returns_empty_arrays_with_no_data()
     {
-        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals();
 
         $this->assertEmpty($result['monthlyIncomeTotals']);
         $this->assertEmpty($result['monthlyExpenseTotals']);
@@ -659,7 +669,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_transfer_excluded_from_expenses_in_monthly_data()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $transfer = Category::where('slug', 'transfer')->first();
@@ -684,7 +694,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_transfer_excluded_from_monthly_averages()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $transfer = Category::where('slug', 'transfer')->first();
@@ -708,7 +718,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_transfer_excluded_from_sparkline_expenses()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $transfer = Category::where('slug', 'transfer')->first();
@@ -718,7 +728,7 @@ class BudgetQueryServiceTest extends TestCase
         Transaction::factory()->create(['amount_cents' => -50000, 'date' => '2025-10-15', 'category_id' => $transfer->id, 'account_id' => $account->id, 'import_id' => $import->id]);
         Transaction::factory()->create(['amount_cents' => 150000, 'date' => '2025-10-05', 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
 
-        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals([$account->id]);
 
         $this->assertCount(1, $result['monthlyExpenseTotals']);
         // Only food expense, transfer excluded
@@ -729,7 +739,7 @@ class BudgetQueryServiceTest extends TestCase
     public function test_transfer_excluded_from_account_summary_expenses()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
         $transfer = Category::where('slug', 'transfer')->first();
@@ -749,14 +759,14 @@ class BudgetQueryServiceTest extends TestCase
     public function test_sparkline_data_includes_months_with_zero_for_missing_side()
     {
         $this->seed(CategorySeeder::class);
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
         // Only expenses in Oct, no income
         Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
 
-        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals([$account->id]);
 
         $this->assertCount(1, $result['monthlyExpenseTotals']);
         $this->assertEquals(30000, $result['monthlyExpenseTotals'][0]['amountCents']);

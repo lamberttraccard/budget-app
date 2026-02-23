@@ -2,11 +2,11 @@ import { Link } from '@inertiajs/react';
 import { useNavItems } from '@/hooks/use-nav-items';
 
 type BottomDockProps = {
-    currentAccount?: string;
+    selectedAccountIds?: number[];
 };
 
-export default function BottomDock({ currentAccount }: BottomDockProps) {
-    const items = useNavItems(currentAccount);
+export default function BottomDock({ selectedAccountIds }: BottomDockProps) {
+    const items = useNavItems(selectedAccountIds);
 
     return (
         <nav

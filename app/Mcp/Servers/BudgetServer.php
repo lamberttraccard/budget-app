@@ -28,7 +28,6 @@ Use the available tools to query transactions, categories, and spending summarie
 **Available query dimensions:**
 - By category (14 predefined categories)
 - By date range (month or custom range)
-- By account type (personal or professional)
 - By individual transaction
 - By month-over-month comparison (two months side by side with deltas)
 - By account summary (per-account income/expenses/net)

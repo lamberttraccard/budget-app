@@ -26,7 +26,7 @@ class RecurringControllerTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -47,7 +47,7 @@ class RecurringControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('recurring')
-                ->where('currentAccount', null)
+                ->where('selectedAccountIds', [])
                 ->loadDeferredProps(fn (Assert $page) => $page
                     ->has('recurringMerchants', 1)
                 )
@@ -73,8 +73,8 @@ class RecurringControllerTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $personalAccount = Account::factory()->personal()->create();
-        $proAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $proAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -103,11 +103,11 @@ class RecurringControllerTest extends TestCase
         }
 
         $this->actingAs($user)
-            ->get(route('recurring', ['account' => 'personal']))
+            ->get(route('recurring', ['accounts' => $personalAccount->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('recurring')
-                ->where('currentAccount', 'personal')
+                ->where('selectedAccountIds', [$personalAccount->id])
                 ->loadDeferredProps(fn (Assert $page) => $page
                     ->has('recurringMerchants', 1)
                 )

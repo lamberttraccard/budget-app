@@ -32,7 +32,7 @@ class GetMonthlyComparison extends Tool
             'compare_year' => $schema->integer()->required()->min(2000)->max(2100)->description('Comparison year (e.g. 2026)'),
             'compare_month' => $schema->integer()->required()->min(1)->max(12)->description('Comparison month number (1-12)'),
             'category_id' => $schema->integer()->nullable()->description('Filter to a single category by ID'),
-            'account_type' => $schema->string()->nullable()->enum(['personal', 'professional'])->description('Filter by account type'),
+            'account_ids' => $schema->array()->nullable()->items($schema->integer())->description('Filter by account IDs. Omit for all accounts.'),
         ];
     }
 
@@ -43,10 +43,10 @@ class GetMonthlyComparison extends Tool
         $compareYear = (int) $request->get('compare_year');
         $compareMonth = (int) $request->get('compare_month');
         $categoryId = $request->get('category_id') !== null ? (int) $request->get('category_id') : null;
-        $accountType = $request->get('account_type');
+        $accountIds = $request->get('account_ids');
 
         $data = $this->queryService->getMonthlyComparison(
-            $baseYear, $baseMonth, $compareYear, $compareMonth, $categoryId, $accountType,
+            $baseYear, $baseMonth, $compareYear, $compareMonth, $categoryId, $accountIds,
         );
 
         $formatted = array_map([$this, 'formatComparisonItem'], $data['categories']);
@@ -54,7 +54,7 @@ class GetMonthlyComparison extends Tool
         $meta = [
             'base_period' => sprintf('%d-%02d', $baseYear, $baseMonth),
             'compare_period' => sprintf('%d-%02d', $compareYear, $compareMonth),
-            'account' => $accountType ?? 'all',
+            'account_ids' => $accountIds,
             'category_filter' => $categoryId,
             'total_count' => count($formatted),
             'base_income_cents' => $data['baseIncomeCents'],

@@ -21,14 +21,11 @@ class CategoryController extends Controller
             $monthParam = now()->format('Y-m');
         }
 
-        $accountParam = $request->query('account', 'personal');
-        if (! in_array($accountParam, ['personal', 'professional'], true)) {
-            $accountParam = 'personal';
-        }
+        $accountIds = $this->parseAccountIds($request);
 
         [$year, $month] = array_map('intval', explode('-', $monthParam));
 
-        $data = $this->budgetQueryService->getCategoryDetail($category->id, $year, $month, $accountParam);
+        $data = $this->budgetQueryService->getCategoryDetail($category->id, $year, $month, $accountIds);
 
         $chartMonth = $request->query('chart_month', $monthParam);
         if (! preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $chartMonth)) {
@@ -37,7 +34,7 @@ class CategoryController extends Controller
 
         [$chartYear, $chartMo] = array_map('intval', explode('-', $chartMonth));
         $fromMonth = Carbon::create($chartYear, $chartMo, 1)->subMonths(11)->format('Y-m');
-        $monthlyTotals = $this->budgetQueryService->getCategoryMonthlyTotals($category->id, $fromMonth, $chartMonth, $accountParam);
+        $monthlyTotals = $this->budgetQueryService->getCategoryMonthlyTotals($category->id, $fromMonth, $chartMonth, $accountIds);
 
         return Inertia::render('categories/show', [
             'category' => [
@@ -52,7 +49,7 @@ class CategoryController extends Controller
             'totalAmountCents' => $data['totalAmountCents'],
             'transactionCount' => $data['transactionCount'],
             'currentMonth' => $monthParam,
-            'currentAccount' => $accountParam,
+            'selectedAccountIds' => $accountIds ?? [],
             'monthlyTotals' => $monthlyTotals,
             'chartMonth' => $chartMonth,
         ]);

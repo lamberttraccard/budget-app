@@ -9,7 +9,7 @@ type Props = {
     currentMonth: string;
     accentColor: string;
     categoryId: number;
-    currentAccount: string;
+    selectedAccountIds: number[];
     chartMonth: string;
 };
 
@@ -29,7 +29,7 @@ export default function CategoryMonthlyChart({
     currentMonth,
     accentColor,
     categoryId,
-    currentAccount,
+    selectedAccountIds,
     chartMonth,
 }: Props) {
     const gradientId = useId();
@@ -71,6 +71,33 @@ export default function CategoryMonthlyChart({
         });
     }, [monthlyTotals, chartWidth]);
 
+    const handlePointClick = useCallback(
+        (index: number) => {
+            const month = monthlyTotals[index].month;
+            if (month === currentMonth) return;
+            router.get(
+                `/categories/${categoryId}`,
+                { month, accounts: selectedAccountIds.length > 0 ? selectedAccountIds.join(',') : undefined, chart_month: chartMonth },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    only: ['category', 'subcategories', 'totalAmountCents', 'transactionCount', 'currentMonth', 'selectedAccountIds', 'monthlyTotals', 'chartMonth', 'transactions'],
+                },
+            );
+        },
+        [monthlyTotals, currentMonth, categoryId, selectedAccountIds, chartMonth],
+    );
+
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent, index: number) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handlePointClick(index);
+            }
+        },
+        [handlePointClick],
+    );
+
     if (monthlyTotals.length < 2) {
         return null;
     }
@@ -96,33 +123,6 @@ export default function CategoryMonthlyChart({
     const fillPath = `${linePath} L ${points[points.length - 1].x},${PADDING.top + CHART_HEIGHT} L ${points[0].x},${PADDING.top + CHART_HEIGHT} Z`;
 
     const showEveryOther = monthlyTotals.length > 6;
-
-    const handlePointClick = useCallback(
-        (index: number) => {
-            const month = monthlyTotals[index].month;
-            if (month === currentMonth) return;
-            router.get(
-                `/categories/${categoryId}`,
-                { month, account: currentAccount, chart_month: chartMonth },
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    only: ['category', 'subcategories', 'totalAmountCents', 'transactionCount', 'currentMonth', 'currentAccount', 'monthlyTotals', 'chartMonth', 'transactions'],
-                },
-            );
-        },
-        [monthlyTotals, currentMonth, categoryId, currentAccount],
-    );
-
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent, index: number) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handlePointClick(index);
-            }
-        },
-        [handlePointClick],
-    );
 
     return (
         <motion.div

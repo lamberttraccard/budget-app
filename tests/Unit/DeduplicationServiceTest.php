@@ -72,7 +72,7 @@ class DeduplicationServiceTest extends TestCase
 
     public function test_filter_duplicates_returns_all_when_no_duplicates_exist(): void
     {
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
 
         $transactions = new Collection([
             new TransactionData('2026-01-15', 'Coffee Shop', -450, 'raw1'),
@@ -88,7 +88,7 @@ class DeduplicationServiceTest extends TestCase
 
     public function test_filter_duplicates_skips_existing_hashes(): void
     {
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
 
         $existingHash = $this->service->generateHash('2026-01-15', -450, 'Coffee Shop', $account->id);
         Transaction::factory()->create([
@@ -109,7 +109,7 @@ class DeduplicationServiceTest extends TestCase
 
     public function test_filter_duplicates_handles_mixed_batch(): void
     {
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
 
         $hash1 = $this->service->generateHash('2026-01-15', -450, 'Coffee Shop', $account->id);
         $hash3 = $this->service->generateHash('2026-01-17', -1200, 'Restaurant', $account->id);
@@ -130,7 +130,7 @@ class DeduplicationServiceTest extends TestCase
 
     public function test_filter_duplicates_returns_empty_when_all_are_duplicates(): void
     {
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
 
         $hash1 = $this->service->generateHash('2026-01-15', -450, 'Coffee Shop', $account->id);
         $hash2 = $this->service->generateHash('2026-01-16', -2350, 'Grocery Store', $account->id);
@@ -149,8 +149,8 @@ class DeduplicationServiceTest extends TestCase
 
     public function test_filter_duplicates_scopes_by_account_id(): void
     {
-        $account1 = Account::factory()->personal()->create();
-        $account2 = Account::factory()->professional()->create();
+        $account1 = Account::factory()->create();
+        $account2 = Account::factory()->create();
 
         $hash = $this->service->generateHash('2026-01-15', -450, 'Coffee Shop', $account1->id);
         Transaction::factory()->create(['account_id' => $account1->id, 'dedup_hash' => $hash]);
@@ -167,7 +167,7 @@ class DeduplicationServiceTest extends TestCase
 
     public function test_filter_duplicates_deduplicates_within_batch(): void
     {
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
 
         // Two identical transactions in the same batch (e.g., two coffees same day, same amount)
         $transactions = new Collection([

@@ -16,7 +16,7 @@ class BudgetQueryService
         return "'".implode("','", self::EXCLUDED_SLUGS)."'";
     }
 
-    public function getMonthlyData(int $year, int $month, ?string $accountType = null): array
+    public function getMonthlyData(int $year, int $month, ?array $accountIds = null): array
     {
         $query = Transaction::query()
             ->select([
@@ -41,9 +41,8 @@ class BudgetQueryService
             )
             ->orderByRaw('ABS(SUM(transactions.amount_cents)) DESC');
 
-        if ($accountType !== null) {
-            $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                ->where('accounts.type', $accountType);
+        if ($accountIds !== null) {
+            $query->whereIn('transactions.account_id', $accountIds);
         }
 
         $rows = $query->get();
@@ -74,14 +73,13 @@ class BudgetQueryService
      *
      * @return string[] Array of "YYYY-MM" strings
      */
-    public function getAvailableMonths(?string $accountType = null): array
+    public function getAvailableMonths(?array $accountIds = null): array
     {
         $query = Transaction::query()
             ->select(DB::raw("DISTINCT TO_CHAR(date, 'YYYY-MM') as month"));
 
-        if ($accountType !== null) {
-            $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                ->where('accounts.type', $accountType);
+        if ($accountIds !== null) {
+            $query->whereIn('transactions.account_id', $accountIds);
         }
 
         return $query->orderBy('month')
@@ -89,7 +87,7 @@ class BudgetQueryService
             ->toArray();
     }
 
-    public function getCategoryDetail(int $categoryId, int $year, int $month, ?string $accountType = null): array
+    public function getCategoryDetail(int $categoryId, int $year, int $month, ?array $accountIds = null): array
     {
         $subcategoryIds = Category::where('parent_id', $categoryId)->pluck('id');
 
@@ -109,9 +107,8 @@ class BudgetQueryService
                 ->whereYear('transactions.date', $year)
                 ->whereMonth('transactions.date', $month);
 
-            if ($accountType !== null) {
-                $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                    ->where('accounts.type', $accountType);
+            if ($accountIds !== null) {
+                $query->whereIn('transactions.account_id', $accountIds);
             }
 
             $subcategories = $query
@@ -133,10 +130,8 @@ class BudgetQueryService
             ->whereYear('transactions.date', $year)
             ->whereMonth('transactions.date', $month);
 
-        if ($accountType !== null) {
-            $txQuery->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                ->where('accounts.type', $accountType)
-                ->select('transactions.*');
+        if ($accountIds !== null) {
+            $txQuery->whereIn('transactions.account_id', $accountIds);
         }
 
         $transactions = $txQuery
@@ -162,7 +157,7 @@ class BudgetQueryService
     /**
      * Query transactions with flexible filters and pagination.
      *
-     * @param  array{q?: string, category_id?: int, date_from?: string, date_to?: string, account_type?: string, limit?: int, offset?: int}  $filters
+     * @param  array{q?: string, category_id?: int, date_from?: string, date_to?: string, account_ids?: int[], limit?: int, offset?: int}  $filters
      * @return array{transactions: array, totalCount: int}
      */
     public function queryTransactions(array $filters): array
@@ -201,8 +196,8 @@ class BudgetQueryService
             $query->where('transactions.date', '<=', $filters['date_to']);
         }
 
-        if (isset($filters['account_type'])) {
-            $query->where('accounts.type', $filters['account_type']);
+        if (isset($filters['account_ids'])) {
+            $query->whereIn('accounts.id', $filters['account_ids']);
         }
 
         $totalCount = $query->count();
@@ -234,7 +229,7 @@ class BudgetQueryService
      *
      * @return array{avgIncomeCents: int, avgExpensesCents: int, categoryAverages: array<string, array{avgAmountCents: int}>, completeMonthCount: int}
      */
-    public function getMonthlyAverages(?string $accountType = null): array
+    public function getMonthlyAverages(?array $accountIds = null): array
     {
         $currentMonth = now()->format('Y-m');
 
@@ -248,17 +243,15 @@ class BudgetQueryService
             ->whereRaw("TO_CHAR(transactions.date, 'YYYY-MM') != ?", [$currentMonth])
             ->groupBy(DB::raw('COALESCE(parent_cat.slug, categories.slug)'));
 
-        if ($accountType !== null) {
-            $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                ->where('accounts.type', $accountType);
+        if ($accountIds !== null) {
+            $query->whereIn('transactions.account_id', $accountIds);
         }
 
         $rows = $query->get();
 
         $completeMonthCount = (int) Transaction::query()
-            ->when($accountType !== null, fn ($q) => $q
-                ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                ->where('accounts.type', $accountType)
+            ->when($accountIds !== null, fn ($q) => $q
+                ->whereIn('transactions.account_id', $accountIds)
             )
             ->whereRaw("TO_CHAR(transactions.date, 'YYYY-MM') != ?", [$currentMonth])
             ->selectRaw("COUNT(DISTINCT TO_CHAR(transactions.date, 'YYYY-MM')) as cnt")
@@ -305,7 +298,7 @@ class BudgetQueryService
      *
      * @return array{monthlyIncomeTotals: array, monthlyExpenseTotals: array}
      */
-    public function getMonthlyExpenseAndIncomeTotals(string $accountType): array
+    public function getMonthlyExpenseAndIncomeTotals(?array $accountIds = null): array
     {
         $query = Transaction::query()
             ->select([
@@ -315,10 +308,12 @@ class BudgetQueryService
             ])
             ->join('categories', 'transactions.category_id', '=', 'categories.id')
             ->leftJoin('categories as parent_cat', 'categories.parent_id', '=', 'parent_cat.id')
-            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-            ->where('accounts.type', $accountType)
             ->groupBy(DB::raw("TO_CHAR(transactions.date, 'YYYY-MM')"))
             ->orderBy('month');
+
+        if ($accountIds !== null) {
+            $query->whereIn('transactions.account_id', $accountIds);
+        }
 
         $rows = $query->get();
 
@@ -349,10 +344,10 @@ class BudgetQueryService
         int $compareYear,
         int $compareMonth,
         ?int $categoryId = null,
-        ?string $accountType = null,
+        ?array $accountIds = null,
     ): array {
-        $baseData = $this->getMonthlyData($baseYear, $baseMonth, $accountType);
-        $compareData = $this->getMonthlyData($compareYear, $compareMonth, $accountType);
+        $baseData = $this->getMonthlyData($baseYear, $baseMonth, $accountIds);
+        $compareData = $this->getMonthlyData($compareYear, $compareMonth, $accountIds);
 
         $baseByCategory = collect($baseData['categoryTotals'])->keyBy('id');
         $compareByCategory = collect($compareData['categoryTotals'])->keyBy('id');
@@ -424,12 +419,11 @@ class BudgetQueryService
                 'accounts.id',
                 'accounts.name',
                 'accounts.bank',
-                'accounts.type',
                 DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) = 'income' THEN transactions.amount_cents ELSE 0 END), 0) as income_cents"),
                 DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) NOT IN ({$this->excludedSlugsSql()}) THEN ABS(transactions.amount_cents) ELSE 0 END), 0) as expenses_cents"),
                 DB::raw('COUNT(transactions.id) as transaction_count'),
             ])
-            ->groupBy('accounts.id', 'accounts.name', 'accounts.bank', 'accounts.type');
+            ->groupBy('accounts.id', 'accounts.name', 'accounts.bank');
 
         $rows = $query->orderBy('accounts.name')->get();
 
@@ -437,7 +431,6 @@ class BudgetQueryService
             'id' => $row->id,
             'name' => $row->name,
             'bank' => $row->bank,
-            'type' => $row->type,
             'incomeCents' => (int) $row->income_cents,
             'expensesCents' => (int) $row->expenses_cents,
             'netCents' => (int) $row->income_cents - (int) $row->expenses_cents,
@@ -456,7 +449,7 @@ class BudgetQueryService
      *
      * @return array<int, array{month: string, amountCents: int}>
      */
-    public function getCategoryMonthlyTotals(int $categoryId, string $fromMonth, string $toMonth, ?string $accountType = null): array
+    public function getCategoryMonthlyTotals(int $categoryId, string $fromMonth, string $toMonth, ?array $accountIds = null): array
     {
         $subcategoryIds = Category::where('parent_id', $categoryId)->pluck('id');
         $allCategoryIds = collect([$categoryId])->merge($subcategoryIds);
@@ -472,9 +465,8 @@ class BudgetQueryService
             ->groupBy(DB::raw("TO_CHAR(transactions.date, 'YYYY-MM')"))
             ->orderBy('month');
 
-        if ($accountType !== null) {
-            $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                ->where('accounts.type', $accountType);
+        if ($accountIds !== null) {
+            $query->whereIn('transactions.account_id', $accountIds);
         }
 
         return $query->get()
@@ -511,7 +503,6 @@ class BudgetQueryService
             'subcategoryName' => $isSubcategory ? $category->name : null,
             'accountId' => $transaction->account_id,
             'accountName' => $transaction->account?->name,
-            'accountType' => $transaction->account?->type,
             'importId' => $transaction->import_id,
             'importFileName' => $transaction->import?->file_name,
             'importBank' => $transaction->import?->bank,

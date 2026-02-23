@@ -26,7 +26,7 @@ class UpdateMerchantRuleTest extends TestCase
 
     public function test_listener_creates_merchant_rule_on_correction(): void
     {
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $food = Category::where('slug', 'food')->first();
         $restaurants = Category::where('slug', 'restaurants')->first();
 
@@ -48,7 +48,7 @@ class UpdateMerchantRuleTest extends TestCase
 
     public function test_listener_updates_existing_rule_on_re_correction(): void
     {
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $restaurants = Category::where('slug', 'restaurants')->first();
         $transport = Category::where('slug', 'transport')->first();
 
@@ -77,7 +77,7 @@ class UpdateMerchantRuleTest extends TestCase
     public function test_integration_correction_enables_future_matching(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $other = Category::where('slug', 'other')->first();
         $food = Category::where('slug', 'food')->first();
 

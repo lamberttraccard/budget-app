@@ -19,8 +19,15 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
-import type { CategoryTotal, DashboardProps } from '@/types';
+import type { AccountContext, CategoryTotal, DashboardProps } from '@/types';
 
 function formatMonthLabel(month: string): string {
     const [year, m] = month.split('-');
@@ -58,20 +65,23 @@ export default function Dashboard({
     incomeCents,
     expensesCents,
     currentMonth,
-    currentAccount,
+    selectedAccountIds,
     availableMonths,
     importPreview,
     averageData,
     imports,
     sparklineData,
 }: DashboardProps) {
-    const { errors } = usePage().props as { errors: Record<string, string> };
+    const pageProps = usePage().props as unknown as { errors: Record<string, string>; accountContexts: AccountContext[] };
+    const { errors, accountContexts } = pageProps;
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [file, setFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
-    const [importAccountType, setImportAccountType] = useState<string>('personal');
+    const [importAccountId, setImportAccountId] = useState<number | null>(null);
+    const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+    const [newAccountName, setNewAccountName] = useState('');
     const [shouldCascade, setShouldCascade] = useState(false);
     const shouldReduceMotion = useReducedMotion();
 
@@ -121,19 +131,23 @@ export default function Dashboard({
 
     const handleMonthChange = useCallback((month: string) => {
         setShouldCascade(false);
-        router.get('/', { month, account: currentAccount }, {
+        const params: Record<string, string> = { month };
+        if (selectedAccountIds.length > 0) params.accounts = selectedAccountIds.join(',');
+        router.get('/', params, {
             preserveState: true,
             preserveScroll: true,
             only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'availableMonths', 'averageData', 'sparklineData', 'imports'],
         });
-    }, [currentAccount]);
+    }, [selectedAccountIds]);
 
-    const handleAccountChange = useCallback((account: string) => {
+    const handleAccountsChange = useCallback((accountIds: number[]) => {
         setShouldCascade(false);
-        router.get('/', { month: currentMonth, account }, {
+        const params: Record<string, string> = { month: currentMonth };
+        if (accountIds.length > 0) params.accounts = accountIds.join(',');
+        router.get('/', params, {
             preserveState: true,
             preserveScroll: true,
-            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'currentAccount', 'availableMonths', 'averageData', 'sparklineData', 'imports'],
+            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'selectedAccountIds', 'availableMonths', 'averageData', 'sparklineData', 'imports'],
         });
     }, [currentMonth]);
 
@@ -148,7 +162,17 @@ export default function Dashboard({
         router.post('/imports/preview', { csv_file: selectedFile }, {
             preserveState: true,
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (page) => {
+                const preview = (page.props as unknown as DashboardProps).importPreview;
+                if (preview) {
+                    const bankAccounts = accountContexts.filter(a => a.bank === preview.bank);
+                    if (bankAccounts.length > 0) {
+                        setImportAccountId(bankAccounts[0].id);
+                        setIsCreatingAccount(false);
+                    } else {
+                        setIsCreatingAccount(true);
+                    }
+                }
                 setShowConfirmation(true);
                 setIsUploading(false);
             },
@@ -157,7 +181,7 @@ export default function Dashboard({
                 setFile(null);
             },
         });
-    }, []);
+    }, [accountContexts]);
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
@@ -172,12 +196,21 @@ export default function Dashboard({
         if (!file) return;
         setIsUploading(true);
 
-        router.post('/imports', { csv_file: file, account_type: importAccountType }, {
+        const data: Record<string, File | string | number | null> = { csv_file: file };
+        if (isCreatingAccount) {
+            data.new_account_name = newAccountName;
+        } else {
+            data.account_id = importAccountId;
+        }
+
+        router.post('/imports', data, {
             onSuccess: () => {
                 setFile(null);
                 setShowConfirmation(false);
                 setIsUploading(false);
-                setImportAccountType('personal');
+                setImportAccountId(null);
+                setIsCreatingAccount(false);
+                setNewAccountName('');
                 setShouldCascade(true);
                 toast('Categorizing transactions...');
             },
@@ -185,15 +218,19 @@ export default function Dashboard({
                 setShowConfirmation(false);
                 setIsUploading(false);
                 setFile(null);
-                setImportAccountType('personal');
+                setImportAccountId(null);
+                setIsCreatingAccount(false);
+                setNewAccountName('');
             },
         });
-    }, [file, importAccountType]);
+    }, [file, isCreatingAccount, newAccountName, importAccountId]);
 
     const handleCancelImport = useCallback(() => {
         setShowConfirmation(false);
         setFile(null);
-        setImportAccountType('personal');
+        setImportAccountId(null);
+        setIsCreatingAccount(false);
+        setNewAccountName('');
     }, []);
 
     // --- Drag-and-drop handlers (desktop) ---
@@ -228,7 +265,7 @@ export default function Dashboard({
     }, [handleFileSelect]);
 
     return (
-        <AppLayout currentAccount={currentAccount} onAccountChange={handleAccountChange}>
+        <AppLayout selectedAccountIds={selectedAccountIds} onAccountsChange={handleAccountsChange}>
             <Head title="Budget" />
 
             {/* Hidden file input */}
@@ -311,10 +348,9 @@ export default function Dashboard({
                                                 color={cat.color}
                                                 icon={cat.icon}
                                                 amountCents={cat.amountCents}
-                                                transactionCount={cat.transactionCount}
                                                 avgAmountCents={averageData?.categoryAverages[cat.slug]?.avgAmountCents}
                                                 currentMonth={currentMonth}
-                                                currentAccount={currentAccount}
+                                                selectedAccountIds={selectedAccountIds}
                                             />
                                         ))}
                                     </div>
@@ -334,10 +370,9 @@ export default function Dashboard({
                                                     color={cat.color}
                                                     icon={cat.icon}
                                                     amountCents={cat.amountCents}
-                                                    transactionCount={cat.transactionCount}
                                                     avgAmountCents={averageData?.categoryAverages[cat.slug]?.avgAmountCents}
                                                     currentMonth={currentMonth}
-                                                    currentAccount={currentAccount}
+                                                    selectedAccountIds={selectedAccountIds}
                                                 />
                                             </motion.div>
                                         ))}
@@ -399,32 +434,53 @@ export default function Dashboard({
                                     {formatDateRange(importPreview.dateFrom, importPreview.dateTo)}
                                 </span>
                             </div>
-                            <div className="flex justify-between text-sm items-center">
-                                <span className="text-text-secondary">Account</span>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setImportAccountType('personal')}
-                                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                                            importAccountType === 'personal'
-                                                ? 'bg-surface-elevated text-white'
-                                                : 'text-text-secondary hover:text-white'
-                                        }`}
-                                    >
-                                        Personal
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setImportAccountType('professional')}
-                                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                                            importAccountType === 'professional'
-                                                ? 'bg-surface-elevated text-white'
-                                                : 'text-text-secondary hover:text-white'
-                                        }`}
-                                    >
-                                        Professional
-                                    </button>
-                                </div>
+                            <div className="space-y-2">
+                                <span className="text-sm text-text-secondary">Account</span>
+                                {(() => {
+                                    const bankAccounts = accountContexts.filter(a => a.bank === importPreview.bank);
+                                    const showNewForm = isCreatingAccount || bankAccounts.length === 0;
+
+                                    return (
+                                        <div className="space-y-2">
+                                            {bankAccounts.length > 0 && (
+                                                <Select
+                                                    value={isCreatingAccount ? '__new__' : String(importAccountId ?? '')}
+                                                    onValueChange={(value) => {
+                                                        if (value === '__new__') {
+                                                            setIsCreatingAccount(true);
+                                                            setImportAccountId(null);
+                                                        } else {
+                                                            setIsCreatingAccount(false);
+                                                            setImportAccountId(Number(value));
+                                                        }
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select account..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {bankAccounts.map(a => (
+                                                            <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
+                                                        ))}
+                                                        <SelectItem value="__new__">+ New account</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+
+                                            {showNewForm && (
+                                                <div className="rounded-lg border border-white/10 p-3">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Account name"
+                                                        value={newAccountName}
+                                                        onChange={(e) => setNewAccountName(e.target.value)}
+                                                        className="w-full rounded-lg border border-white/10 bg-surface px-3 py-2 text-sm text-white placeholder:text-text-tertiary"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
                     )}

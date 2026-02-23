@@ -30,7 +30,7 @@ class GetCategoryBreakdown extends Tool
             'category_id' => $schema->integer()->required()->description('The parent category ID to break down'),
             'year' => $schema->integer()->required()->description('Year (e.g. 2026)'),
             'month' => $schema->integer()->required()->min(1)->max(12)->description('Month number (1-12)'),
-            'account_type' => $schema->string()->nullable()->enum(['personal', 'professional'])->description('Filter by account type'),
+            'account_ids' => $schema->array()->nullable()->items($schema->integer())->description('Filter by account IDs. Omit for all accounts.'),
         ];
     }
 
@@ -39,9 +39,9 @@ class GetCategoryBreakdown extends Tool
         $categoryId = (int) $request->get('category_id');
         $year = (int) $request->get('year');
         $month = (int) $request->get('month');
-        $accountType = $request->get('account_type');
+        $accountIds = $request->get('account_ids');
 
-        $data = $this->queryService->getCategoryDetail($categoryId, $year, $month, $accountType);
+        $data = $this->queryService->getCategoryDetail($categoryId, $year, $month, $accountIds);
 
         $formattedSubcategories = array_map(fn (array $sub) => [
             'category_id' => $sub['id'],
@@ -60,7 +60,7 @@ class GetCategoryBreakdown extends Tool
         $meta = [
             'category_id' => $categoryId,
             'period' => sprintf('%d-%02d', $year, $month),
-            'account' => $accountType ?? 'all',
+            'account_ids' => $accountIds,
             'total_amount_cents' => $data['totalAmountCents'],
             'transaction_count' => $data['transactionCount'],
         ];

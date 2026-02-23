@@ -17,7 +17,7 @@ class RecurringDetectionService
      * Detect recurring transactions (subscriptions) by finding merchants with
      * consistent monthly charges: same amount, one charge per month, 3+ consecutive months.
      *
-     * @param  string|null  $accountType  Filter by account type (personal/professional)
+     * @param  int[]|null  $accountIds  Filter by account IDs (null = all accounts)
      * @return array<int, array{
      *     merchantName: string,
      *     normalizedMerchant: string,
@@ -34,7 +34,7 @@ class RecurringDetectionService
      *     transactions: array,
      * }>
      */
-    public function detectRecurring(?string $accountType = null): array
+    public function detectRecurring(?array $accountIds = null): array
     {
         // Phase 1: SQL aggregation — group by normalized merchant + month
         $query = Transaction::query()
@@ -52,9 +52,8 @@ class RecurringDetectionService
             ->orderBy('normalized_merchant')
             ->orderBy('month');
 
-        if ($accountType !== null) {
-            $query->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-                ->where('accounts.type', $accountType);
+        if ($accountIds !== null) {
+            $query->whereIn('transactions.account_id', $accountIds);
         }
 
         $rows = $query->get();
@@ -105,7 +104,7 @@ class RecurringDetectionService
 
         // Fetch full transaction history for recurring merchants
         $normalizedNames = collect($recurringMerchants)->pluck('normalizedMerchant');
-        $transactions = $this->fetchTransactionHistory($normalizedNames, $accountType);
+        $transactions = $this->fetchTransactionHistory($normalizedNames, $accountIds);
 
         // Build final result with computed fields
         return $this->buildResult($recurringMerchants, $transactions);
@@ -174,7 +173,7 @@ class RecurringDetectionService
         return $maxRun;
     }
 
-    private function fetchTransactionHistory(Collection $normalizedNames, ?string $accountType): Collection
+    private function fetchTransactionHistory(Collection $normalizedNames, ?array $accountIds): Collection
     {
         $placeholders = $normalizedNames->map(fn () => '?')->implode(',');
 
@@ -197,8 +196,8 @@ class RecurringDetectionService
                 DB::raw('LOWER(TRIM(transactions.description)) as normalized_merchant'),
             ]);
 
-        if ($accountType !== null) {
-            $query->where('accounts.type', $accountType);
+        if ($accountIds !== null) {
+            $query->whereIn('accounts.id', $accountIds);
         }
 
         return $query->orderByDesc('transactions.date')

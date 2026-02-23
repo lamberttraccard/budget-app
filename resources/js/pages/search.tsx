@@ -8,10 +8,10 @@ import SearchResultRow from '@/components/SearchResultRow';
 import AppLayout from '@/layouts/app-layout';
 import type { SearchProps, SharedProps } from '@/types';
 
-function buildSearchParams(q: string | null, account: string | null): Record<string, string> {
+function buildSearchParams(q: string | null, accountIds: number[]): Record<string, string> {
     const params: Record<string, string> = {};
     if (q) params.q = q;
-    if (account) params.account = account;
+    if (accountIds.length > 0) params.accounts = accountIds.join(',');
     return params;
 }
 
@@ -19,7 +19,7 @@ export default function SearchPage({
     results,
     totalCount,
     query: initialQuery,
-    currentAccount,
+    selectedAccountIds,
 }: SearchProps) {
     const { allCategories } = usePage<SharedProps>().props;
     const [localQuery, setLocalQuery] = useState(initialQuery);
@@ -47,12 +47,12 @@ export default function SearchPage({
             timerRef.current = setTimeout(() => {
                 router.get(
                     '/search',
-                    buildSearchParams(value, currentAccount),
+                    buildSearchParams(value, selectedAccountIds),
                     { preserveState: true, replace: true },
                 );
             }, 300);
         },
-        [currentAccount],
+        [selectedAccountIds],
     );
 
     const handleInputChange = useCallback(
@@ -64,12 +64,12 @@ export default function SearchPage({
             } else if (value.length === 0) {
                 router.get(
                     '/search',
-                    buildSearchParams(null, currentAccount),
+                    buildSearchParams(null, selectedAccountIds),
                     { preserveState: true, replace: true },
                 );
             }
         },
-        [debouncedSearch, currentAccount],
+        [debouncedSearch, selectedAccountIds],
     );
 
     const handleClear = useCallback(() => {
@@ -77,13 +77,13 @@ export default function SearchPage({
         inputRef.current?.focus();
         router.get(
             '/search',
-            buildSearchParams(null, currentAccount),
+            buildSearchParams(null, selectedAccountIds),
             { preserveState: true, replace: true },
         );
-    }, [currentAccount]);
+    }, [selectedAccountIds]);
 
-    const handleAccountChange = useCallback((account: string) => {
-        router.get('/search', buildSearchParams(localQuery, account), { preserveState: true, replace: true });
+    const handleAccountsChange = useCallback((accountIds: number[]) => {
+        router.get('/search', buildSearchParams(localQuery, accountIds), { preserveState: true, replace: true });
     }, [localQuery]);
 
     const handleTransactionTap = useCallback(
@@ -126,7 +126,7 @@ export default function SearchPage({
     );
 
     return (
-        <AppLayout currentAccount={currentAccount ?? undefined} onAccountChange={handleAccountChange}>
+        <AppLayout selectedAccountIds={selectedAccountIds} onAccountsChange={handleAccountsChange}>
             <Head title="Search" />
 
             <AmbientCircle />

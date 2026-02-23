@@ -14,17 +14,6 @@ class AccountFactory extends Factory
         return [
             'name' => fake()->randomElement(['Personal Checking', 'Main Account', 'Professional Account', 'Savings']),
             'bank' => fake()->randomElement(['Banque Populaire', 'Revolut', 'BNP Paribas', 'Crédit Agricole']),
-            'type' => fake()->randomElement(['personal', 'professional']),
         ];
-    }
-
-    public function personal(): static
-    {
-        return $this->state(['type' => 'personal']);
-    }
-
-    public function professional(): static
-    {
-        return $this->state(['type' => 'professional']);
     }
 }

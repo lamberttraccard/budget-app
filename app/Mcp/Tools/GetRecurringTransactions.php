@@ -27,15 +27,15 @@ class GetRecurringTransactions extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'account_type' => $schema->string()->nullable()->enum(['personal', 'professional'])->description('Filter by account type'),
+            'account_ids' => $schema->array()->nullable()->items($schema->integer())->description('Filter by account IDs. Omit for all accounts.'),
         ];
     }
 
     public function handle(Request $request): Response|ResponseFactory
     {
-        $accountType = $request->get('account_type');
+        $accountIds = $request->get('account_ids');
 
-        $recurringMerchants = $this->recurringDetectionService->detectRecurring($accountType);
+        $recurringMerchants = $this->recurringDetectionService->detectRecurring($accountIds);
 
         $formatted = array_map(fn (array $merchant) => [
             'merchant_name' => $merchant['merchantName'],
@@ -58,7 +58,7 @@ class GetRecurringTransactions extends Tool
 
         $meta = [
             'total_count' => count($formatted),
-            'account' => $accountType ?? 'all',
+            'account_ids' => $accountIds,
         ];
 
         return Response::structured($this->formatResponse($formatted, $meta));

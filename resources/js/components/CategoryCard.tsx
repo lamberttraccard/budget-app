@@ -10,13 +10,12 @@ type Props = {
     color: string;
     icon: string | null;
     amountCents: number;
-    transactionCount: number;
     avgAmountCents?: number;
     currentMonth: string;
-    currentAccount: string;
+    selectedAccountIds: number[];
 };
 
-export default function CategoryCard({ id, name, color, icon, amountCents, transactionCount, avgAmountCents, currentMonth, currentAccount }: Props) {
+export default function CategoryCard({ id, name, color, icon, amountCents, avgAmountCents, currentMonth, selectedAccountIds }: Props) {
     const showAvg = avgAmountCents !== undefined;
 
     let deltaNode = null;
@@ -39,7 +38,7 @@ export default function CategoryCard({ id, name, color, icon, amountCents, trans
 
     return (
         <Link
-            href={`/categories/${id}?month=${currentMonth}&account=${currentAccount}`}
+            href={`/categories/${id}?month=${currentMonth}${selectedAccountIds.length > 0 ? `&accounts=${selectedAccountIds.join(',')}` : ''}`}
             className="flex items-center gap-4 rounded-xl p-4 bg-surface/80 backdrop-blur-2xl border border-white/[0.06] transition-colors hover:bg-surface-elevated/80"
         >
             <div

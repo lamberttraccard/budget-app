@@ -54,7 +54,7 @@ class SearchTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -76,7 +76,7 @@ class SearchTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -96,7 +96,7 @@ class SearchTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -116,7 +116,7 @@ class SearchTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -131,12 +131,12 @@ class SearchTest extends TestCase
             );
     }
 
-    public function test_search_filters_by_account_type(): void
+    public function test_search_filters_by_account(): void
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -144,7 +144,7 @@ class SearchTest extends TestCase
         $this->createSearchableTransaction('CARREFOUR PROFESSIONAL', $food, $professionalAccount, $import);
 
         $this->actingAs($user)
-            ->get(route('search', ['q' => 'carrefour', 'account' => 'personal']))
+            ->get(route('search', ['q' => 'carrefour', 'accounts' => $personalAccount->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('search')
@@ -157,7 +157,7 @@ class SearchTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -178,7 +178,7 @@ class SearchTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -198,7 +198,7 @@ class SearchTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -240,8 +240,8 @@ class SearchTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $personalAccount = Account::factory()->personal()->create();
-        $professionalAccount = Account::factory()->professional()->create();
+        $personalAccount = Account::factory()->create();
+        $professionalAccount = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -256,7 +256,7 @@ class SearchTest extends TestCase
                 ->component('search')
                 ->has('results', 2)
                 ->where('totalCount', 2)
-                ->where('currentAccount', null)
+                ->where('selectedAccountIds', [])
             );
     }
 
@@ -264,7 +264,7 @@ class SearchTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 
@@ -295,7 +295,7 @@ class SearchTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $food = Category::where('slug', 'food')->first();
 

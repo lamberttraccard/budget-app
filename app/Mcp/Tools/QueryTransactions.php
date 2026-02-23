@@ -30,7 +30,7 @@ class QueryTransactions extends Tool
             'category_id' => $schema->integer()->nullable()->description('Filter by category ID'),
             'date_from' => $schema->string()->nullable()->format('date')->description('Start date (YYYY-MM-DD)'),
             'date_to' => $schema->string()->nullable()->format('date')->description('End date (YYYY-MM-DD)'),
-            'account_type' => $schema->string()->nullable()->enum(['personal', 'professional'])->description('Filter by account type'),
+            'account_ids' => $schema->array()->nullable()->items($schema->integer())->description('Filter by account IDs. Omit for all accounts.'),
             'limit' => $schema->integer()->default(50)->min(1)->max(200)->description('Max results per page (default 50, max 200)'),
             'offset' => $schema->integer()->default(0)->min(0)->description('Number of results to skip for pagination'),
         ];
@@ -52,7 +52,7 @@ class QueryTransactions extends Tool
                 'category_id' => $request->get('category_id'),
                 'date_from' => $request->get('date_from'),
                 'date_to' => $request->get('date_to'),
-                'account_type' => $request->get('account_type'),
+                'account_ids' => $request->get('account_ids'),
             ], fn ($v) => $v !== null),
         ];
 

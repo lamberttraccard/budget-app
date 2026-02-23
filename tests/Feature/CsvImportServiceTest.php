@@ -25,7 +25,7 @@ class CsvImportServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = app(CsvImportService::class);
-        $this->account = Account::factory()->personal()->create();
+        $this->account = Account::factory()->create();
     }
 
     private function bpCsvContent(): string

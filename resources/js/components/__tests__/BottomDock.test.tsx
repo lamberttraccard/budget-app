@@ -55,16 +55,16 @@ describe('BottomDock', () => {
         expect(searchLink).toHaveClass('text-white');
     });
 
-    it('appends account query param to links when currentAccount is set', () => {
-        render(<BottomDock currentAccount="personal" />);
+    it('appends accounts query param to links when selectedAccountIds is set', () => {
+        render(<BottomDock selectedAccountIds={[1, 2]} />);
         const recurringLink = screen.getByText('Recurring').closest('a');
         const searchLink = screen.getByText('Search').closest('a');
-        expect(recurringLink).toHaveAttribute('href', '/recurring?account=personal');
-        expect(searchLink).toHaveAttribute('href', '/search?account=personal');
+        expect(recurringLink).toHaveAttribute('href', '/recurring?accounts=1,2');
+        expect(searchLink).toHaveAttribute('href', '/search?accounts=1,2');
     });
 
-    it('does not append account param to Dashboard link', () => {
-        render(<BottomDock currentAccount="personal" />);
+    it('does not append accounts param to Dashboard link', () => {
+        render(<BottomDock selectedAccountIds={[1]} />);
         const dashboardLink = screen.getByText('Dashboard').closest('a');
         expect(dashboardLink).toHaveAttribute('href', '/');
     });

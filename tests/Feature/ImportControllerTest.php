@@ -86,7 +86,7 @@ class ImportControllerTest extends TestCase
         $response->assertSessionHasErrors(['csv_file']);
     }
 
-    public function test_store_with_valid_csv_creates_import_and_transactions(): void
+    public function test_store_with_new_account_creates_import_and_transactions(): void
     {
         $this->seed(CategorySeeder::class);
         Event::fake([ImportCompleted::class]);
@@ -94,7 +94,10 @@ class ImportControllerTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
 
         $response = $this->actingAs($user)
-            ->post(route('imports.store'), ['csv_file' => $file]);
+            ->post(route('imports.store'), [
+                'csv_file' => $file,
+                'new_account_name' => 'BP Personal',
+            ]);
 
         $response->assertRedirect(route('home'));
 
@@ -105,26 +108,14 @@ class ImportControllerTest extends TestCase
         ]);
 
         $this->assertDatabaseCount('transactions', 3);
-    }
-
-    public function test_store_auto_creates_account_when_none_exists(): void
-    {
-        $this->seed(CategorySeeder::class);
-        Event::fake([ImportCompleted::class]);
-        $user = User::factory()->create();
-        $file = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
-
-        $this->actingAs($user)
-            ->post(route('imports.store'), ['csv_file' => $file]);
 
         $this->assertDatabaseHas('accounts', [
             'bank' => 'Banque Populaire',
-            'type' => 'personal',
-            'name' => 'Banque Populaire Personal',
+            'name' => 'BP Personal',
         ]);
     }
 
-    public function test_store_uses_existing_account_when_one_matches(): void
+    public function test_store_with_existing_account(): void
     {
         $this->seed(CategorySeeder::class);
         Event::fake([ImportCompleted::class]);
@@ -132,14 +123,16 @@ class ImportControllerTest extends TestCase
 
         $existingAccount = Account::create([
             'bank' => 'Banque Populaire',
-            'type' => 'personal',
             'name' => 'My BP Account',
         ]);
 
         $file = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
 
         $this->actingAs($user)
-            ->post(route('imports.store'), ['csv_file' => $file]);
+            ->post(route('imports.store'), [
+                'csv_file' => $file,
+                'account_id' => $existingAccount->id,
+            ]);
 
         // Should not create a new account
         $this->assertDatabaseCount('accounts', 1);
@@ -154,10 +147,11 @@ class ImportControllerTest extends TestCase
     public function test_store_with_unrecognized_csv_returns_validation_error(): void
     {
         $user = User::factory()->create();
+        $account = Account::factory()->create();
         $file = UploadedFile::fake()->createWithContent('random.csv', "col1,col2,col3\nfoo,bar,baz");
 
         $response = $this->actingAs($user)
-            ->post(route('imports.store'), ['csv_file' => $file]);
+            ->post(route('imports.store'), ['csv_file' => $file, 'account_id' => $account->id]);
 
         $response->assertRedirect();
         $response->assertSessionHasErrors(['csv_file']);
@@ -187,12 +181,15 @@ class ImportControllerTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
 
         $this->actingAs($user)
-            ->post(route('imports.store'), ['csv_file' => $file]);
+            ->post(route('imports.store'), [
+                'csv_file' => $file,
+                'new_account_name' => 'BP Personal',
+            ]);
 
         Event::assertDispatched(ImportCompleted::class);
     }
 
-    public function test_store_with_professional_account_type(): void
+    public function test_store_creates_new_account_with_detected_bank(): void
     {
         $this->seed(CategorySeeder::class);
         Event::fake([ImportCompleted::class]);
@@ -202,33 +199,28 @@ class ImportControllerTest extends TestCase
         $this->actingAs($user)
             ->post(route('imports.store'), [
                 'csv_file' => $file,
-                'account_type' => 'professional',
+                'new_account_name' => 'BP Pro',
             ]);
 
         $this->assertDatabaseHas('accounts', [
             'bank' => 'Banque Populaire',
-            'type' => 'professional',
-            'name' => 'Banque Populaire Professional',
+            'name' => 'BP Pro',
         ]);
     }
 
-    public function test_store_without_account_type_defaults_to_personal(): void
+    public function test_store_without_account_returns_validation_error(): void
     {
-        $this->seed(CategorySeeder::class);
-        Event::fake([ImportCompleted::class]);
         $user = User::factory()->create();
         $file = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->post(route('imports.store'), ['csv_file' => $file]);
 
-        $this->assertDatabaseHas('accounts', [
-            'bank' => 'Banque Populaire',
-            'type' => 'personal',
-        ]);
+        $response->assertRedirect();
+        $response->assertSessionHasErrors();
     }
 
-    public function test_store_with_invalid_account_type_returns_validation_error(): void
+    public function test_store_with_nonexistent_account_id_returns_validation_error(): void
     {
         $user = User::factory()->create();
         $file = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
@@ -236,11 +228,11 @@ class ImportControllerTest extends TestCase
         $response = $this->actingAs($user)
             ->post(route('imports.store'), [
                 'csv_file' => $file,
-                'account_type' => 'invalid',
+                'account_id' => 99999,
             ]);
 
         $response->assertRedirect();
-        $response->assertSessionHasErrors(['account_type']);
+        $response->assertSessionHasErrors(['account_id']);
     }
 
     public function test_store_with_duplicate_csv_imports_zero_new_transactions(): void
@@ -249,17 +241,24 @@ class ImportControllerTest extends TestCase
         Event::fake([ImportCompleted::class]);
         $user = User::factory()->create();
 
-        // First import
+        // First import (creates account)
         $file1 = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
         $this->actingAs($user)
-            ->post(route('imports.store'), ['csv_file' => $file1]);
+            ->post(route('imports.store'), [
+                'csv_file' => $file1,
+                'new_account_name' => 'BP Personal',
+            ]);
 
         $this->assertDatabaseCount('transactions', 3);
+        $account = Account::first();
 
-        // Second import with same content
+        // Second import with same content, using existing account
         $file2 = UploadedFile::fake()->createWithContent('releve.csv', $this->bpCsvContent());
         $response = $this->actingAs($user)
-            ->post(route('imports.store'), ['csv_file' => $file2]);
+            ->post(route('imports.store'), [
+                'csv_file' => $file2,
+                'account_id' => $account->id,
+            ]);
 
         $response->assertRedirect(route('home'));
 
@@ -291,7 +290,7 @@ class ImportControllerTest extends TestCase
     public function test_authenticated_user_can_delete_import(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         Transaction::factory()->count(5)->create([
             'import_id' => $import->id,
@@ -309,7 +308,7 @@ class ImportControllerTest extends TestCase
     public function test_cascade_deletes_all_linked_transactions(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $otherImport = Import::factory()->completed()->create();
 
@@ -333,7 +332,7 @@ class ImportControllerTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $food = Category::where('slug', 'food')->first();
 
         MerchantRule::create([
@@ -392,7 +391,7 @@ class ImportControllerTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $food = Category::where('slug', 'food')->first();
 
         $import = Import::factory()->completed()->create();
@@ -485,7 +484,7 @@ class ImportControllerTest extends TestCase
     public function test_status_endpoint_returns_batch_progress(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
 
         Transaction::factory()->count(3)->create([
@@ -522,7 +521,7 @@ class ImportControllerTest extends TestCase
     public function test_recategorize_dispatches_new_batch(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->categorized()->create();
 
         Transaction::factory()->count(3)->create([
@@ -577,7 +576,7 @@ class ImportControllerTest extends TestCase
     public function test_imports_include_status_and_uncategorized_count(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->categorized()->create([
             'bank' => 'Banque Populaire',
             'transaction_count' => 10,

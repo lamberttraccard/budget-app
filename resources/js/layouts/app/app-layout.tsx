@@ -6,9 +6,9 @@ import BottomDock from '@/components/BottomDock';
 import { useNavItems } from '@/hooks/use-nav-items';
 import type { AccountContext, AppLayoutProps } from '@/types';
 
-export default function AppLayout({ children, currentAccount, onAccountChange, accentColor }: AppLayoutProps) {
+export default function AppLayout({ children, selectedAccountIds, onAccountsChange, accentColor }: AppLayoutProps) {
     const { accountContexts } = usePage<{ props: { accountContexts: AccountContext[] } }>().props as unknown as { accountContexts: AccountContext[] };
-    const navItems = useNavItems(currentAccount);
+    const navItems = useNavItems(selectedAccountIds);
 
     return (
         <div className="min-h-screen bg-background overflow-x-hidden">
@@ -40,11 +40,11 @@ export default function AppLayout({ children, currentAccount, onAccountChange, a
                             ))}
                         </nav>
                     </div>
-                    {accountContexts?.length > 0 && currentAccount && onAccountChange && (
+                    {accountContexts?.length > 0 && onAccountsChange && (
                         <AccountPicker
-                            currentAccount={currentAccount}
+                            selectedAccountIds={selectedAccountIds ?? []}
                             accountContexts={accountContexts}
-                            onAccountChange={onAccountChange}
+                            onAccountsChange={onAccountsChange}
                             dark={!!accentColor}
                         />
                     )}
@@ -63,7 +63,7 @@ export default function AppLayout({ children, currentAccount, onAccountChange, a
                 duration={2000}
             />
 
-            <BottomDock currentAccount={currentAccount} />
+            <BottomDock selectedAccountIds={selectedAccountIds} />
         </div>
     );
 }

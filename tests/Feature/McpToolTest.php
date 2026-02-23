@@ -42,8 +42,8 @@ class McpToolTest extends TestCase
         $this->seed(CategorySeeder::class);
 
         $this->user = User::factory()->create();
-        $this->personal = Account::factory()->personal()->create(['name' => 'Personal Checking', 'bank' => 'Banque Populaire']);
-        $this->professional = Account::factory()->professional()->create(['name' => 'Pro Account', 'bank' => 'Revolut']);
+        $this->personal = Account::factory()->create(['name' => 'Personal Checking', 'bank' => 'Banque Populaire']);
+        $this->professional = Account::factory()->create(['name' => 'Pro Account', 'bank' => 'Revolut']);
 
         $this->food = Category::where('slug', 'food')->first();
         $this->transport = Category::where('slug', 'transport')->first();
@@ -122,7 +122,7 @@ class McpToolTest extends TestCase
         $this->assertEquals('FEB TX', $result['transactions'][0]['description']);
     }
 
-    public function test_query_transactions_filters_by_account_type(): void
+    public function test_query_transactions_filters_by_account_ids(): void
     {
         Transaction::factory()->create([
             'amount_cents' => -3500, 'date' => '2026-02-10',
@@ -136,7 +136,7 @@ class McpToolTest extends TestCase
         ]);
 
         $service = app(BudgetQueryService::class);
-        $result = $service->queryTransactions(['account_type' => 'personal']);
+        $result = $service->queryTransactions(['account_ids' => [$this->personal->id]]);
 
         $this->assertCount(1, $result['transactions']);
         $this->assertEquals('PERSONAL TX', $result['transactions'][0]['description']);
@@ -206,7 +206,6 @@ class McpToolTest extends TestCase
         $this->assertEquals('Food', $detail['categoryName']);
         $this->assertNull($detail['subcategoryName']);
         $this->assertEquals('Personal Checking', $detail['accountName']);
-        $this->assertEquals('personal', $detail['accountType']);
         $this->assertEquals('export_2026_02.csv', $detail['importFileName']);
         $this->assertEquals('Banque Populaire', $detail['importBank']);
     }
@@ -300,7 +299,7 @@ class McpToolTest extends TestCase
         ]);
 
         $response = BudgetServer::actingAs($this->user)
-            ->tool(GetCategoryTotals::class, ['year' => 2026, 'month' => 2, 'account_type' => 'personal']);
+            ->tool(GetCategoryTotals::class, ['year' => 2026, 'month' => 2, 'account_ids' => [$this->personal->id]]);
 
         $response->assertOk();
         $response->assertSee('-5000');
@@ -379,7 +378,7 @@ class McpToolTest extends TestCase
         ]);
 
         $response = BudgetServer::actingAs($this->user)
-            ->tool(QueryTransactions::class, ['account_type' => 'professional']);
+            ->tool(QueryTransactions::class, ['account_ids' => [$this->professional->id]]);
 
         $response->assertOk();
         $response->assertSee('PRO TX');
@@ -799,7 +798,7 @@ class McpToolTest extends TestCase
         $response->assertSee('"total_count":1');
     }
 
-    public function test_get_monthly_comparison_tool_with_account_type_filter(): void
+    public function test_get_monthly_comparison_tool_with_account_ids_filter(): void
     {
         Transaction::factory()->create([
             'amount_cents' => -5000, 'date' => '2026-01-15',
@@ -818,11 +817,11 @@ class McpToolTest extends TestCase
             ->tool(GetMonthlyComparison::class, [
                 'base_year' => 2026, 'base_month' => 1,
                 'compare_year' => 2026, 'compare_month' => 2,
-                'account_type' => 'personal',
+                'account_ids' => [$this->personal->id],
             ]);
 
         $response->assertOk();
-        $response->assertSee('"account":"personal"');
+        $response->assertSee('"account_ids":['.$this->personal->id.']');
     }
 
     // ──────────────────────────────────────────────────

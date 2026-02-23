@@ -15,14 +15,11 @@ class RecurringController extends Controller
 
     public function index(Request $request): Response
     {
-        $account = $request->string('account')->toString() ?: null;
-        if ($account !== null && ! in_array($account, ['personal', 'professional'], true)) {
-            $account = null;
-        }
+        $accountIds = $this->parseAccountIds($request);
 
         return Inertia::render('recurring', [
-            'recurringMerchants' => Inertia::defer(fn () => $this->recurringDetectionService->detectRecurring($account)),
-            'currentAccount' => $account,
+            'recurringMerchants' => Inertia::defer(fn () => $this->recurringDetectionService->detectRecurring($accountIds)),
+            'selectedAccountIds' => $accountIds ?? [],
         ]);
     }
 }

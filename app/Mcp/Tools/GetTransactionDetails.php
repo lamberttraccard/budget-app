@@ -51,7 +51,6 @@ class GetTransactionDetails extends Tool
             'subcategory_name' => $detail['subcategoryName'],
             'account_id' => $detail['accountId'],
             'account_name' => $detail['accountName'],
-            'account_type' => $detail['accountType'],
             'import_id' => $detail['importId'],
             'import_file_name' => $detail['importFileName'],
             'import_bank' => $detail['importBank'],

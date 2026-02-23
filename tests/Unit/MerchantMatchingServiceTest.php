@@ -65,7 +65,7 @@ class MerchantMatchingServiceTest extends TestCase
         MerchantRule::factory()->create(['merchant_pattern' => 'CARREFOUR CITY', 'category_id' => $foodCategory->id]);
         MerchantRule::factory()->create(['merchant_pattern' => 'PHARMACIE CENTRALE', 'category_id' => $healthCategory->id]);
 
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $t1 = Transaction::factory()->create([
             'description' => 'CARREFOUR CITY',
@@ -89,7 +89,7 @@ class MerchantMatchingServiceTest extends TestCase
 
     public function test_match_batch_returns_empty_array_when_no_transactions_match(): void
     {
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $t1 = Transaction::factory()->create([
             'description' => 'UNKNOWN MERCHANT',
@@ -108,7 +108,7 @@ class MerchantMatchingServiceTest extends TestCase
         $category = Category::factory()->create(['slug' => 'food']);
         MerchantRule::factory()->create(['merchant_pattern' => 'CARREFOUR', 'category_id' => $category->id]);
 
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $import = Import::factory()->completed()->create();
         $matched = Transaction::factory()->create([
             'description' => 'CARREFOUR',

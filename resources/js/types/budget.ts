@@ -52,8 +52,9 @@ export type ImportRecord = {
 };
 
 export type AccountContext = {
-    value: string;
-    label: string;
+    id: number;
+    name: string;
+    bank: string;
 };
 
 export type AverageData = {
@@ -86,7 +87,7 @@ export type CategoryShowProps = {
     totalAmountCents: number;
     transactionCount: number;
     currentMonth: string;
-    currentAccount: string;
+    selectedAccountIds: number[];
     monthlyTotals: MonthlyTotal[];
     chartMonth: string;
 };
@@ -106,7 +107,7 @@ export type SearchProps = {
     results: SearchResultItem[];
     totalCount: number;
     query: string;
-    currentAccount: string | null;
+    selectedAccountIds: number[];
 };
 
 export type RecurringTransaction = {
@@ -133,7 +134,7 @@ export type RecurringMerchant = {
 
 export type RecurringProps = {
     recurringMerchants?: RecurringMerchant[];
-    currentAccount: string | null;
+    selectedAccountIds: number[];
 };
 
 export type DashboardProps = {
@@ -141,7 +142,7 @@ export type DashboardProps = {
     incomeCents: number;
     expensesCents: number;
     currentMonth: string;
-    currentAccount: string;
+    selectedAccountIds: number[];
     availableMonths: string[];
     importPreview?: ImportPreview | null;
     averageData?: AverageData;

@@ -9,12 +9,12 @@ export type DockNavItem = {
     isActive: boolean;
 };
 
-export function useNavItems(currentAccount?: string): DockNavItem[] {
+export function useNavItems(selectedAccountIds?: number[]): DockNavItem[] {
     const { currentUrl } = useCurrentUrl();
 
     function buildHref(path: string): string {
-        if (currentAccount && path !== '/') {
-            return `${path}?account=${currentAccount}`;
+        if (selectedAccountIds && selectedAccountIds.length > 0 && path !== '/') {
+            return `${path}?accounts=${selectedAccountIds.join(',')}`;
         }
         return path;
     }

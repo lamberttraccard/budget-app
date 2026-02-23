@@ -41,15 +41,15 @@ class DemoSeeder extends Seeder
     private function createAccounts(): array
     {
         return [
-            'bp' => Account::factory()->personal()->create([
+            'bp' => Account::factory()->create([
                 'name' => 'Compte Courant',
                 'bank' => 'Banque Populaire',
             ]),
-            'revolut' => Account::factory()->personal()->create([
+            'revolut' => Account::factory()->create([
                 'name' => 'Revolut Personal',
                 'bank' => 'Revolut',
             ]),
-            'business' => Account::factory()->professional()->create([
+            'business' => Account::factory()->create([
                 'name' => 'Revolut Business',
                 'bank' => 'Revolut',
             ]),

@@ -26,7 +26,7 @@ class TransactionControllerTest extends TestCase
     public function test_can_update_transaction_category(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $oldCategory = Category::where('slug', 'food')->first();
         $newCategory = Category::where('slug', 'restaurants')->first();
         $import = Import::factory()->completed()->create();
@@ -54,7 +54,7 @@ class TransactionControllerTest extends TestCase
     public function test_update_requires_valid_category(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $category = Category::where('slug', 'food')->first();
 
         $transaction = Transaction::factory()->create([
@@ -72,7 +72,7 @@ class TransactionControllerTest extends TestCase
 
     public function test_update_requires_authentication(): void
     {
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $category = Category::where('slug', 'food')->first();
 
         $transaction = Transaction::factory()->create([
@@ -103,7 +103,7 @@ class TransactionControllerTest extends TestCase
     public function test_can_re_correct_transaction_category(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $food = Category::where('slug', 'food')->first();
         $restaurants = Category::where('slug', 'restaurants')->first();
         $transport = Category::where('slug', 'transport')->first();
@@ -132,7 +132,7 @@ class TransactionControllerTest extends TestCase
     public function test_update_returns_redirect_back(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $category = Category::where('slug', 'food')->first();
         $newCategory = Category::where('slug', 'transport')->first();
 
@@ -153,7 +153,7 @@ class TransactionControllerTest extends TestCase
     public function test_category_id_is_required(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $category = Category::where('slug', 'food')->first();
 
         $transaction = Transaction::factory()->create([
@@ -172,7 +172,7 @@ class TransactionControllerTest extends TestCase
         Event::fake([CategoryCorrected::class]);
 
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $food = Category::where('slug', 'food')->first();
         $restaurants = Category::where('slug', 'restaurants')->first();
 
@@ -199,7 +199,7 @@ class TransactionControllerTest extends TestCase
         Event::fake([CategoryCorrected::class]);
 
         $user = User::factory()->create();
-        $account = Account::factory()->personal()->create();
+        $account = Account::factory()->create();
         $food = Category::where('slug', 'food')->first();
 
         $transaction = Transaction::factory()->create([

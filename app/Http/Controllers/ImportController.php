@@ -55,10 +55,9 @@ class ImportController extends Controller
     {
         $request->validate([
             'csv_file' => ['required', 'file', 'max:5120'],
-            'account_type' => ['sometimes', 'in:personal,professional'],
+            'account_id' => ['required_without:new_account_name', 'integer', 'exists:accounts,id'],
+            'new_account_name' => ['required_without:account_id', 'string', 'max:255'],
         ]);
-
-        $accountType = $request->input('account_type', 'personal');
 
         $file = $request->file('csv_file');
         $content = $file->get();
@@ -70,10 +69,14 @@ class ImportController extends Controller
             return back()->withErrors(['csv_file' => $e->getMessage()]);
         }
 
-        $account = Account::firstOrCreate(
-            ['bank' => $parser->bankName(), 'type' => $accountType],
-            ['name' => $parser->bankName().' '.ucfirst($accountType)],
-        );
+        if ($request->filled('account_id')) {
+            $account = Account::findOrFail($request->input('account_id'));
+        } else {
+            $account = Account::create([
+                'name' => $request->input('new_account_name'),
+                'bank' => $parser->bankName(),
+            ]);
+        }
 
         try {
             $this->csvImportService->import($content, $filename, $account->id);

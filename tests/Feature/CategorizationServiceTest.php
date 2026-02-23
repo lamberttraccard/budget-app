@@ -31,7 +31,7 @@ class CategorizationServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = app(CategorizationService::class);
-        $this->account = Account::factory()->personal()->create();
+        $this->account = Account::factory()->create();
         $this->import = Import::factory()->completed()->create();
         $this->seedCategories();
     }
