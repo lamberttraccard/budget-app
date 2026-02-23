@@ -1,4 +1,4 @@
-import { LayoutGrid, Repeat, Search } from 'lucide-react';
+import { LayoutGrid, Repeat, Search, Settings } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 
@@ -37,6 +37,12 @@ export function useNavItems(selectedAccountIds?: number[]): DockNavItem[] {
             href: buildHref('/search'),
             icon: Search,
             isActive: currentUrl === '/search',
+        },
+        {
+            label: 'Settings',
+            href: buildHref('/settings/merchant-rules'),
+            icon: Settings,
+            isActive: currentUrl.startsWith('/settings'),
         },
     ];
 }

@@ -41,7 +41,7 @@ class UpdateMerchantRuleTest extends TestCase
         $listener->handle($event);
 
         $this->assertDatabaseHas('merchant_rules', [
-            'merchant_pattern' => 'BOULANGERIE LEFEVRE',
+            'merchant_pattern' => 'boulangerie lefevre',
             'category_id' => $restaurants->id,
         ]);
     }
@@ -53,7 +53,7 @@ class UpdateMerchantRuleTest extends TestCase
         $transport = Category::where('slug', 'transport')->first();
 
         MerchantRule::create([
-            'merchant_pattern' => 'UBER EATS',
+            'merchant_pattern' => 'uber eats',
             'category_id' => $restaurants->id,
         ]);
 
@@ -69,7 +69,7 @@ class UpdateMerchantRuleTest extends TestCase
 
         $this->assertDatabaseCount('merchant_rules', 1);
         $this->assertDatabaseHas('merchant_rules', [
-            'merchant_pattern' => 'UBER EATS',
+            'merchant_pattern' => 'uber eats',
             'category_id' => $transport->id,
         ]);
     }
@@ -93,7 +93,7 @@ class UpdateMerchantRuleTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('merchant_rules', [
-            'merchant_pattern' => 'PICARD SURGELES',
+            'merchant_pattern' => 'picard surgeles',
             'category_id' => $food->id,
         ]);
 

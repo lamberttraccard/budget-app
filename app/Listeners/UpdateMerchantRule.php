@@ -10,7 +10,7 @@ class UpdateMerchantRule
     public function handle(CategoryCorrected $event): void
     {
         MerchantRule::updateOrCreate(
-            ['merchant_pattern' => trim($event->transaction->description)],
+            ['merchant_pattern' => mb_strtolower(trim($event->transaction->description))],
             ['category_id' => $event->newCategoryId],
         );
     }

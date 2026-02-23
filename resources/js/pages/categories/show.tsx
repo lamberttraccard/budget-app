@@ -2,14 +2,17 @@ import { Deferred, Head, router, usePage } from '@inertiajs/react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import ApplyRuleConfirmDialog from '@/components/ApplyRuleConfirmDialog';
 import CategoryMonthlyChart from '@/components/CategoryMonthlyChart';
 import CategoryPicker from '@/components/CategoryPicker';
 import ColorHeader from '@/components/ColorHeader';
 import SubcategoryRow from '@/components/SubcategoryRow';
 import TransactionRow from '@/components/TransactionRow';
+import type { TransactionTapData } from '@/components/TransactionRow';
 import { Skeleton } from '@/components/ui/skeleton';
 import AppLayout from '@/layouts/app-layout';
 import type { CategoryShowProps, SharedProps, TransactionItem } from '@/types';
+
 
 function TransactionListSkeleton() {
     return (
@@ -43,8 +46,12 @@ export default function CategoryShow({
     const [activeSubcategoryId, setActiveSubcategoryId] = useState<number | null>(null);
     const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
     const [selectedTransactionCategoryId, setSelectedTransactionCategoryId] = useState<number | null>(null);
+    const [selectedDescription, setSelectedDescription] = useState<string | null>(null);
+    const [pendingCategoryId, setPendingCategoryId] = useState<number | null>(null);
+    const [matchCount, setMatchCount] = useState<number | null>(null);
     const [isPatching, setIsPatching] = useState(false);
     const pickerTriggerRef = useRef<HTMLSpanElement>(null);
+    const selectedTransactionIdRef = useRef<number | null>(null);
 
     const handleAccountsChange = useCallback((accountIds: number[]) => {
         const params: Record<string, string> = { month: currentMonth };
@@ -62,14 +69,15 @@ export default function CategoryShow({
         );
     };
 
-    const handleTransactionTap = useCallback((transactionId: number, categoryId: number, element: HTMLElement) => {
+    const handleTransactionTap = useCallback((data: TransactionTapData) => {
         if (isPatching) return;
-        setSelectedTransactionId(transactionId);
-        setSelectedTransactionCategoryId(categoryId);
+        setSelectedTransactionId(data.id);
+        selectedTransactionIdRef.current = data.id;
+        setSelectedTransactionCategoryId(data.categoryId);
+        setSelectedDescription(data.description);
 
-        // Position the desktop dropdown anchor at the clicked row
         if (pickerTriggerRef.current) {
-            const rect = element.getBoundingClientRect();
+            const rect = data.element.getBoundingClientRect();
             Object.assign(pickerTriggerRef.current.style, {
                 top: `${rect.bottom}px`,
                 left: `${rect.left}px`,
@@ -78,21 +86,99 @@ export default function CategoryShow({
         }
     }, [isPatching]);
 
-    const handleCategorySelect = useCallback((categoryId: number) => {
-        if (selectedTransactionId === null || isPatching) return;
+    const clearState = useCallback(() => {
+        setSelectedTransactionId(null);
+        selectedTransactionIdRef.current = null;
+        setSelectedTransactionCategoryId(null);
+        setSelectedDescription(null);
+        setPendingCategoryId(null);
+        setMatchCount(null);
+    }, []);
+
+    const patchTransaction = useCallback((applyToAll: boolean) => {
+        if (selectedTransactionId === null || pendingCategoryId === null) return;
         setIsPatching(true);
-        router.patch(`/transactions/${selectedTransactionId}`, {
-            category_id: categoryId,
-        }, {
+
+        const data = applyToAll
+            ? { category_id: pendingCategoryId, apply_to_all: true as const }
+            : { category_id: pendingCategoryId };
+
+        router.patch(`/transactions/${selectedTransactionId}`, data, {
             preserveScroll: true,
-            onSuccess: () => {
-                setSelectedTransactionId(null);
-                setSelectedTransactionCategoryId(null);
-                toast("Got it, I'll remember");
+            onSuccess: (page) => {
+                clearState();
+                if (applyToAll) {
+                    const props = page.props as unknown as { flash?: { updated_count?: number } };
+                    const count = props.flash?.updated_count;
+                    toast(`Updated ${count ?? 0} transactions`);
+                } else {
+                    toast("Got it, I'll remember");
+                }
             },
             onFinish: () => setIsPatching(false),
         });
-    }, [selectedTransactionId, isPatching]);
+    }, [selectedTransactionId, pendingCategoryId, clearState]);
+
+    const handleCategorySelect = useCallback((categoryId: number) => {
+        if (selectedTransactionId === null || isPatching) return;
+
+        // F6: Skip if same category
+        if (categoryId === selectedTransactionCategoryId) {
+            clearState();
+            return;
+        }
+
+        setPendingCategoryId(categoryId);
+
+        // Fetch match count
+        fetch(`/transactions/match-count?description=${encodeURIComponent(selectedDescription ?? '')}`)
+            .then((response) => {
+                if (!response.ok) {
+                    toast.error('Failed to check matching transactions');
+                    clearState();
+                    return null;
+                }
+                return response.json();
+            })
+            .then((data: { count: number } | null) => {
+                if (!data) return;
+
+                // Guard: abort if the user tapped a different transaction while fetch was in flight
+                const currentId = selectedTransactionIdRef.current;
+                if (currentId !== selectedTransactionId) return;
+
+                if (data.count <= 1) {
+                    // Single match — apply immediately (no dialog)
+                    setIsPatching(true);
+                    router.patch(`/transactions/${currentId}`, {
+                        category_id: categoryId,
+                    }, {
+                        preserveScroll: true,
+                        onSuccess: () => {
+                            clearState();
+                            toast("Got it, I'll remember");
+                        },
+                        onFinish: () => setIsPatching(false),
+                    });
+                } else {
+                    // Multiple matches — show dialog
+                    setMatchCount(data.count);
+                }
+            })
+            .catch(() => {
+                toast.error('Failed to check matching transactions');
+                clearState();
+            });
+    }, [selectedTransactionId, selectedTransactionCategoryId, selectedDescription, isPatching, clearState]);
+
+    const handlePickerClose = useCallback(() => {
+        // Only clear state if there's no pending category selection
+        if (pendingCategoryId === null) {
+            clearState();
+        }
+    }, [pendingCategoryId, clearState]);
+
+    const pendingCategory = allCategories.find((c) => c.id === pendingCategoryId);
 
     const shouldReduceMotion = useReducedMotion();
 
@@ -185,13 +271,22 @@ export default function CategoryShow({
             <CategoryPicker
                 categories={allCategories}
                 currentCategoryId={selectedTransactionCategoryId ?? 0}
-                isOpen={selectedTransactionId !== null}
-                onClose={() => {
-                    setSelectedTransactionId(null);
-                    setSelectedTransactionCategoryId(null);
-                }}
+                isOpen={selectedTransactionId !== null && pendingCategoryId === null}
+                onClose={handlePickerClose}
                 onSelect={handleCategorySelect}
                 triggerRef={pickerTriggerRef}
+            />
+
+            <ApplyRuleConfirmDialog
+                isOpen={matchCount !== null && matchCount > 1 && pendingCategoryId !== null}
+                description={selectedDescription ?? ''}
+                categoryName={pendingCategory?.name ?? ''}
+                categoryColor={pendingCategory?.color ?? ''}
+                matchCount={matchCount ?? 0}
+                isLoading={isPatching}
+                onApplyOne={() => patchTransaction(false)}
+                onApplyAll={() => patchTransaction(true)}
+                onCancel={clearState}
             />
         </AppLayout>
     );

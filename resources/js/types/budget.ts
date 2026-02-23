@@ -152,4 +152,21 @@ export type DashboardProps = {
 
 export type SharedProps = {
     allCategories: CategoryOption[];
+    flash?: {
+        updated_count?: number;
+    };
+};
+
+export type MerchantRuleItem = {
+    id: number;
+    merchantPattern: string;
+    categoryId: number;
+    categoryName: string;
+    categoryColor: string;
+    categoryIcon: string | null;
+    matchCount: number;
+};
+
+export type MerchantRulesProps = {
+    rules: MerchantRuleItem[];
 };

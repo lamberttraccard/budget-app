@@ -194,6 +194,147 @@ class TransactionControllerTest extends TestCase
         });
     }
 
+    public function test_update_with_apply_to_all_updates_matching_transactions(): void
+    {
+        Event::fake([CategoryCorrected::class]);
+
+        $user = User::factory()->create();
+        $account = Account::factory()->create();
+        $food = Category::where('slug', 'food')->first();
+        $restaurants = Category::where('slug', 'restaurants')->first();
+        $import = Import::factory()->completed()->create();
+
+        $transaction1 = Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'description' => 'CARREFOUR CITY PARIS',
+        ]);
+
+        $transaction2 = Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'description' => 'carrefour city paris',
+        ]);
+
+        $transaction3 = Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'description' => 'OTHER STORE',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->patch("/transactions/{$transaction1->id}", [
+                'category_id' => $restaurants->id,
+                'apply_to_all' => true,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('updated_count', 2);
+
+        $this->assertDatabaseHas('transactions', [
+            'id' => $transaction1->id,
+            'category_id' => $restaurants->id,
+        ]);
+        $this->assertDatabaseHas('transactions', [
+            'id' => $transaction2->id,
+            'category_id' => $restaurants->id,
+        ]);
+        // Unrelated transaction should NOT be updated
+        $this->assertDatabaseHas('transactions', [
+            'id' => $transaction3->id,
+            'category_id' => $food->id,
+        ]);
+
+        // Only one CategoryCorrected event (for the original transaction)
+        Event::assertDispatchedTimes(CategoryCorrected::class, 1);
+    }
+
+    public function test_update_without_apply_to_all_updates_only_single_transaction(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->create();
+        $food = Category::where('slug', 'food')->first();
+        $restaurants = Category::where('slug', 'restaurants')->first();
+        $import = Import::factory()->completed()->create();
+
+        $transaction1 = Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'description' => 'CARREFOUR CITY PARIS',
+        ]);
+
+        $transaction2 = Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'description' => 'carrefour city paris',
+        ]);
+
+        $this->actingAs($user)
+            ->patch("/transactions/{$transaction1->id}", [
+                'category_id' => $restaurants->id,
+            ]);
+
+        $this->assertDatabaseHas('transactions', [
+            'id' => $transaction1->id,
+            'category_id' => $restaurants->id,
+        ]);
+        // Other matching transaction should NOT be updated
+        $this->assertDatabaseHas('transactions', [
+            'id' => $transaction2->id,
+            'category_id' => $food->id,
+        ]);
+    }
+
+    public function test_match_count_returns_correct_count(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->create();
+        $food = Category::where('slug', 'food')->first();
+        $import = Import::factory()->completed()->create();
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'description' => 'CARREFOUR CITY PARIS',
+        ]);
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'description' => 'carrefour city paris',
+        ]);
+
+        Transaction::factory()->create([
+            'category_id' => $food->id,
+            'account_id' => $account->id,
+            'import_id' => $import->id,
+            'description' => 'OTHER STORE',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get('/transactions/match-count?description=CARREFOUR+CITY+PARIS');
+
+        $response->assertOk();
+        $response->assertJson(['count' => 2]);
+    }
+
+    public function test_match_count_requires_description(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->get('/transactions/match-count');
+
+        $response->assertSessionHasErrors('description');
+    }
+
     public function test_category_corrected_event_not_dispatched_when_same_category(): void
     {
         Event::fake([CategoryCorrected::class]);

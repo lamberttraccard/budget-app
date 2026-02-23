@@ -1,16 +1,23 @@
 import { Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
+import AmbientCircle from '@/components/AmbientCircle';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
+import { index as merchantRulesIndex } from '@/routes/merchant-rules';
 import { edit } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
+    {
+        title: 'Merchant Rules',
+        href: merchantRulesIndex(),
+        icon: null,
+    },
     {
         title: 'Profile',
         href: edit(),
@@ -37,6 +44,8 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     }
 
     return (
+        <>
+        <AmbientCircle />
         <div className="px-4 py-6">
             <Heading
                 title="Settings"
@@ -79,5 +88,6 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 </div>
             </div>
         </div>
+        </>
     );
 }

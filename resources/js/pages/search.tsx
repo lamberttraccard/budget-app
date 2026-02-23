@@ -3,10 +3,13 @@ import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import AmbientCircle from '@/components/AmbientCircle';
+import ApplyRuleConfirmDialog from '@/components/ApplyRuleConfirmDialog';
 import CategoryPicker from '@/components/CategoryPicker';
 import SearchResultRow from '@/components/SearchResultRow';
+import type { TransactionTapData } from '@/components/TransactionRow';
 import AppLayout from '@/layouts/app-layout';
 import type { SearchProps, SharedProps } from '@/types';
+
 
 function buildSearchParams(q: string | null, accountIds: number[]): Record<string, string> {
     const params: Record<string, string> = {};
@@ -27,8 +30,12 @@ export default function SearchPage({
 
     const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
     const [selectedTransactionCategoryId, setSelectedTransactionCategoryId] = useState<number | null>(null);
+    const [selectedDescription, setSelectedDescription] = useState<string | null>(null);
+    const [pendingCategoryId, setPendingCategoryId] = useState<number | null>(null);
+    const [matchCount, setMatchCount] = useState<number | null>(null);
     const [isPatching, setIsPatching] = useState(false);
     const pickerTriggerRef = useRef<HTMLSpanElement>(null);
+    const selectedTransactionIdRef = useRef<number | null>(null);
 
     // Sync localQuery when server-side query changes (e.g. back navigation)
     useEffect(() => {
@@ -86,14 +93,25 @@ export default function SearchPage({
         router.get('/search', buildSearchParams(localQuery, accountIds), { preserveState: true, replace: true });
     }, [localQuery]);
 
+    const clearState = useCallback(() => {
+        setSelectedTransactionId(null);
+        selectedTransactionIdRef.current = null;
+        setSelectedTransactionCategoryId(null);
+        setSelectedDescription(null);
+        setPendingCategoryId(null);
+        setMatchCount(null);
+    }, []);
+
     const handleTransactionTap = useCallback(
-        (transactionId: number, categoryId: number, element: HTMLElement) => {
+        (data: TransactionTapData) => {
             if (isPatching) return;
-            setSelectedTransactionId(transactionId);
-            setSelectedTransactionCategoryId(categoryId);
+            setSelectedTransactionId(data.id);
+            selectedTransactionIdRef.current = data.id;
+            setSelectedTransactionCategoryId(data.categoryId);
+            setSelectedDescription(data.description);
 
             if (pickerTriggerRef.current) {
-                const rect = element.getBoundingClientRect();
+                const rect = data.element.getBoundingClientRect();
                 Object.assign(pickerTriggerRef.current.style, {
                     top: `${rect.bottom}px`,
                     left: `${rect.left}px`,
@@ -104,26 +122,93 @@ export default function SearchPage({
         [isPatching],
     );
 
+    const patchTransaction = useCallback((applyToAll: boolean) => {
+        if (selectedTransactionId === null || pendingCategoryId === null) return;
+        setIsPatching(true);
+
+        const data = applyToAll
+            ? { category_id: pendingCategoryId, apply_to_all: true as const }
+            : { category_id: pendingCategoryId };
+
+        router.patch(`/transactions/${selectedTransactionId}`, data, {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                clearState();
+                if (applyToAll) {
+                    const props = page.props as unknown as { flash?: { updated_count?: number } };
+                    const count = props.flash?.updated_count;
+                    toast(`Updated ${count ?? 0} transactions`);
+                } else {
+                    toast("Got it, I'll remember");
+                }
+            },
+            onFinish: () => setIsPatching(false),
+        });
+    }, [selectedTransactionId, pendingCategoryId, clearState]);
+
     const handleCategorySelect = useCallback(
         (categoryId: number) => {
             if (selectedTransactionId === null || isPatching) return;
-            setIsPatching(true);
-            router.patch(
-                `/transactions/${selectedTransactionId}`,
-                { category_id: categoryId },
-                {
-                    preserveScroll: true,
-                    onSuccess: () => {
-                        setSelectedTransactionId(null);
-                        setSelectedTransactionCategoryId(null);
-                        toast("Got it, I'll remember");
-                    },
-                    onFinish: () => setIsPatching(false),
-                },
-            );
+
+            // F6: Skip if same category
+            if (categoryId === selectedTransactionCategoryId) {
+                clearState();
+                return;
+            }
+
+            setPendingCategoryId(categoryId);
+
+            // Fetch match count
+            fetch(`/transactions/match-count?description=${encodeURIComponent(selectedDescription ?? '')}`)
+                .then((response) => {
+                    if (!response.ok) {
+                        toast.error('Failed to check matching transactions');
+                        clearState();
+                        return null;
+                    }
+                    return response.json();
+                })
+                .then((data: { count: number } | null) => {
+                    if (!data) return;
+
+                    // Guard: abort if the user tapped a different transaction while fetch was in flight
+                    const currentId = selectedTransactionIdRef.current;
+                    if (currentId !== selectedTransactionId) return;
+
+                    if (data.count <= 1) {
+                        // Single match — apply immediately (no dialog)
+                        setIsPatching(true);
+                        router.patch(`/transactions/${currentId}`, {
+                            category_id: categoryId,
+                        }, {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                clearState();
+                                toast("Got it, I'll remember");
+                            },
+                            onFinish: () => setIsPatching(false),
+                        });
+                    } else {
+                        // Multiple matches — show dialog
+                        setMatchCount(data.count);
+                    }
+                })
+                .catch(() => {
+                    toast.error('Failed to check matching transactions');
+                    clearState();
+                });
         },
-        [selectedTransactionId, isPatching],
+        [selectedTransactionId, selectedTransactionCategoryId, selectedDescription, isPatching, clearState],
     );
+
+    const handlePickerClose = useCallback(() => {
+        // Only clear state if there's no pending category selection
+        if (pendingCategoryId === null) {
+            clearState();
+        }
+    }, [pendingCategoryId, clearState]);
+
+    const pendingCategory = allCategories.find((c) => c.id === pendingCategoryId);
 
     return (
         <AppLayout selectedAccountIds={selectedAccountIds} onAccountsChange={handleAccountsChange}>
@@ -215,13 +300,22 @@ export default function SearchPage({
             <CategoryPicker
                 categories={allCategories}
                 currentCategoryId={selectedTransactionCategoryId ?? 0}
-                isOpen={selectedTransactionId !== null}
-                onClose={() => {
-                    setSelectedTransactionId(null);
-                    setSelectedTransactionCategoryId(null);
-                }}
+                isOpen={selectedTransactionId !== null && pendingCategoryId === null}
+                onClose={handlePickerClose}
                 onSelect={handleCategorySelect}
                 triggerRef={pickerTriggerRef}
+            />
+
+            <ApplyRuleConfirmDialog
+                isOpen={matchCount !== null && matchCount > 1 && pendingCategoryId !== null}
+                description={selectedDescription ?? ''}
+                categoryName={pendingCategory?.name ?? ''}
+                categoryColor={pendingCategory?.color ?? ''}
+                matchCount={matchCount ?? 0}
+                isLoading={isPatching}
+                onApplyOne={() => patchTransaction(false)}
+                onApplyAll={() => patchTransaction(true)}
+                onCancel={clearState}
             />
         </AppLayout>
     );

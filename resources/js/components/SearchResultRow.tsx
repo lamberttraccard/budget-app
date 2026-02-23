@@ -1,5 +1,7 @@
+import type { TransactionTapData } from '@/components/TransactionRow';
 import { formatAbsAmount } from '@/lib/formatAmount';
 import { formatDate } from '@/lib/formatDate';
+
 
 type Props = {
     id: number;
@@ -10,7 +12,7 @@ type Props = {
     categoryName: string;
     categoryColor: string;
     accountName: string;
-    onTap: (transactionId: number, categoryId: number, element: HTMLElement) => void;
+    onTap: (data: TransactionTapData) => void;
 };
 
 export default function SearchResultRow({
@@ -27,7 +29,7 @@ export default function SearchResultRow({
     return (
         <button
             type="button"
-            onClick={(e) => onTap(id, categoryId, e.currentTarget)}
+            onClick={(e) => onTap({ id, categoryId, description, element: e.currentTarget })}
             className="flex w-full items-center gap-3 px-4 py-2.5 min-h-[44px] text-left
                        hover:bg-surface-elevated rounded-lg transition-colors cursor-pointer"
         >

@@ -45,6 +45,10 @@ Route::get('categories/{category}', [CategoryController::class, 'show'])
     ->middleware(['auth', 'verified'])
     ->name('categories.show');
 
+Route::get('transactions/match-count', [TransactionController::class, 'matchCount'])
+    ->middleware(['auth', 'verified'])
+    ->name('transactions.match-count');
+
 Route::patch('transactions/{transaction}', [TransactionController::class, 'update'])
     ->middleware(['auth', 'verified'])
     ->name('transactions.update');

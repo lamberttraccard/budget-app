@@ -52,6 +52,11 @@ describe('SearchResultRow', () => {
         fireEvent.click(button);
 
         expect(onTap).toHaveBeenCalledTimes(1);
-        expect(onTap).toHaveBeenCalledWith(1, 3, expect.any(HTMLElement));
+        expect(onTap).toHaveBeenCalledWith({
+            id: 1,
+            categoryId: 3,
+            description: 'CARREFOUR CITY PARIS',
+            element: expect.any(HTMLElement),
+        });
     });
 });
