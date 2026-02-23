@@ -41,6 +41,7 @@ class CsvImportService
                         'category_id' => null,
                         'account_id' => $accountId,
                         'import_id' => $import->id,
+                        'bank_metadata' => $entry['transaction']->bankMetadata ? json_encode($entry['transaction']->bankMetadata) : null,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ], $uniqueEntries);

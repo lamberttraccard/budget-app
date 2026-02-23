@@ -9,5 +9,6 @@ readonly class TransactionData
         public string $description,
         public int $amountCents,
         public string $rawLine,
+        public ?array $bankMetadata = null,
     ) {}
 }

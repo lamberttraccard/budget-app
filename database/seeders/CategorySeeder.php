@@ -22,6 +22,7 @@ class CategorySeeder extends Seeder
             ['name' => 'Insurance',     'slug' => 'insurance',     'color' => '#94A3B8', 'icon' => 'shield'],
             ['name' => 'Income',        'slug' => 'income',        'color' => '#10B981', 'icon' => 'wallet'],
             ['name' => 'Professional',  'slug' => 'professional',  'color' => '#EAB308', 'icon' => 'briefcase'],
+            ['name' => 'Transfer',      'slug' => 'transfer',      'color' => '#6B7280', 'icon' => 'arrow-left-right'],
             ['name' => 'Other',         'slug' => 'other',         'color' => '#A1A1AA', 'icon' => 'ellipsis'],
         ];
 
@@ -36,6 +37,7 @@ class CategorySeeder extends Seeder
             'transport' => ['Fuel', 'Car Maintenance'],
             'housing' => ['Mortgage', 'Maintenance'],
             'income' => ['Salary', 'Freelance', 'Refunds', 'Investments'],
+            'transfer' => ['Internal', 'Savings'],
         ];
 
         foreach ($subcategories as $parentSlug => $children) {

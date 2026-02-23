@@ -183,6 +183,59 @@ class CategorizeTransactionChunkTest extends TestCase
         });
     }
 
+    public function test_chunk_includes_bank_hint_in_prompt(): void
+    {
+        $t1 = Transaction::factory()->create([
+            'description' => 'CARREFOUR CITY',
+            'amount_cents' => -4250,
+            'account_id' => $this->account->id,
+            'import_id' => $this->import->id,
+            'category_id' => null,
+            'bank_metadata' => [
+                'type_operation' => 'Carte',
+                'categorie' => 'Alimentation',
+                'sous_categorie' => 'Hyper/supermarche',
+            ],
+        ]);
+
+        TransactionCategorizer::fake([
+            [
+                'results' => [
+                    ['index' => 1, 'description' => 'CARREFOUR CITY', 'category_slug' => 'food', 'confidence' => 0.95],
+                ],
+            ],
+        ]);
+
+        Event::fake([TransactionCategorized::class]);
+
+        (new CategorizeTransactionChunk([$t1->id]))->handle();
+
+        TransactionCategorizer::assertPrompted(function ($prompt) {
+            return str_contains($prompt->prompt, '[bank hint: Alimentation > Hyper/supermarche]');
+        });
+    }
+
+    public function test_chunk_no_bank_hint_when_metadata_is_null(): void
+    {
+        $t1 = $this->createUncategorizedTransaction('CARREFOUR CITY', -4250);
+
+        TransactionCategorizer::fake([
+            [
+                'results' => [
+                    ['index' => 1, 'description' => 'CARREFOUR CITY', 'category_slug' => 'food', 'confidence' => 0.95],
+                ],
+            ],
+        ]);
+
+        Event::fake([TransactionCategorized::class]);
+
+        (new CategorizeTransactionChunk([$t1->id]))->handle();
+
+        TransactionCategorizer::assertPrompted(function ($prompt) {
+            return ! str_contains($prompt->prompt, '[bank hint:');
+        });
+    }
+
     public function test_chunk_handles_empty_transaction_ids(): void
     {
         TransactionCategorizer::fake([]);

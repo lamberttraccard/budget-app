@@ -140,11 +140,19 @@ class BanquePopulaireParser implements CsvParserInterface
 
                 $description = trim($fields[2]) !== '' ? trim($fields[2]) : trim($fields[1]);
 
+                $bankMetadata = [
+                    'type_operation' => trim($fields[5]),
+                    'categorie' => trim($fields[6]),
+                    'sous_categorie' => trim($fields[7]),
+                ];
+                $bankMetadata = array_filter($bankMetadata) ?: null;
+
                 $transactions->push(new TransactionData(
                     date: $this->parseDate($fields[10]),
                     description: $description,
                     amountCents: $this->parseAmount($amountRaw),
                     rawLine: $trimmed,
+                    bankMetadata: $bankMetadata,
                 ));
             } catch (CsvParseException) {
                 continue;

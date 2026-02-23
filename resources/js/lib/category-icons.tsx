@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
     Apple,
+    ArrowLeftRight,
     Briefcase,
     Car,
     CreditCard,
@@ -18,6 +19,7 @@ import {
 
 const iconMap: Record<string, LucideIcon> = {
     'apple': Apple,
+    'arrow-left-right': ArrowLeftRight,
     'utensils': Utensils,
     'car': Car,
     'house': House,

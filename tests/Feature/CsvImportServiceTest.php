@@ -221,6 +221,60 @@ class CsvImportServiceTest extends TestCase
         $this->assertSame('2026-01-17', $result->date_to->format('Y-m-d'));
     }
 
+    private function bpEnrichedCsvContent(): string
+    {
+        return mb_convert_encoding(
+            "Date de comptabilisation;Libelle simplifie;Libelle operation;Reference;Informations complementaires;Type operation;Categorie;Sous categorie;Debit;Credit;Date operation;Date de valeur;Pointage operation\r\n"
+            ."30/01/2026;VIR INTERNE;VIREMENT COMPTE EPARGNE;REF001;Info1;Virement;Transaction exclue;Virement interne;-500,00;;30/01/2026;30/01/2026;P\r\n"
+            ."31/01/2026;CARREFOUR;CARTE CARREFOUR CITY;REF002;Info2;Carte;Alimentation;Hyper/supermarche;-42,50;;31/01/2026;31/01/2026;P\r\n",
+            'ISO-8859-15',
+            'UTF-8',
+        );
+    }
+
+    public function test_import_enriched_bp_csv_persists_bank_metadata(): void
+    {
+        Event::fake([ImportCompleted::class]);
+
+        $import = $this->service->import($this->bpEnrichedCsvContent(), 'enriched.csv', $this->account->id);
+
+        $transactions = Transaction::where('import_id', $import->id)->orderBy('date')->get();
+        $this->assertCount(2, $transactions);
+
+        // First transaction: Virement interne
+        $this->assertNotNull($transactions[0]->bank_metadata);
+        $this->assertSame('Virement interne', $transactions[0]->bank_metadata['sous_categorie']);
+        $this->assertSame('Transaction exclue', $transactions[0]->bank_metadata['categorie']);
+
+        // Second transaction: regular category
+        $this->assertNotNull($transactions[1]->bank_metadata);
+        $this->assertSame('Alimentation', $transactions[1]->bank_metadata['categorie']);
+    }
+
+    public function test_import_classic_bp_csv_has_null_bank_metadata(): void
+    {
+        Event::fake([ImportCompleted::class]);
+
+        $import = $this->service->import($this->bpCsvContent(), 'classic.csv', $this->account->id);
+
+        $transactions = Transaction::where('import_id', $import->id)->get();
+        foreach ($transactions as $transaction) {
+            $this->assertNull($transaction->bank_metadata);
+        }
+    }
+
+    public function test_import_revolut_csv_has_null_bank_metadata(): void
+    {
+        Event::fake([ImportCompleted::class]);
+
+        $import = $this->service->import($this->revolutPersonalCsvContent(), 'revolut.csv', $this->account->id);
+
+        $transactions = Transaction::where('import_id', $import->id)->get();
+        foreach ($transactions as $transaction) {
+            $this->assertNull($transaction->bank_metadata);
+        }
+    }
+
     public function test_database_transaction_atomicity(): void
     {
         Event::fake([ImportCompleted::class]);

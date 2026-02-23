@@ -38,20 +38,21 @@ class CategorizationServiceTest extends TestCase
 
     private function seedCategories(): void
     {
-        $slugs = ['food', 'restaurants', 'transport', 'housing', 'entertainment', 'shopping', 'health', 'education', 'travel', 'insurance', 'income', 'professional', 'other'];
+        $slugs = ['food', 'restaurants', 'transport', 'housing', 'entertainment', 'shopping', 'health', 'education', 'travel', 'insurance', 'income', 'professional', 'transfer', 'other'];
         $this->categories = [];
         foreach ($slugs as $slug) {
             $this->categories[$slug] = Category::factory()->create(['slug' => $slug, 'name' => ucfirst($slug)]);
         }
     }
 
-    private function createUncategorizedTransaction(string $description): Transaction
+    private function createUncategorizedTransaction(string $description, ?array $bankMetadata = null): Transaction
     {
         return Transaction::factory()->create([
             'description' => $description,
             'account_id' => $this->account->id,
             'import_id' => $this->import->id,
             'category_id' => null,
+            'bank_metadata' => $bankMetadata,
         ]);
     }
 
@@ -163,5 +164,90 @@ class CategorizationServiceTest extends TestCase
         $this->service->categorize($this->import);
 
         Event::assertDispatched(TransactionCategorized::class, 2);
+    }
+
+    // --- Bank Hints Tests ---
+
+    public function test_virement_interne_auto_categorized_as_transfer_without_ai(): void
+    {
+        $transaction = $this->createUncategorizedTransaction('VIREMENT COMPTE EPARGNE', [
+            'type_operation' => 'Virement',
+            'categorie' => 'Transaction exclue',
+            'sous_categorie' => 'Virement interne',
+        ]);
+
+        Bus::fake([CategorizeTransactionChunk::class]);
+        Event::fake([TransactionCategorized::class]);
+
+        $this->service->categorize($this->import);
+
+        $this->assertSame($this->categories['transfer']->id, $transaction->fresh()->category_id);
+        Event::assertDispatched(TransactionCategorized::class, 1);
+        Bus::assertNothingBatched();
+    }
+
+    public function test_bank_hints_and_merchant_rules_categorize_all_without_ai(): void
+    {
+        MerchantRule::factory()->create([
+            'merchant_pattern' => 'CARREFOUR CITY',
+            'category_id' => $this->categories['food']->id,
+        ]);
+
+        $transfer = $this->createUncategorizedTransaction('VIREMENT COMPTE EPARGNE', [
+            'type_operation' => 'Virement',
+            'categorie' => 'Transaction exclue',
+            'sous_categorie' => 'Virement interne',
+        ]);
+        $merchant = $this->createUncategorizedTransaction('CARREFOUR CITY');
+
+        Bus::fake([CategorizeTransactionChunk::class]);
+        Event::fake([TransactionCategorized::class]);
+
+        $this->service->categorize($this->import);
+
+        $this->assertSame($this->categories['transfer']->id, $transfer->fresh()->category_id);
+        $this->assertSame($this->categories['food']->id, $merchant->fresh()->category_id);
+        Bus::assertNothingBatched();
+        $this->assertSame('categorized', $this->import->fresh()->status);
+    }
+
+    public function test_apply_bank_hints_graceful_when_transfer_category_not_seeded(): void
+    {
+        // Delete the transfer category
+        Category::where('slug', 'transfer')->delete();
+
+        $transaction = $this->createUncategorizedTransaction('VIREMENT COMPTE EPARGNE', [
+            'type_operation' => 'Virement',
+            'categorie' => 'Transaction exclue',
+            'sous_categorie' => 'Virement interne',
+        ]);
+
+        Bus::fake([CategorizeTransactionChunk::class]);
+        Event::fake([TransactionCategorized::class]);
+
+        $this->service->categorize($this->import);
+
+        // Transaction should NOT be categorized by bank hints
+        $this->assertNull($transaction->fresh()->category_id);
+        // Should fall through to AI
+        Bus::assertBatched(fn ($batch) => $batch->jobs->count() === 1);
+    }
+
+    public function test_non_virement_interne_bank_metadata_falls_through_to_ai(): void
+    {
+        $transaction = $this->createUncategorizedTransaction('CARREFOUR CITY', [
+            'type_operation' => 'Carte',
+            'categorie' => 'Alimentation',
+            'sous_categorie' => 'Hyper/supermarche',
+        ]);
+
+        Bus::fake([CategorizeTransactionChunk::class]);
+        Event::fake([TransactionCategorized::class]);
+
+        $this->service->categorize($this->import);
+
+        // Not categorized by bank hints (not "Virement interne")
+        $this->assertNull($transaction->fresh()->category_id);
+        Bus::assertBatched(fn ($batch) => $batch->jobs->count() === 1);
     }
 }

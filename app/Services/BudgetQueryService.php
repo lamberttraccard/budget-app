@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\DB;
 
 class BudgetQueryService
 {
+    private const EXCLUDED_SLUGS = ['income', 'transfer'];
+
+    private function excludedSlugsSql(): string
+    {
+        return "'".implode("','", self::EXCLUDED_SLUGS)."'";
+    }
+
     public function getMonthlyData(int $year, int $month, ?string $accountType = null): array
     {
         $query = Transaction::query()
@@ -55,7 +62,7 @@ class BudgetQueryService
         $incomeCents = $incomeRow ? (int) $incomeRow->total_amount : 0;
 
         $expensesCents = abs(
-            $rows->filter(fn ($r) => $r->slug !== 'income')
+            $rows->filter(fn ($r) => ! in_array($r->slug, self::EXCLUDED_SLUGS, true))
                 ->sum(fn ($r) => (int) $r->total_amount)
         );
 
@@ -278,7 +285,7 @@ class BudgetQueryService
 
             if ($row->slug === 'income') {
                 $totalIncome = $totalAmount;
-            } else {
+            } elseif (! in_array($row->slug, self::EXCLUDED_SLUGS, true)) {
                 $totalExpenses += $totalAmount;
             }
         }
@@ -304,7 +311,7 @@ class BudgetQueryService
             ->select([
                 DB::raw("TO_CHAR(transactions.date, 'YYYY-MM') as month"),
                 DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) = 'income' THEN transactions.amount_cents ELSE 0 END), 0) as income_cents"),
-                DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) != 'income' THEN ABS(transactions.amount_cents) ELSE 0 END), 0) as expenses_cents"),
+                DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) NOT IN ({$this->excludedSlugsSql()}) THEN ABS(transactions.amount_cents) ELSE 0 END), 0) as expenses_cents"),
             ])
             ->join('categories', 'transactions.category_id', '=', 'categories.id')
             ->leftJoin('categories as parent_cat', 'categories.parent_id', '=', 'parent_cat.id')
@@ -419,7 +426,7 @@ class BudgetQueryService
                 'accounts.bank',
                 'accounts.type',
                 DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) = 'income' THEN transactions.amount_cents ELSE 0 END), 0) as income_cents"),
-                DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) != 'income' THEN ABS(transactions.amount_cents) ELSE 0 END), 0) as expenses_cents"),
+                DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) NOT IN ({$this->excludedSlugsSql()}) THEN ABS(transactions.amount_cents) ELSE 0 END), 0) as expenses_cents"),
                 DB::raw('COUNT(transactions.id) as transaction_count'),
             ])
             ->groupBy('accounts.id', 'accounts.name', 'accounts.bank', 'accounts.type');

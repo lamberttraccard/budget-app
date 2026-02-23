@@ -15,16 +15,16 @@ class CategorySeederTest extends TestCase
     {
         $this->seed(CategorySeeder::class);
 
-        $this->assertSame(13, Category::whereNull('parent_id')->count());
-        $this->assertSame(8, Category::whereNotNull('parent_id')->count());
-        $this->assertDatabaseCount('categories', 21);
+        $this->assertSame(14, Category::whereNull('parent_id')->count());
+        $this->assertSame(10, Category::whereNotNull('parent_id')->count());
+        $this->assertDatabaseCount('categories', 24);
     }
 
     public function test_all_top_level_categories_have_null_parent(): void
     {
         $this->seed(CategorySeeder::class);
 
-        $this->assertSame(13, Category::whereNull('parent_id')->count());
+        $this->assertSame(14, Category::whereNull('parent_id')->count());
     }
 
     public function test_food_category_has_correct_color(): void
@@ -65,7 +65,7 @@ class CategorySeederTest extends TestCase
         $expectedSlugs = [
             'food', 'restaurants', 'transport', 'housing', 'entertainment',
             'shopping', 'health', 'education', 'travel',
-            'insurance', 'income', 'professional', 'other',
+            'insurance', 'income', 'professional', 'transfer', 'other',
         ];
 
         foreach ($expectedSlugs as $slug) {
@@ -78,7 +78,7 @@ class CategorySeederTest extends TestCase
         $this->seed(CategorySeeder::class);
         $this->seed(CategorySeeder::class);
 
-        $this->assertDatabaseCount('categories', 21);
+        $this->assertDatabaseCount('categories', 24);
     }
 
     public function test_subcategories_have_correct_parent(): void
@@ -122,6 +122,34 @@ class CategorySeederTest extends TestCase
 
         $this->assertNotNull($food);
         $this->assertSame('apple', $food->icon);
+    }
+
+    public function test_transfer_category_has_correct_attributes(): void
+    {
+        $this->seed(CategorySeeder::class);
+
+        $transfer = Category::where('slug', 'transfer')->first();
+
+        $this->assertNotNull($transfer);
+        $this->assertSame('Transfer', $transfer->name);
+        $this->assertSame('#6B7280', $transfer->color);
+        $this->assertSame('arrow-left-right', $transfer->icon);
+        $this->assertNull($transfer->parent_id);
+    }
+
+    public function test_transfer_subcategories_exist_with_correct_slugs(): void
+    {
+        $this->seed(CategorySeeder::class);
+
+        $transfer = Category::where('slug', 'transfer')->first();
+
+        $internal = Category::where('slug', 'transfer-internal')->first();
+        $savings = Category::where('slug', 'transfer-savings')->first();
+
+        $this->assertNotNull($internal);
+        $this->assertNotNull($savings);
+        $this->assertSame($transfer->id, $internal->parent_id);
+        $this->assertSame($transfer->id, $savings->parent_id);
     }
 
     public function test_all_categories_have_icons(): void

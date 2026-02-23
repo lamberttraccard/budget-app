@@ -18,6 +18,7 @@ class Transaction extends Model
         'category_id',
         'account_id',
         'import_id',
+        'bank_metadata',
     ];
 
     protected function casts(): array
@@ -25,6 +26,7 @@ class Transaction extends Model
         return [
             'amount_cents' => 'integer',
             'date' => 'date',
+            'bank_metadata' => 'array',
         ];
     }
 

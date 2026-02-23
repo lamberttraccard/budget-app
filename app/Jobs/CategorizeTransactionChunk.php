@@ -54,7 +54,15 @@ class CategorizeTransactionChunk implements ShouldQueue
             foreach ($uncategorized->values() as $i => $transaction) {
                 $index = $i + 1;
                 $indexedTransactions[$index] = $transaction;
-                $prompt .= "{$index}. \"{$transaction->description}\" ({$transaction->amount_cents} cents, {$transaction->date->format('Y-m-d')})\n";
+                $hint = '';
+                if ($transaction->bank_metadata) {
+                    $cat = $transaction->bank_metadata['categorie'] ?? '';
+                    $sub = $transaction->bank_metadata['sous_categorie'] ?? '';
+                    if ($cat) {
+                        $hint = ' [bank hint: '.$cat.($sub ? " > {$sub}" : '').']';
+                    }
+                }
+                $prompt .= "{$index}. \"{$transaction->description}\" ({$transaction->amount_cents} cents, {$transaction->date->format('Y-m-d')}){$hint}\n";
             }
 
             $response = (new TransactionCategorizer)->prompt($prompt);

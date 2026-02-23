@@ -171,6 +171,100 @@ class BanquePopulaireParserTest extends TestCase
         $this->assertStringContainsString(';', $transactions[0]->rawLine);
     }
 
+    private function enrichedCsvContent(): string
+    {
+        return $this->encode(
+            "Date de comptabilisation;Libelle simplifie;Libelle operation;Reference;Informations complementaires;Type operation;Categorie;Sous categorie;Debit;Credit;Date operation;Date de valeur;Pointage operation\r\n"
+            ."30/01/2026;VIR INTERNE;VIREMENT COMPTE EPARGNE;REF001;Info1;Virement;Transaction exclue;Virement interne;-500,00;;30/01/2026;30/01/2026;P\r\n"
+            ."31/01/2026;CARREFOUR;CARTE CARREFOUR CITY;REF002;Info2;Carte;Alimentation;Hyper/supermarche;-42,50;;31/01/2026;31/01/2026;P\r\n"
+            ."01/02/2026;SALAIRE;VIREMENT SALAIRE JANVIER;REF003;Info3;Virement recu;;;;150000,00;01/02/2026;01/02/2026;P\r\n"
+        );
+    }
+
+    public function test_can_parse_returns_true_for_enriched_bp_csv(): void
+    {
+        $this->assertTrue($this->parser->canParse($this->enrichedCsvContent(), 'export.csv'));
+    }
+
+    public function test_enriched_csv_parses_correct_transaction_count(): void
+    {
+        $transactions = $this->parser->parse($this->enrichedCsvContent());
+
+        $this->assertCount(3, $transactions);
+    }
+
+    public function test_enriched_csv_extracts_bank_metadata_for_virement_interne(): void
+    {
+        $transactions = $this->parser->parse($this->enrichedCsvContent());
+
+        $first = $transactions[0];
+        $this->assertNotNull($first->bankMetadata);
+        $this->assertSame('Virement', $first->bankMetadata['type_operation']);
+        $this->assertSame('Transaction exclue', $first->bankMetadata['categorie']);
+        $this->assertSame('Virement interne', $first->bankMetadata['sous_categorie']);
+    }
+
+    public function test_enriched_csv_extracts_bank_metadata_for_regular_category(): void
+    {
+        $transactions = $this->parser->parse($this->enrichedCsvContent());
+
+        $second = $transactions[1];
+        $this->assertNotNull($second->bankMetadata);
+        $this->assertSame('Carte', $second->bankMetadata['type_operation']);
+        $this->assertSame('Alimentation', $second->bankMetadata['categorie']);
+        $this->assertSame('Hyper/supermarche', $second->bankMetadata['sous_categorie']);
+    }
+
+    public function test_enriched_csv_bank_metadata_partial_when_only_type_operation(): void
+    {
+        $transactions = $this->parser->parse($this->enrichedCsvContent());
+
+        $third = $transactions[2];
+        $this->assertNotNull($third->bankMetadata);
+        $this->assertSame('Virement recu', $third->bankMetadata['type_operation']);
+        $this->assertArrayNotHasKey('categorie', $third->bankMetadata);
+        $this->assertArrayNotHasKey('sous_categorie', $third->bankMetadata);
+    }
+
+    public function test_enriched_csv_bank_metadata_null_when_all_fields_empty(): void
+    {
+        $csv = $this->encode(
+            "Date de comptabilisation;Libelle simplifie;Libelle operation;Reference;Informations complementaires;Type operation;Categorie;Sous categorie;Debit;Credit;Date operation;Date de valeur;Pointage operation\r\n"
+            ."15/02/2026;ITEM;SOME ITEM;REF001;Info1;;;;-10,00;;15/02/2026;15/02/2026;P\r\n"
+        );
+
+        $transactions = $this->parser->parse($csv);
+
+        $this->assertCount(1, $transactions);
+        $this->assertNull($transactions[0]->bankMetadata);
+    }
+
+    public function test_enriched_csv_parses_correct_amounts(): void
+    {
+        $transactions = $this->parser->parse($this->enrichedCsvContent());
+
+        $this->assertSame(-50000, $transactions[0]->amountCents);
+        $this->assertSame(-4250, $transactions[1]->amountCents);
+        $this->assertSame(15000000, $transactions[2]->amountCents);
+    }
+
+    public function test_enriched_csv_uses_libelle_operation_as_description(): void
+    {
+        $transactions = $this->parser->parse($this->enrichedCsvContent());
+
+        $this->assertSame('VIREMENT COMPTE EPARGNE', $transactions[0]->description);
+        $this->assertSame('CARTE CARREFOUR CITY', $transactions[1]->description);
+    }
+
+    public function test_classic_csv_has_null_bank_metadata(): void
+    {
+        $transactions = $this->parser->parse($this->validCsvContent());
+
+        foreach ($transactions as $transaction) {
+            $this->assertNull($transaction->bankMetadata);
+        }
+    }
+
     public function test_throws_csv_parse_exception_for_empty_content(): void
     {
         $this->expectException(CsvParseException::class);

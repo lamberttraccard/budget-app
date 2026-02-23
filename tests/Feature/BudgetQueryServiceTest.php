@@ -654,6 +654,98 @@ class BudgetQueryServiceTest extends TestCase
         $this->assertEmpty($result['monthlyExpenseTotals']);
     }
 
+    // --- Transfer Exclusion Tests ---
+
+    public function test_transfer_excluded_from_expenses_in_monthly_data()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $transfer = Category::where('slug', 'transfer')->first();
+        $income = Category::where('slug', 'income')->first();
+
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2026-02-10', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -50000, 'date' => '2026-02-12', 'category_id' => $transfer->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => 100000, 'date' => '2026-02-01', 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+
+        $result = $this->service->getMonthlyData(2026, 2);
+
+        // Transfer excluded from expenses
+        $this->assertEquals(30000, $result['expensesCents']);
+        // Income unaffected
+        $this->assertEquals(100000, $result['incomeCents']);
+        // Transfer still in categoryTotals
+        $transferTotal = collect($result['categoryTotals'])->firstWhere('slug', 'transfer');
+        $this->assertNotNull($transferTotal);
+        $this->assertEquals(-50000, $transferTotal['amountCents']);
+    }
+
+    public function test_transfer_excluded_from_monthly_averages()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $transfer = Category::where('slug', 'transfer')->first();
+        $income = Category::where('slug', 'income')->first();
+
+        foreach (['2025-10-15', '2025-11-15'] as $date) {
+            Transaction::factory()->create(['amount_cents' => -30000, 'date' => $date, 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+            Transaction::factory()->create(['amount_cents' => -50000, 'date' => $date, 'category_id' => $transfer->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+            Transaction::factory()->create(['amount_cents' => 150000, 'date' => $date, 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        }
+
+        $result = $this->service->getMonthlyAverages();
+
+        // Only food in expenses avg, transfer excluded
+        $this->assertEquals(30000, $result['avgExpensesCents']);
+        $this->assertEquals(150000, $result['avgIncomeCents']);
+        // Transfer still has a categoryAverages entry
+        $this->assertArrayHasKey('transfer', $result['categoryAverages']);
+    }
+
+    public function test_transfer_excluded_from_sparkline_expenses()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $transfer = Category::where('slug', 'transfer')->first();
+        $income = Category::where('slug', 'income')->first();
+
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -50000, 'date' => '2025-10-15', 'category_id' => $transfer->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => 150000, 'date' => '2025-10-05', 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+
+        $this->assertCount(1, $result['monthlyExpenseTotals']);
+        // Only food expense, transfer excluded
+        $this->assertEquals(30000, $result['monthlyExpenseTotals'][0]['amountCents']);
+        $this->assertEquals(150000, $result['monthlyIncomeTotals'][0]['amountCents']);
+    }
+
+    public function test_transfer_excluded_from_account_summary_expenses()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $transfer = Category::where('slug', 'transfer')->first();
+        $income = Category::where('slug', 'income')->first();
+
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2026-02-10', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -50000, 'date' => '2026-02-12', 'category_id' => $transfer->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => 100000, 'date' => '2026-02-01', 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+
+        $result = $this->service->getAccountSummary(2026, 2);
+
+        $this->assertEquals(30000, $result['totalExpensesCents']);
+        $this->assertEquals(100000, $result['totalIncomeCents']);
+        $this->assertEquals(30000, $result['accounts'][0]['expensesCents']);
+    }
+
     public function test_sparkline_data_includes_months_with_zero_for_missing_side()
     {
         $this->seed(CategorySeeder::class);
