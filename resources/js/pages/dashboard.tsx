@@ -63,6 +63,7 @@ export default function Dashboard({
     importPreview,
     averageData,
     imports,
+    sparklineData,
 }: DashboardProps) {
     const { errors } = usePage().props as { errors: Record<string, string> };
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -123,7 +124,7 @@ export default function Dashboard({
         router.get('/', { month, account: currentAccount }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'availableMonths', 'averageData', 'imports'],
+            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'availableMonths', 'averageData', 'sparklineData', 'imports'],
         });
     }, [currentAccount]);
 
@@ -132,7 +133,7 @@ export default function Dashboard({
         router.get('/', { month: currentMonth, account }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'currentAccount', 'availableMonths', 'averageData', 'imports'],
+            only: ['categoryTotals', 'incomeCents', 'expensesCents', 'currentMonth', 'currentAccount', 'availableMonths', 'averageData', 'sparklineData', 'imports'],
         });
     }, [currentMonth]);
 
@@ -270,6 +271,7 @@ export default function Dashboard({
                     avgIncomeCents={averageData?.avgIncomeCents}
                     avgExpensesCents={averageData?.avgExpensesCents}
                     showDashes={isEmptyMonth}
+                    sparklineData={sparklineData}
                 />
 
                 {isEmptyMonth ? (
