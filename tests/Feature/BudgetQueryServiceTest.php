@@ -555,4 +555,121 @@ class BudgetQueryServiceTest extends TestCase
         $this->assertCount(1, $febResult['categoryTotals']);
         $this->assertEquals(-20000, $febResult['categoryTotals'][0]['amountCents']);
     }
+
+    // --- Monthly Sparkline Data Tests ---
+
+    public function test_sparkline_data_returns_correct_structure()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $income = Category::where('slug', 'income')->first();
+
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => 150000, 'date' => '2025-10-05', 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+
+        $this->assertArrayHasKey('monthlyIncomeTotals', $result);
+        $this->assertArrayHasKey('monthlyExpenseTotals', $result);
+        $this->assertIsArray($result['monthlyIncomeTotals']);
+        $this->assertIsArray($result['monthlyExpenseTotals']);
+    }
+
+    public function test_sparkline_data_separates_income_and_expenses()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+        $transport = Category::where('slug', 'transport')->first();
+        $income = Category::where('slug', 'income')->first();
+
+        // Oct 2025: income 150000, expenses -30000 food + -20000 transport = 50000
+        Transaction::factory()->create(['amount_cents' => 150000, 'date' => '2025-10-05', 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-10-10', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -20000, 'date' => '2025-10-15', 'category_id' => $transport->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+
+        // Nov 2025: income 200000, expenses -40000 food
+        Transaction::factory()->create(['amount_cents' => 200000, 'date' => '2025-11-05', 'category_id' => $income->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -40000, 'date' => '2025-11-10', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+
+        $this->assertCount(2, $result['monthlyIncomeTotals']);
+        $this->assertEquals('2025-10', $result['monthlyIncomeTotals'][0]['month']);
+        $this->assertEquals(150000, $result['monthlyIncomeTotals'][0]['amountCents']);
+        $this->assertEquals('2025-11', $result['monthlyIncomeTotals'][1]['month']);
+        $this->assertEquals(200000, $result['monthlyIncomeTotals'][1]['amountCents']);
+
+        $this->assertCount(2, $result['monthlyExpenseTotals']);
+        $this->assertEquals('2025-10', $result['monthlyExpenseTotals'][0]['month']);
+        $this->assertEquals(50000, $result['monthlyExpenseTotals'][0]['amountCents']); // absolute value
+        $this->assertEquals('2025-11', $result['monthlyExpenseTotals'][1]['month']);
+        $this->assertEquals(40000, $result['monthlyExpenseTotals'][1]['amountCents']);
+    }
+
+    public function test_sparkline_data_caps_at_12_months()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        // Create 14 months of data
+        for ($i = 0; $i < 14; $i++) {
+            $date = now()->subMonths(14 - $i)->startOfMonth()->addDays(14)->toDateString();
+            Transaction::factory()->create(['amount_cents' => -10000, 'date' => $date, 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+        }
+
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+
+        $this->assertLessThanOrEqual(12, count($result['monthlyExpenseTotals']));
+    }
+
+    public function test_sparkline_data_filters_by_account_type()
+    {
+        $this->seed(CategorySeeder::class);
+        $personalAccount = Account::factory()->personal()->create();
+        $professionalAccount = Account::factory()->professional()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        Transaction::factory()->create(['amount_cents' => -10000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $personalAccount->id, 'import_id' => $import->id]);
+        Transaction::factory()->create(['amount_cents' => -50000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $professionalAccount->id, 'import_id' => $import->id]);
+
+        $personal = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+        $this->assertEquals(10000, $personal['monthlyExpenseTotals'][0]['amountCents']);
+
+        $professional = $this->service->getMonthlyExpenseAndIncomeTotals('professional');
+        $this->assertEquals(50000, $professional['monthlyExpenseTotals'][0]['amountCents']);
+    }
+
+    public function test_sparkline_data_returns_empty_arrays_with_no_data()
+    {
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+
+        $this->assertEmpty($result['monthlyIncomeTotals']);
+        $this->assertEmpty($result['monthlyExpenseTotals']);
+    }
+
+    public function test_sparkline_data_includes_months_with_zero_for_missing_side()
+    {
+        $this->seed(CategorySeeder::class);
+        $account = Account::factory()->personal()->create();
+        $import = Import::factory()->completed()->create();
+        $food = Category::where('slug', 'food')->first();
+
+        // Only expenses in Oct, no income
+        Transaction::factory()->create(['amount_cents' => -30000, 'date' => '2025-10-15', 'category_id' => $food->id, 'account_id' => $account->id, 'import_id' => $import->id]);
+
+        $result = $this->service->getMonthlyExpenseAndIncomeTotals('personal');
+
+        $this->assertCount(1, $result['monthlyExpenseTotals']);
+        $this->assertEquals(30000, $result['monthlyExpenseTotals'][0]['amountCents']);
+        // Income should have an entry for Oct with 0
+        $this->assertCount(1, $result['monthlyIncomeTotals']);
+        $this->assertEquals(0, $result['monthlyIncomeTotals'][0]['amountCents']);
+    }
 }

@@ -292,6 +292,48 @@ class BudgetQueryService
     }
 
     /**
+     * Get monthly income and expense totals for sparkline display.
+     * Returns the most recent 12 months of data, with income and expenses separated.
+     * Expense amounts are returned as positive (absolute) values.
+     *
+     * @return array{monthlyIncomeTotals: array, monthlyExpenseTotals: array}
+     */
+    public function getMonthlyExpenseAndIncomeTotals(string $accountType): array
+    {
+        $query = Transaction::query()
+            ->select([
+                DB::raw("TO_CHAR(transactions.date, 'YYYY-MM') as month"),
+                DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) = 'income' THEN transactions.amount_cents ELSE 0 END), 0) as income_cents"),
+                DB::raw("COALESCE(SUM(CASE WHEN COALESCE(parent_cat.slug, categories.slug) != 'income' THEN ABS(transactions.amount_cents) ELSE 0 END), 0) as expenses_cents"),
+            ])
+            ->join('categories', 'transactions.category_id', '=', 'categories.id')
+            ->leftJoin('categories as parent_cat', 'categories.parent_id', '=', 'parent_cat.id')
+            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
+            ->where('accounts.type', $accountType)
+            ->groupBy(DB::raw("TO_CHAR(transactions.date, 'YYYY-MM')"))
+            ->orderBy('month');
+
+        $rows = $query->get();
+
+        // Keep only the most recent 12 months (query orders ascending, so slice from the end)
+        if ($rows->count() > 12) {
+            $rows = $rows->slice(-12)->values();
+        }
+
+        $monthlyIncomeTotals = $rows->map(fn ($row) => [
+            'month' => $row->month,
+            'amountCents' => (int) $row->income_cents,
+        ])->values()->toArray();
+
+        $monthlyExpenseTotals = $rows->map(fn ($row) => [
+            'month' => $row->month,
+            'amountCents' => (int) $row->expenses_cents,
+        ])->values()->toArray();
+
+        return compact('monthlyIncomeTotals', 'monthlyExpenseTotals');
+    }
+
+    /**
      * Compare category spending between two months with absolute and percentage deltas.
      */
     public function getMonthlyComparison(
