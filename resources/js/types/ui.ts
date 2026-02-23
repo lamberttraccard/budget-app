@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 
 export type AppLayoutProps = {
     children: ReactNode;
-    selectedAccountIds?: number[];
     onAccountsChange?: (accountIds: number[]) => void;
     accentColor?: string;
 };

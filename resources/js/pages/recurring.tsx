@@ -47,7 +47,7 @@ export default function RecurringPage({
     const merchants = recurringMerchants ?? [];
 
     return (
-        <AppLayout selectedAccountIds={selectedAccountIds} onAccountsChange={handleAccountsChange}>
+        <AppLayout onAccountsChange={handleAccountsChange}>
             <Head title="Recurring" />
 
             <AmbientCircle />

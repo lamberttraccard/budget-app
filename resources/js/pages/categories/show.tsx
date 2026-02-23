@@ -187,7 +187,7 @@ export default function CategoryShow({
         : transactions;
 
     return (
-        <AppLayout selectedAccountIds={selectedAccountIds} onAccountsChange={handleAccountsChange} accentColor={category.color}>
+        <AppLayout onAccountsChange={handleAccountsChange} accentColor={category.color}>
             <Head title={category.name} />
 
             <motion.div

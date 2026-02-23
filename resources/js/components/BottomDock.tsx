@@ -1,12 +1,10 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { useNavItems } from '@/hooks/use-nav-items';
+import type { SharedProps } from '@/types';
 
-type BottomDockProps = {
-    selectedAccountIds?: number[];
-};
-
-export default function BottomDock({ selectedAccountIds }: BottomDockProps) {
-    const items = useNavItems(selectedAccountIds);
+export default function BottomDock() {
+    const { selectedAccountIds } = usePage<SharedProps>().props;
+    const items = useNavItems(selectedAccountIds ?? []);
 
     return (
         <nav

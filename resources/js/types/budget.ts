@@ -152,6 +152,8 @@ export type DashboardProps = {
 
 export type SharedProps = {
     allCategories: CategoryOption[];
+    selectedAccountIds: number[];
+    accountContexts: AccountContext[];
     flash?: {
         updated_count?: number;
     };

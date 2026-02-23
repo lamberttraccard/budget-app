@@ -211,7 +211,7 @@ export default function SearchPage({
     const pendingCategory = allCategories.find((c) => c.id === pendingCategoryId);
 
     return (
-        <AppLayout selectedAccountIds={selectedAccountIds} onAccountsChange={handleAccountsChange}>
+        <AppLayout onAccountsChange={handleAccountsChange}>
             <Head title="Search" />
 
             <AmbientCircle />

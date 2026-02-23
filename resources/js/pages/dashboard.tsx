@@ -265,7 +265,7 @@ export default function Dashboard({
     }, [handleFileSelect]);
 
     return (
-        <AppLayout selectedAccountIds={selectedAccountIds} onAccountsChange={handleAccountsChange}>
+        <AppLayout onAccountsChange={handleAccountsChange}>
             <Head title="Budget" />
 
             {/* Hidden file input */}

@@ -1,14 +1,28 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { useCallback } from 'react';
 import { Toaster } from 'sonner';
 import AccountPicker from '@/components/AccountPicker';
 import AppLogoIcon from '@/components/app-logo-icon';
 import BottomDock from '@/components/BottomDock';
 import { useNavItems } from '@/hooks/use-nav-items';
-import type { AccountContext, AppLayoutProps } from '@/types';
+import type { AppLayoutProps, SharedProps } from '@/types';
 
-export default function AppLayout({ children, selectedAccountIds, onAccountsChange, accentColor }: AppLayoutProps) {
-    const { accountContexts } = usePage<{ props: { accountContexts: AccountContext[] } }>().props as unknown as { accountContexts: AccountContext[] };
+export default function AppLayout({ children, onAccountsChange, accentColor }: AppLayoutProps) {
+    const { accountContexts, selectedAccountIds: sharedAccountIds } = usePage<SharedProps>().props;
+
+    const selectedAccountIds = sharedAccountIds ?? [];
     const navItems = useNavItems(selectedAccountIds);
+
+    const defaultAccountsChange = useCallback((accountIds: number[]) => {
+        const params: Record<string, string> = {};
+        if (accountIds.length > 0) params.accounts = accountIds.join(',');
+        router.get(window.location.pathname, params, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    }, []);
+
+    const handleAccountsChange = onAccountsChange ?? defaultAccountsChange;
 
     return (
         <div className="min-h-screen bg-background overflow-x-hidden">
@@ -40,11 +54,11 @@ export default function AppLayout({ children, selectedAccountIds, onAccountsChan
                             ))}
                         </nav>
                     </div>
-                    {accountContexts?.length > 0 && onAccountsChange && (
+                    {accountContexts?.length > 1 && (
                         <AccountPicker
-                            selectedAccountIds={selectedAccountIds ?? []}
+                            selectedAccountIds={selectedAccountIds}
                             accountContexts={accountContexts}
-                            onAccountsChange={onAccountsChange}
+                            onAccountsChange={handleAccountsChange}
                             dark={!!accentColor}
                         />
                     )}
@@ -63,7 +77,7 @@ export default function AppLayout({ children, selectedAccountIds, onAccountsChan
                 duration={2000}
             />
 
-            <BottomDock selectedAccountIds={selectedAccountIds} />
+            <BottomDock />
         </div>
     );
 }

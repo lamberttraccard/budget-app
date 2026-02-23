@@ -13,7 +13,7 @@ export function useNavItems(selectedAccountIds?: number[]): DockNavItem[] {
     const { currentUrl } = useCurrentUrl();
 
     function buildHref(path: string): string {
-        if (selectedAccountIds && selectedAccountIds.length > 0 && path !== '/') {
+        if (selectedAccountIds && selectedAccountIds.length > 0) {
             return `${path}?accounts=${selectedAccountIds.join(',')}`;
         }
         return path;

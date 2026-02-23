@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Concerns\ParsesAccountIds;
 use App\Models\Account;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -9,6 +10,8 @@ use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    use ParsesAccountIds;
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -60,6 +63,7 @@ class HandleInertiaRequests extends Middleware
                     ->values()
                     ->toArray()
                 : [],
+            'selectedAccountIds' => fn () => $this->parseAccountIds($request) ?? [],
             'allCategories' => fn () => $request->user()
                 ? Category::whereNull('parent_id')
                     ->orderBy('name')

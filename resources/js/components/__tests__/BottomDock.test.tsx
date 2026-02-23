@@ -4,9 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BottomDock from '../BottomDock';
 
 let mockUrl = '/';
+let mockSelectedAccountIds: number[] = [];
 
 vi.mock('@inertiajs/react', () => ({
-    usePage: () => ({ url: mockUrl }),
+    usePage: () => ({ url: mockUrl, props: { selectedAccountIds: mockSelectedAccountIds } }),
     Link: ({ href, children, ...props }: { href: string; children: ReactNode; [key: string]: unknown }) => (
         <a href={href} {...props}>{children}</a>
     ),
@@ -15,6 +16,7 @@ vi.mock('@inertiajs/react', () => ({
 describe('BottomDock', () => {
     beforeEach(() => {
         mockUrl = '/';
+        mockSelectedAccountIds = [];
     });
 
     it('renders 3 dock items with correct labels', () => {
@@ -55,18 +57,15 @@ describe('BottomDock', () => {
         expect(searchLink).toHaveClass('text-white');
     });
 
-    it('appends accounts query param to links when selectedAccountIds is set', () => {
-        render(<BottomDock selectedAccountIds={[1, 2]} />);
+    it('appends accounts query param to all links when selectedAccountIds is set', () => {
+        mockSelectedAccountIds = [1, 2];
+        render(<BottomDock />);
+        const dashboardLink = screen.getByText('Dashboard').closest('a');
         const recurringLink = screen.getByText('Recurring').closest('a');
         const searchLink = screen.getByText('Search').closest('a');
+        expect(dashboardLink).toHaveAttribute('href', '/?accounts=1,2');
         expect(recurringLink).toHaveAttribute('href', '/recurring?accounts=1,2');
         expect(searchLink).toHaveAttribute('href', '/search?accounts=1,2');
-    });
-
-    it('does not append accounts param to Dashboard link', () => {
-        render(<BottomDock selectedAccountIds={[1]} />);
-        const dashboardLink = screen.getByText('Dashboard').closest('a');
-        expect(dashboardLink).toHaveAttribute('href', '/');
     });
 
     it('renders items as links with correct hrefs', () => {
