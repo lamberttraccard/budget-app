@@ -38,23 +38,29 @@ export default function SearchResultRow({
                 style={{ backgroundColor: categoryColor }}
             />
             <span className="flex-1 min-w-0">
-                <span className="block text-sm text-white truncate">
-                    {description}
+                <span className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-white truncate">
+                        {description}
+                    </span>
+                    <span className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-text-tertiary">
+                            {formatDate(date)}
+                        </span>
+                        <span className="text-sm font-semibold tabular-nums text-white">
+                            {formatAbsAmount(amountCents)}
+                        </span>
+                    </span>
                 </span>
-                <span className="block text-xs text-text-tertiary truncate">
-                    {categoryName}
+                <span className="flex items-center justify-between mt-0.5">
+                    <span className="text-xs text-text-tertiary truncate min-w-0">
+                        {categoryName}
+                    </span>
+                    {accountName && (
+                        <span className="text-[10px] text-text-tertiary bg-surface-elevated rounded-full px-1.5 py-0.5 shrink-0 truncate max-w-[100px]">
+                            {accountName}
+                        </span>
+                    )}
                 </span>
-            </span>
-            <span className="text-xs text-text-tertiary shrink-0">
-                {formatDate(date)}
-            </span>
-            {accountName && (
-                <span className="text-[10px] text-text-tertiary bg-surface-elevated rounded-full px-1.5 py-0.5 shrink-0">
-                    {accountName}
-                </span>
-            )}
-            <span className="text-sm font-semibold tabular-nums text-white shrink-0">
-                {formatAbsAmount(amountCents)}
             </span>
         </button>
     );
