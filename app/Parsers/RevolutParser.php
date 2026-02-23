@@ -21,6 +21,21 @@ class RevolutParser implements CsvParserInterface
         'Balance',
     ];
 
+    private const PERSONAL_HEADERS_FR = [
+        'Type',
+        'Produit',
+        'Date de début',
+        'Date de fin',
+        'Description',
+        'Montant',
+        'Frais',
+        'Devise',
+        'État',
+        'Solde',
+    ];
+
+    private const COMPLETED_STATES = ['COMPLETED', 'TERMINÉ'];
+
     private const BUSINESS_REQUIRED_HEADERS = [
         'Date started (UTC)',
         'Date completed (UTC)',
@@ -43,7 +58,7 @@ class RevolutParser implements CsvParserInterface
 
         $headers = str_getcsv(trim($firstLine), ',', '"', '');
 
-        if ($headers === self::PERSONAL_HEADERS) {
+        if ($headers === self::PERSONAL_HEADERS || $headers === self::PERSONAL_HEADERS_FR) {
             return true;
         }
 
@@ -69,13 +84,14 @@ class RevolutParser implements CsvParserInterface
         }
 
         $headers = str_getcsv(trim($headerLine), ',', '"', '');
-        $isPersonal = in_array('State', $headers, true);
+        $isFrench = in_array('État', $headers, true);
+        $isPersonal = in_array('State', $headers, true) || $isFrench;
         $headerMap = array_flip($headers);
 
-        $dateCol = $isPersonal ? 'Completed Date' : 'Date completed (UTC)';
+        $dateCol = $isFrench ? 'Date de fin' : ($isPersonal ? 'Completed Date' : 'Date completed (UTC)');
         $descCol = 'Description';
-        $amountCol = 'Amount';
-        $stateCol = $isPersonal ? 'State' : null;
+        $amountCol = $isFrench ? 'Montant' : 'Amount';
+        $stateCol = $isFrench ? 'État' : ($isPersonal ? 'State' : null);
 
         if (! isset($headerMap[$dateCol], $headerMap[$descCol], $headerMap[$amountCol])) {
             throw new CsvParseException('Invalid Revolut CSV headers.');
@@ -100,7 +116,7 @@ class RevolutParser implements CsvParserInterface
             if ($stateCol !== null) {
                 $state = trim($fields[$headerMap[$stateCol]]);
 
-                if ($state !== 'COMPLETED') {
+                if (! in_array($state, self::COMPLETED_STATES, true)) {
                     continue;
                 }
             }

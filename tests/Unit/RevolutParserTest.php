@@ -25,6 +25,14 @@ class RevolutParserTest extends TestCase
             ."TOPUP,Current,2023-03-12 08:00:00,2023-03-12 08:01:00,Top-Up by *1234,500.00,0.00,EUR,COMPLETED,895.00\n";
     }
 
+    private function personalFrCsvContent(): string
+    {
+        return "Type,Produit,Date de début,Date de fin,Description,Montant,Frais,Devise,État,Solde\n"
+            ."Paiement par carte,Pro,2025-01-04 08:41:36,2025-01-05 12:58:21,Namecheap,-16.71,0.17,EUR,TERMINÉ,1827.01\n"
+            ."Ajout de fonds,Pro,2025-01-02 11:54:58,2025-01-02 11:54:59,Paiement envoyé par L'IMPERIAL,65.00,0.00,EUR,TERMINÉ,1843.89\n"
+            ."CASHBACK,Pro,2025-01-02 01:28:41,2025-01-02 01:28:41,Cashback Pro,0.83,0.00,EUR,TERMINÉ,1778.89\n";
+    }
+
     private function businessCsvContent(): string
     {
         return "Date started (UTC),Date completed (UTC),ID,Type,Description,Reference,Payer,Card number,Orig currency,Orig amount,Payment currency,Amount,Fee,Balance,Account,Beneficiary account number,Beneficiary sort code or routing number,Beneficiary IBAN,Beneficiary BIC\n"
@@ -42,6 +50,11 @@ class RevolutParserTest extends TestCase
     public function test_can_parse_returns_true_for_valid_revolut_business_csv(): void
     {
         $this->assertTrue($this->parser->canParse($this->businessCsvContent(), 'revolut-business.csv'));
+    }
+
+    public function test_can_parse_returns_true_for_valid_revolut_personal_fr_csv(): void
+    {
+        $this->assertTrue($this->parser->canParse($this->personalFrCsvContent(), 'revolut-fr.csv'));
     }
 
     public function test_can_parse_returns_false_for_bp_csv(): void
@@ -142,6 +155,38 @@ class RevolutParserTest extends TestCase
         $this->assertCount(2, $transactions);
         $this->assertSame('Completed One', $transactions[0]->description);
         $this->assertSame('Completed Two', $transactions[1]->description);
+    }
+
+    // --- French personal format parsing tests ---
+
+    public function test_parses_valid_personal_fr_csv(): void
+    {
+        $transactions = $this->parser->parse($this->personalFrCsvContent());
+
+        $this->assertCount(3, $transactions);
+
+        $first = $transactions[0];
+        $this->assertSame('2025-01-05', $first->date);
+        $this->assertSame('Namecheap', $first->description);
+        $this->assertSame(-1671, $first->amountCents);
+
+        $second = $transactions[1];
+        $this->assertSame('2025-01-02', $second->date);
+        $this->assertSame("Paiement envoyé par L'IMPERIAL", $second->description);
+        $this->assertSame(6500, $second->amountCents);
+    }
+
+    public function test_fr_format_filters_non_termine_states(): void
+    {
+        $csv = "Type,Produit,Date de début,Date de fin,Description,Montant,Frais,Devise,État,Solde\n"
+            ."Paiement par carte,Pro,2025-01-04 08:41:36,2025-01-05 12:58:21,Completed,-16.71,0.17,EUR,TERMINÉ,1827.01\n"
+            ."Paiement par carte,Pro,2025-01-04 08:41:36,,Pending,-10.00,0.00,EUR,EN ATTENTE,1837.01\n"
+            ."Paiement par carte,Pro,2025-01-04 08:41:36,2025-01-05 12:58:21,Reverted,-5.00,0.00,EUR,ANNULÉ,1842.01\n";
+
+        $transactions = $this->parser->parse($csv);
+
+        $this->assertCount(1, $transactions);
+        $this->assertSame('Completed', $transactions[0]->description);
     }
 
     // --- Business format parsing tests ---
