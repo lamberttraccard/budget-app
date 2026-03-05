@@ -42,7 +42,7 @@ export default function RecurringPage({
     selectedAccountIds,
 }: RecurringProps) {
     const [expandedMerchant, setExpandedMerchant] = useState<string | null>(null);
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
 
     const toggleMerchant = useCallback((merchantName: string) => {
         setExpandedMerchant((prev) => (prev === merchantName ? null : merchantName));
