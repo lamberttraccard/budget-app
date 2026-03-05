@@ -16,8 +16,6 @@ function formatMonth(yearMonth: string): string {
 
 export default function RecurringMerchantCard({
     merchantName,
-    categoryName,
-    categoryColor,
     typicalAmountCents,
     frequency,
     lastSeenMonth,

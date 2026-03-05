@@ -38,7 +38,6 @@ function RecurringPageSkeleton() {
 
 export default function RecurringPage({
     recurringMerchants,
-    selectedAccountIds,
 }: RecurringProps) {
     const [expandedMerchant, setExpandedMerchant] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
