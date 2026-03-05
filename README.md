@@ -3,8 +3,9 @@
 A personal budget management app built with **Laravel 12**, **React 19**, and **Inertia.js 2**. Import your bank CSV statements, automatically categorize transactions with AI (Google Gemini), and visualize your spending by category and month.
 
 <p align="center">
-  <img src="dashboard.png" alt="Dashboard" width="300" />
-  <img src="recurring.png" alt="Recurring transactions" width="300" />
+  <img src="dashboard.png" alt="Dashboard" width="260" />
+  <img src="category.png" alt="Category detail" width="260" />
+  <img src="recurring.png" alt="Recurring transactions" width="260" />
 </p>
 
 ## Features
