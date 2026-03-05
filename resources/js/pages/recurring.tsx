@@ -74,6 +74,21 @@ export default function RecurringPage({
         return { incomeCents: inc, expensesCents: exp, incomeCount: incN, expensesCount: expN };
     }, [filteredMerchants]);
 
+    const categoryGroups = useMemo(() => {
+        const groups = new Map<string, { name: string; color: string; totalCents: number; merchants: RecurringMerchant[] }>();
+        for (const m of filteredMerchants) {
+            const key = m.categoryName;
+            const group = groups.get(key);
+            if (group) {
+                group.totalCents += Math.abs(m.typicalAmountCents);
+                group.merchants.push(m);
+            } else {
+                groups.set(key, { name: key, color: m.categoryColor, totalCents: Math.abs(m.typicalAmountCents), merchants: [m] });
+            }
+        }
+        return [...groups.values()].sort((a, b) => b.totalCents - a.totalCents);
+    }, [filteredMerchants]);
+
     return (
         <AppLayout onAccountsChange={handleAccountsChange}>
             <Head title="Recurring" />
@@ -130,17 +145,35 @@ export default function RecurringPage({
                     )}
                 </Deferred>
 
-                {/* Recurring merchant list */}
+                {/* Recurring merchant list grouped by category */}
                 <Deferred data="recurringMerchants" fallback={<RecurringPageSkeleton />}>
                     {filteredMerchants.length > 0 ? (
-                        <div className="space-y-3">
-                            {filteredMerchants.map((merchant) => (
-                                <RecurringMerchantCard
-                                    key={merchant.merchantName}
-                                    {...merchant}
-                                    isExpanded={expandedMerchant === merchant.merchantName}
-                                    onToggle={() => toggleMerchant(merchant.merchantName)}
-                                />
+                        <div className="space-y-5">
+                            {categoryGroups.map((group) => (
+                                <div key={group.name} className="space-y-2">
+                                    <div className="flex items-center justify-between px-1">
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className="size-2 rounded-full"
+                                                style={{ backgroundColor: group.color }}
+                                            />
+                                            <span className="text-sm font-medium text-text-secondary">{group.name}</span>
+                                        </div>
+                                        <span className="text-sm font-medium tabular-nums text-text-secondary">
+                                            {formatAbsAmount(group.totalCents)}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {group.merchants.map((merchant) => (
+                                            <RecurringMerchantCard
+                                                key={merchant.merchantName}
+                                                {...merchant}
+                                                isExpanded={expandedMerchant === merchant.merchantName}
+                                                onToggle={() => toggleMerchant(merchant.merchantName)}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     ) : (
