@@ -31,10 +31,10 @@ describe('RecurringMerchantCard', () => {
         expect(screen.getByText(/15,99/)).toBeInTheDocument();
     });
 
-    it('renders category color dot with correct background color', () => {
-        const { container } = render(<RecurringMerchantCard {...defaultProps} />);
-        const dot = container.querySelector('.rounded-full.size-2');
-        expect(dot).toHaveStyle({ backgroundColor: '#F97316' });
+    it('renders frequency and last seen month', () => {
+        render(<RecurringMerchantCard {...defaultProps} />);
+        expect(screen.getByText('Monthly')).toBeInTheDocument();
+        expect(screen.getByText('Feb 2026')).toBeInTheDocument();
     });
 
     it('calls onToggle when clicked', () => {

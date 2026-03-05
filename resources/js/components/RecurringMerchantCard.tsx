@@ -35,16 +35,9 @@ export default function RecurringMerchantCard({
                 onClick={onToggle}
                 className="flex w-full items-center gap-3 px-4 py-3 min-h-[44px] text-left cursor-pointer"
             >
-                <span
-                    className="size-2 rounded-full shrink-0"
-                    style={{ backgroundColor: categoryColor }}
-                />
                 <span className="flex-1 min-w-0">
                     <span className="block text-[15px] font-semibold text-white truncate">
                         {merchantName}
-                    </span>
-                    <span className="block text-xs text-text-secondary truncate">
-                        {categoryName}
                     </span>
                 </span>
                 <span className="text-right shrink-0">
