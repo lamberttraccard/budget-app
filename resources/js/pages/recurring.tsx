@@ -7,12 +7,11 @@ import AppLayout from '@/layouts/app-layout';
 import { formatAbsAmount } from '@/lib/formatAmount';
 import type { RecurringMerchant, RecurringProps } from '@/types';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
+type StatusFilter = 'active' | 'inactive';
 
 const EMPTY_MERCHANTS: RecurringMerchant[] = [];
 
 const filterOptions: { value: StatusFilter; label: string }[] = [
-    { value: 'all', label: 'All' },
     { value: 'active', label: 'Active' },
     { value: 'inactive', label: 'Inactive' },
 ];
@@ -59,7 +58,6 @@ export default function RecurringPage({
     const merchants = recurringMerchants ?? EMPTY_MERCHANTS;
 
     const filteredMerchants = useMemo(() => {
-        if (statusFilter === 'all') return merchants;
         return merchants.filter((m) =>
             statusFilter === 'active' ? m.isActive : !m.isActive,
         );
@@ -179,9 +177,7 @@ export default function RecurringPage({
                     ) : (
                         <div className="py-12 text-center">
                             <p className="text-sm text-text-tertiary">
-                                {statusFilter === 'all'
-                                    ? 'No recurring transactions detected yet'
-                                    : `No ${statusFilter} recurring transactions`}
+                                {`No ${statusFilter} recurring transactions`}
                             </p>
                         </div>
                     )}
