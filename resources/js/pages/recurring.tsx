@@ -65,10 +65,14 @@ export default function RecurringPage({
         );
     }, [merchants, statusFilter]);
 
-    const monthlyTotalCents = useMemo(
-        () => filteredMerchants.reduce((sum, m) => sum + Math.abs(m.typicalAmountCents), 0),
-        [filteredMerchants],
-    );
+    const { incomeCents, expensesCents, incomeCount, expensesCount } = useMemo(() => {
+        let inc = 0, exp = 0, incN = 0, expN = 0;
+        for (const m of filteredMerchants) {
+            if (m.typicalAmountCents >= 0) { inc += m.typicalAmountCents; incN++; }
+            else { exp += Math.abs(m.typicalAmountCents); expN++; }
+        }
+        return { incomeCents: inc, expensesCents: exp, incomeCount: incN, expensesCount: expN };
+    }, [filteredMerchants]);
 
     return (
         <AppLayout onAccountsChange={handleAccountsChange}>
@@ -100,17 +104,28 @@ export default function RecurringPage({
                     </div>
                 </div>
 
-                {/* Monthly total */}
-                <Deferred data="recurringMerchants" fallback={<Skeleton className="h-[88px] rounded-xl" />}>
+                {/* Monthly totals */}
+                <Deferred data="recurringMerchants" fallback={<div className="flex gap-3"><Skeleton className="h-[88px] flex-1 rounded-xl" /><Skeleton className="h-[88px] flex-1 rounded-xl" /></div>}>
                     {filteredMerchants.length > 0 && (
-                        <div className="relative overflow-hidden rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
-                            <p className="text-xs text-text-secondary mb-1">Monthly fixed charges</p>
-                            <p className="text-2xl font-semibold tabular-nums text-[#FB7185]">
-                                {formatAbsAmount(monthlyTotalCents)}
-                            </p>
-                            <p className="text-xs text-text-tertiary mt-1">
-                                {filteredMerchants.length} subscription{filteredMerchants.length === 1 ? '' : 's'}
-                            </p>
+                        <div className="flex gap-3">
+                            <div className="relative flex-1 overflow-hidden rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
+                                <p className="text-xs text-text-secondary mb-1">Income</p>
+                                <p className="text-lg font-semibold tabular-nums text-[#10B981]">
+                                    {formatAbsAmount(incomeCents)}
+                                </p>
+                                <p className="text-xs text-text-tertiary mt-1">
+                                    {incomeCount} recurring
+                                </p>
+                            </div>
+                            <div className="relative flex-1 overflow-hidden rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
+                                <p className="text-xs text-text-secondary mb-1">Fixed charges</p>
+                                <p className="text-lg font-semibold tabular-nums text-[#FB7185]">
+                                    {formatAbsAmount(expensesCents)}
+                                </p>
+                                <p className="text-xs text-text-tertiary mt-1">
+                                    {expensesCount} recurring
+                                </p>
+                            </div>
                         </div>
                     )}
                 </Deferred>
