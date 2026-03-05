@@ -4,6 +4,7 @@ import AmbientCircle from '@/components/AmbientCircle';
 import RecurringMerchantCard from '@/components/RecurringMerchantCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import AppLayout from '@/layouts/app-layout';
+import { formatAbsAmount } from '@/lib/formatAmount';
 import type { RecurringMerchant, RecurringProps } from '@/types';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
@@ -64,6 +65,11 @@ export default function RecurringPage({
         );
     }, [merchants, statusFilter]);
 
+    const monthlyTotalCents = useMemo(
+        () => filteredMerchants.reduce((sum, m) => sum + Math.abs(m.typicalAmountCents), 0),
+        [filteredMerchants],
+    );
+
     return (
         <AppLayout onAccountsChange={handleAccountsChange}>
             <Head title="Recurring" />
@@ -94,13 +100,23 @@ export default function RecurringPage({
                     </div>
                 </div>
 
+                {/* Monthly total */}
+                <Deferred data="recurringMerchants" fallback={<Skeleton className="h-[88px] rounded-xl" />}>
+                    {filteredMerchants.length > 0 && (
+                        <div className="relative overflow-hidden rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
+                            <p className="text-xs text-text-secondary mb-1">Monthly fixed charges</p>
+                            <p className="text-2xl font-semibold tabular-nums text-[#FB7185]">
+                                {formatAbsAmount(monthlyTotalCents)}
+                            </p>
+                            <p className="text-xs text-text-tertiary mt-1">
+                                {filteredMerchants.length} subscription{filteredMerchants.length === 1 ? '' : 's'}
+                            </p>
+                        </div>
+                    )}
+                </Deferred>
+
                 {/* Recurring merchant list */}
                 <Deferred data="recurringMerchants" fallback={<RecurringPageSkeleton />}>
-                    {filteredMerchants.length > 0 && (
-                        <p className="text-xs text-text-secondary -mt-2">
-                            {filteredMerchants.length} recurring transaction{filteredMerchants.length === 1 ? '' : 's'}
-                        </p>
-                    )}
                     {filteredMerchants.length > 0 ? (
                         <div className="space-y-3">
                             {filteredMerchants.map((merchant) => (
