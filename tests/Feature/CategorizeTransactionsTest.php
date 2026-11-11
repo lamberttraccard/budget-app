@@ -7,8 +7,12 @@ use App\Jobs\CategorizeTransactions;
 use App\Models\Account;
 use App\Models\Import;
 use App\Models\Transaction;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Testing\Fakes\BatchFake;
+use RuntimeException;
 use Tests\TestCase;
 
 class CategorizeTransactionsTest extends TestCase
@@ -105,5 +109,26 @@ class CategorizeTransactionsTest extends TestCase
 
             return $batchedIds === $allIds;
         });
+    }
+
+    public function test_catch_callback_logs_the_chunk_failure(): void
+    {
+        Bus::fake([CategorizeTransactionChunk::class]);
+        Log::spy();
+
+        $this->createUncategorizedTransactions(3);
+
+        CategorizeTransactions::dispatch($this->import);
+
+        $pendingBatch = Bus::dispatchedBatches()[0];
+        $batch = new BatchFake('batch-id', '', 1, 1, 1, [], [], CarbonImmutable::now());
+
+        // Laravel invokes catch callbacks with (Batch $batch, Throwable $e).
+        $pendingBatch->catchCallbacks()[0]($batch, new RuntimeException('Gemini credits depleted'));
+
+        Log::shouldHaveReceived('error')->with('Batch categorization had failures', [
+            'import_id' => $this->import->id,
+            'error' => 'Gemini credits depleted',
+        ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Import;
 use App\Models\Transaction;
+use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 
@@ -30,7 +31,7 @@ class CategorizeTransactions
 
         $batch = Bus::batch($jobs)
             ->allowFailures()
-            ->catch(function (\Throwable $e) use ($import) {
+            ->catch(function (Batch $batch, \Throwable $e) use ($import) {
                 Log::error('Batch categorization had failures', [
                     'import_id' => $import->id,
                     'error' => $e->getMessage(),
