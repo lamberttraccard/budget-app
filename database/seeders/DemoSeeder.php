@@ -9,19 +9,32 @@ use App\Models\MerchantRule;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DemoSeeder extends Seeder
 {
     private array $categories = [];
 
-    /** March 2025 → February 2026 (12 months) */
-    private const MONTHS = [
-        '2025-03', '2025-04', '2025-05', '2025-06', '2025-07', '2025-08',
-        '2025-09', '2025-10', '2025-11', '2025-12', '2026-01', '2026-02',
-    ];
+    /** The last 12 months as 'YYYY-MM', oldest first, ending with the current month. */
+    private array $months = [];
+
+    private string $today;
 
     public function run(): void
     {
+        // All-or-nothing, so a failed run never leaves a half-seeded database behind.
+        DB::transaction(fn () => $this->seed());
+    }
+
+    private function seed(): void
+    {
+        $now = now();
+        $this->today = $now->toDateString();
+        $this->months = array_map(
+            fn (int $ago) => $now->copy()->startOfMonth()->subMonths($ago)->format('Y-m'),
+            range(11, 0),
+        );
+
         $this->call(CategorySeeder::class);
         $this->categories = Category::all()->keyBy('slug')->toArray();
 
@@ -88,7 +101,7 @@ class DemoSeeder extends Seeder
 
     private function seedBanquePopulaire(Account $account): void
     {
-        foreach (self::MONTHS as $month) {
+        foreach ($this->months as $month) {
             $fileName = 'releve_'.str_replace('-', '_', $month).'.csv';
             $txnData = $this->bpMonth($month);
             $this->createImportWithTransactions($fileName, 'Banque Populaire', $account, $txnData);
@@ -130,52 +143,52 @@ class DemoSeeder extends Seeder
             [$d(16), -2500,           'CB PHARMACIE DU CENTRE', 'health'],
         ];
 
-        $seasonal = match ($month) {
-            '2025-03' => [
+        $seasonal = match (substr($month, 5)) {
+            '03' => [
                 [$d(15), -25000, 'IMPOTS.GOUV ACOMPTE IR', null],
                 [$d(20), -6500,  'CB JARDILAND PRINTEMPS', 'shopping'],
             ],
-            '2025-04' => [
+            '04' => [
                 [$d(12), -3800, 'CB TRUFFAUT PLANTES', 'shopping'],
                 [$d(21), -5500, 'CB DECATHLON RUNNING', 'shopping'],
             ],
-            '2025-05' => [
+            '05' => [
                 [$d(1),  -8500, 'CB FLEURISTE FETE MERES', 'other'],
                 [$d(15), -25000, 'IMPOTS.GOUV ACOMPTE IR', null],
                 [$d(25), -4200, 'CB RESTAURANT ANNIVERSAIRE', 'restaurants'],
             ],
-            '2025-06' => [
+            '06' => [
                 [$d(10), -35000, 'CB SNCF BILLETS VACANCES', 'travel'],
                 [$d(20), -12000, 'CB DECATHLON EQUIPEMENT ETE', 'shopping'],
             ],
-            '2025-07' => [
+            '07' => [
                 [$d(1),  -95000, 'CB AIRBNB LOCATION VACANCES', 'travel'],
                 [$d(5),  -15000, 'CB PEAGE AUTOROUTE A7', 'transport-fuel'],
                 [$d(8),  -8500,  'CB RESTAURANT PLAGE', 'restaurants'],
                 [$d(12), -6200,  'CB SUPERMARCHE VACANCES', 'food'],
                 [$d(15), -4500,  'CB ACTIVITE NAUTIQUE', 'entertainment'],
             ],
-            '2025-08' => [
+            '08' => [
                 [$d(3),  -7800,  'CB RESTAURANT VACANCES SUD', 'restaurants'],
                 [$d(10), -5500,  'CB MARCHE PROVENCAL', 'food'],
                 [$d(20), -15000, 'CB PEAGE RETOUR AUTOROUTE', 'transport-fuel'],
                 [$d(25), -3200,  'CB STATION SERVICE RETOUR', 'transport-fuel'],
             ],
-            '2025-09' => [
+            '09' => [
                 [$d(2),  -15000, 'CB FNAC FOURNITURES RENTREE', 'shopping'],
                 [$d(2),  -8500,  'CB CULTURA LIVRES RENTREE', 'education'],
                 [$d(5),  -25000, 'IMPOTS.GOUV ACOMPTE IR', null],
                 [$d(15), -6800,  'CB UNIQLO GARDE ROBE', 'shopping'],
             ],
-            '2025-10' => [
+            '10' => [
                 [$d(25), -3500, 'CB HALLOWEEN DEGUISEMENT', 'entertainment'],
             ],
-            '2025-11' => [
+            '11' => [
                 [$d(25), -18000, 'CB AMAZON BLACK FRIDAY', 'shopping'],
                 [$d(26), -12000, 'CB FNAC BLACK FRIDAY', 'shopping'],
                 [$d(15), -25000, 'IMPOTS.GOUV ACOMPTE IR', null],
             ],
-            '2025-12' => [
+            '12' => [
                 [$d(15), -15000, 'CB FNAC CADEAUX NOEL', 'other'],
                 [$d(18), -12000, 'CB GALERIES LAFAYETTE NOEL', 'shopping'],
                 [$d(20), -8500,  'CB AMAZON CADEAUX NOEL', 'other'],
@@ -183,13 +196,13 @@ class DemoSeeder extends Seeder
                 [$d(31), -12000, 'CB RESTAURANT REVEILLON', 'restaurants'],
                 [$d(22), 50000,  'VIR PRIME NOEL ACME SAS', 'income-salary'],
             ],
-            '2026-01' => [
+            '01' => [
                 [$d(2),  -35000, 'CB SNCF VOYAGE BILLET', 'travel'],
                 [$d(10), -4500,  'CB BOOKING.COM HOTEL', 'travel'],
                 [$d(15), -8900,  'CB SOLDES ZARA', 'shopping'],
                 [$d(16), -6500,  'CB SOLDES FNAC', 'shopping'],
             ],
-            '2026-02' => [
+            '02' => [
                 [$d(14), -8500, 'CB RESTAURANT ST VALENTIN', 'restaurants'],
                 [$d(14), -4500, 'CB FLEURISTE ST VALENTIN', 'other'],
             ],
@@ -203,7 +216,7 @@ class DemoSeeder extends Seeder
 
     private function seedRevolutPersonal(Account $account): void
     {
-        foreach (array_chunk(self::MONTHS, 2) as $pair) {
+        foreach (array_chunk($this->months, 2) as $pair) {
             $txnData = array_merge(
                 ...array_map(fn ($m) => $this->revolutPersonalMonth($m), $pair),
             );
@@ -232,23 +245,23 @@ class DemoSeeder extends Seeder
             [$d(28), -2100 + $v * 6,  'LEBONCOIN PAIEMENT', null],
         ];
 
-        $seasonal = match ($month) {
-            '2025-06' => [[$d(15), -12000, 'AIRBNB WEEKEND BRETAGNE', 'travel']],
-            '2025-07' => [
+        $seasonal = match (substr($month, 5)) {
+            '06' => [[$d(15), -12000, 'AIRBNB WEEKEND BRETAGNE', 'travel']],
+            '07' => [
                 [$d(10), -8000, 'CB SOUVENIR BOUTIQUE', 'shopping'],
                 [$d(18), -5500, 'UBER EATS VACANCES', 'restaurants'],
             ],
-            '2025-08' => [
+            '08' => [
                 [$d(5),  -15000, 'AIRBNB WEEKEND NICE', 'travel'],
                 [$d(22), -3500,  'UBER TRIP AEROPORT', 'transport'],
             ],
-            '2025-09' => [[$d(3), -9500, 'AMAZON RENTREE TECH', 'shopping']],
-            '2025-11' => [[$d(25), -15000, 'AMAZON BLACK FRIDAY TECH', 'shopping']],
-            '2025-12' => [
+            '09' => [[$d(3), -9500, 'AMAZON RENTREE TECH', 'shopping']],
+            '11' => [[$d(25), -15000, 'AMAZON BLACK FRIDAY TECH', 'shopping']],
+            '12' => [
                 [$d(20), -8900, 'AIRBNB WEEKEND LYON', 'travel'],
                 [$d(23), -6500, 'AMAZON CADEAUX', 'other'],
             ],
-            '2026-01' => [[$d(5), -7500, 'SOLDES AMAZON FR', 'shopping']],
+            '01' => [[$d(5), -7500, 'SOLDES AMAZON FR', 'shopping']],
             default => [],
         };
 
@@ -259,7 +272,7 @@ class DemoSeeder extends Seeder
 
     private function seedRevolutBusiness(Account $account): void
     {
-        foreach (array_chunk(self::MONTHS, 2) as $pair) {
+        foreach (array_chunk($this->months, 2) as $pair) {
             $txnData = array_merge(
                 ...array_map(fn ($m) => $this->revolutBusinessMonth($m), $pair),
             );
@@ -288,29 +301,29 @@ class DemoSeeder extends Seeder
             [$d(22), -15000, 'FORMATION LARAVEL MASTERCLASS', 'education'],
         ];
 
-        $seasonal = match ($month) {
-            '2025-03' => [[$d(25), -45000, 'EXPERT COMPTABLE BILAN 2024', 'professional']],
-            '2025-05' => [[$d(10), 450000, 'VIR FREELANCE CLIENT GAMMA', 'income-freelance']],
-            '2025-06' => [
+        $seasonal = match (substr($month, 5)) {
+            '03' => [[$d(25), -45000, 'EXPERT COMPTABLE BILAN '.((int) substr($month, 0, 4) - 1), 'professional']],
+            '05' => [[$d(10), 450000, 'VIR FREELANCE CLIENT GAMMA', 'income-freelance']],
+            '06' => [
                 [$d(8),  -25000, 'CONFERENCE LARACON EU BILLET', 'education'],
                 [$d(9),  -18000, 'HOTEL LARACON EU', 'travel'],
             ],
-            '2025-07' => [[$d(15), -3500, 'RESTAURANT CLIENT VISIO', null]],
-            '2025-09' => [
+            '07' => [[$d(15), -3500, 'RESTAURANT CLIENT VISIO', null]],
+            '09' => [
                 [$d(5),  -35000, 'MACBOOK RENOUVELLEMENT', 'professional'],
                 [$d(10), 520000, 'VIR FREELANCE GROS PROJET', 'income-freelance'],
             ],
-            '2025-10' => [[$d(15), -8000, 'CONFERENCE FORUM PHP', 'education']],
-            '2025-11' => [[$d(20), -12000, 'BLACK FRIDAY LICENCES JETBRAINS', 'professional']],
-            '2025-12' => [
+            '10' => [[$d(15), -8000, 'CONFERENCE FORUM PHP', 'education']],
+            '11' => [[$d(20), -12000, 'BLACK FRIDAY LICENCES JETBRAINS', 'professional']],
+            '12' => [
                 [$d(10), 180000, 'VIR FREELANCE BONUS FIN ANNEE', 'income-freelance'],
                 [$d(28), -8000,  'CADEAU CLIENTS FIN ANNEE', 'other'],
             ],
-            '2026-01' => [
+            '01' => [
                 [$d(8),  -55000, 'EXPERT COMPTABLE CLOTURE', 'professional'],
                 [$d(20), -9000,  'URSSAF COTISATIONS T1', null],
             ],
-            '2026-02' => [[$d(5), 380000, 'VIR FREELANCE NOUVEAU CLIENT', 'income-freelance']],
+            '02' => [[$d(5), 380000, 'VIR FREELANCE NOUVEAU CLIENT', 'income-freelance']],
             default => [],
         };
 
@@ -319,15 +332,17 @@ class DemoSeeder extends Seeder
 
     // ── Helpers ───────────────────────────────────────────────────────
 
-    /** Convert raw tuples [date, amount, description, category] to factory sequence data. */
+    /** Convert raw tuples [date, amount, description, category] to factory sequence data, skipping future dates. */
     private function toSequence(array $rows): array
     {
-        return array_map(fn (array $row) => [
+        $past = array_filter($rows, fn (array $row) => $row[0] <= $this->today);
+
+        return array_values(array_map(fn (array $row) => [
             'date' => $row[0],
             'amount_cents' => $row[1],
             'description' => $row[2],
             'category_id' => $row[3] ? $this->cat($row[3]) : null,
-        ], $rows);
+        ], $past));
     }
 
     /** Create a completed import and its transactions using factories. */
