@@ -38,9 +38,11 @@ export default function SearchPage({
     const selectedTransactionIdRef = useRef<number | null>(null);
 
     // Sync localQuery when server-side query changes (e.g. back navigation)
-    useEffect(() => {
+    const [syncedQuery, setSyncedQuery] = useState(initialQuery);
+    if (initialQuery !== syncedQuery) {
+        setSyncedQuery(initialQuery);
         setLocalQuery(initialQuery);
-    }, [initialQuery]);
+    }
 
     const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
