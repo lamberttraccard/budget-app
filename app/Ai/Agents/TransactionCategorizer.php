@@ -13,7 +13,7 @@ use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 
 #[Provider(Lab::Gemini)]
-#[Model('gemini-2.5-flash')]
+#[Model('gemini-3.8-flash')]
 #[Temperature(0.1)]
 #[Timeout(60)]
 class TransactionCategorizer implements Agent, HasStructuredOutput
