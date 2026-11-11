@@ -1,0 +1,202 @@
+#!/usr/bin/env bash
+# Prepares an Amp orb: PHP 8.5 + Composer, PostgreSQL 17 with pgvector, PHP and Bun
+# dependencies, a local .env, a migrated and seeded database, and built frontend assets.
+# Runs natively in the orb (no Sail/Docker). Safe to run repeatedly.
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+repo_root="$PWD"
+
+step() {
+	local label="$1"
+	shift
+	local start=$SECONDS
+	echo "==> $label"
+	"$@"
+	echo "<== $label ($((SECONDS - start))s)"
+}
+
+PHP_VERSION=8.5
+PG_VERSION=17
+php_packages=(cli pgsql mbstring xml curl zip intl bcmath sqlite3 gd)
+apt_packages=(unzip "postgresql-$PG_VERSION" "postgresql-$PG_VERSION-pgvector")
+for ext in "${php_packages[@]}"; do apt_packages+=("php$PHP_VERSION-$ext"); done
+
+install_system_packages() {
+	# Only take PHP packages from the sury repository; everything else stays on Debian's builds.
+	sudo tee /etc/apt/preferences.d/sury-php >/dev/null <<'EOF'
+Package: php* libphp*
+Pin: origin packages.sury.org
+Pin-Priority: 500
+
+Package: *
+Pin: origin packages.sury.org
+Pin-Priority: 100
+EOF
+
+	local missing=()
+	for pkg in "${apt_packages[@]}"; do
+		dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed" || missing+=("$pkg")
+	done
+	if [ ${#missing[@]} -eq 0 ]; then
+		echo "all system packages present"
+		return
+	fi
+
+	local codename
+	codename="$(. /etc/os-release && echo "$VERSION_CODENAME")"
+
+	# Debian ships PHP 8.4 only; composer.json requires ^8.5.
+	if [ ! -f /etc/apt/sources.list.d/php.list ]; then
+		local keyring_deb
+		keyring_deb="$(mktemp --suffix=.deb)"
+		curl -fsSL -o "$keyring_deb" https://packages.sury.org/debsuryorg-archive-keyring.deb
+		sudo dpkg -i "$keyring_deb"
+		rm -f "$keyring_deb"
+		echo "deb [signed-by=/usr/share/keyrings/debsuryorg-archive-keyring.gpg] https://packages.sury.org/php/ $codename main" |
+			sudo tee /etc/apt/sources.list.d/php.list >/dev/null
+	fi
+
+	sudo apt-get update -q
+
+	# Debian 13 ships PostgreSQL 17; older releases (Debian 12 has 15) need the PGDG repository.
+	if ! apt-cache show "postgresql-$PG_VERSION" >/dev/null 2>&1; then
+		sudo install -d /usr/share/postgresql-common/pgdg
+		sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+			https://www.postgresql.org/media/keys/ACCC4CF8.asc
+		echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $codename-pgdg main" |
+			sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+		sudo apt-get update -q
+	fi
+
+	sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends "${missing[@]}"
+}
+
+install_composer() {
+	if command -v composer >/dev/null 2>&1; then
+		composer --version
+		return
+	fi
+	# Composer's documented install: the installer's checksum is published from a separate origin.
+	local tmp expected actual
+	tmp="$(mktemp -d)"
+	expected="$(curl -fsSL https://composer.github.io/installer.sig)"
+	curl -fsSL -o "$tmp/composer-setup.php" https://getcomposer.org/installer
+	actual="$(sha384sum "$tmp/composer-setup.php" | cut -d' ' -f1)"
+	if [ "$expected" != "$actual" ]; then
+		echo "Composer installer checksum mismatch" >&2
+		rm -rf "$tmp"
+		return 1
+	fi
+	sudo php "$tmp/composer-setup.php" --quiet --install-dir=/usr/local/bin --filename=composer
+	rm -rf "$tmp"
+}
+
+wait_for_postgres() {
+	for _ in $(seq 1 60); do
+		pg_isready -q -h 127.0.0.1 && return
+		sleep 0.5
+	done
+	pg_isready -h 127.0.0.1
+}
+
+configure_postgres() {
+	local conf="/etc/postgresql/$PG_VERSION/main/conf.d/amp-orb.conf"
+	local desired
+	# Faster commits without risking corruption: fsync stays on because the orb is snapshotted
+	# while Postgres runs, and turning it off made no measurable difference to the test suite.
+	desired="# Ephemeral orb: favor speed over durability.
+synchronous_commit = off"
+	if [ "$(sudo cat "$conf" 2>/dev/null)" != "$desired" ]; then
+		echo "$desired" | sudo tee "$conf" >/dev/null
+		sudo systemctl enable postgresql
+		sudo systemctl restart postgresql
+	else
+		sudo systemctl enable --now postgresql
+	fi
+	wait_for_postgres
+
+	# Matches DB_* in .env.example and CI; phpunit.xml uses the "testing" database.
+	sudo -u postgres psql -v ON_ERROR_STOP=1 -q <<'SQL'
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'sail') THEN
+    CREATE ROLE sail LOGIN SUPERUSER PASSWORD 'password';
+  END IF;
+END $$;
+SQL
+	for db in budget_app testing; do
+		if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname = '$db'" | grep -q 1; then
+			sudo -u postgres createdb -O sail "$db"
+		fi
+	done
+}
+
+configure_env() {
+	[ -f .env ] || cp -- .env.example .env
+	# Carry over keys added to .env.example since .env was created (e.g. in an older snapshot).
+	[ -z "$(tail -c1 .env)" ] || echo >>.env
+	local line
+	while IFS= read -r line; do
+		[[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)= ]] || continue
+		if ! grep -q "^${BASH_REMATCH[1]}=" .env; then
+			echo "$line" >>.env
+			echo "added ${BASH_REMATCH[1]} to .env"
+		fi
+	done <.env.example
+	# Sail hostnames do not exist in the orb: Postgres runs locally and Mailpit is absent.
+	sed -i -e 's/^DB_HOST=pgsql$/DB_HOST=127.0.0.1/' -e 's/^MAIL_MAILER=smtp$/MAIL_MAILER=log/' .env
+}
+
+generate_app_key() {
+	if grep -q '^APP_KEY=$' .env; then
+		php artisan key:generate --ansi
+	fi
+}
+
+migrate_and_seed() {
+	php artisan migrate --force --ansi
+	# Seed only an empty database; DemoSeeder creates fixed users and is not rerunnable.
+	# Ask Laravel so the check uses the same connection as migrate and db:seed.
+	local users
+	users="$(php artisan tinker --execute='echo \App\Models\User::count();')"
+	if [ "$users" = "0" ]; then
+		php artisan db:seed --force --ansi
+	fi
+}
+
+write_agent_guidance() {
+	local guidance="$HOME/.config/amp/AGENTS.md"
+	local begin="# budget-app orb environment"
+	local end="<!-- end budget-app orb environment -->"
+	mkdir -p "$(dirname "$guidance")"
+	touch "$guidance"
+	# Replace the previous block so guidance changes reach existing snapshots.
+	sed -i "/^$begin\$/,/^$end\$/d" "$guidance"
+	if [ -s "$guidance" ] && [ -n "$(tail -n1 "$guidance")" ]; then echo >>"$guidance"; fi
+	cat >>"$guidance" <<EOF
+$begin
+
+- In this orb, PHP $PHP_VERSION, Composer, Bun, and PostgreSQL $PG_VERSION (with pgvector) run natively.
+  Run commands without the \`./vendor/bin/sail\` prefix, e.g. \`composer test\`, \`php artisan test\`,
+  \`bun run test\`, \`bun run types\`.
+- PostgreSQL listens on 127.0.0.1:5432 (user \`sail\`, password \`password\`, databases
+  \`budget_app\` and \`testing\`). Check it with \`pg_isready -h 127.0.0.1\`.
+- \`amp orb services ensure\` starts the app (\`web\` portal) and the queue worker from
+  \`.amp/services.yaml\`. The app serves built assets; run \`bun run build\` after frontend changes.
+- Seeded login: \`test@example.com\` / \`password\`.
+$end
+EOF
+}
+
+step "System packages (PHP $PHP_VERSION, PostgreSQL $PG_VERSION)" install_system_packages
+step "Composer" install_composer
+step "PostgreSQL" configure_postgres
+step ".env" configure_env
+step "Composer install" composer install --no-interaction --no-progress --prefer-dist
+step "Bun install" bun install --frozen-lockfile
+step "App key" generate_app_key
+step "Migrate and seed" migrate_and_seed
+step "Build assets" bun run build
+step "Agent guidance" write_agent_guidance
+
+echo "Setup complete in ${SECONDS}s ($repo_root)"

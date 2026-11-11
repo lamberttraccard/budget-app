@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Runs after activation and on every wake. Only makes sure PostgreSQL is up.
+set -euo pipefail
+
+if ! pg_isready -q -h 127.0.0.1; then
+	sudo systemctl start postgresql
+	for _ in $(seq 1 16); do
+		pg_isready -q -h 127.0.0.1 && break
+		sleep 0.5
+	done
+fi
+pg_isready -h 127.0.0.1
