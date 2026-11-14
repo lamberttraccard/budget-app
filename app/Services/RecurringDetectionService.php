@@ -60,7 +60,7 @@ class RecurringDetectionService
             $query->whereIn('transactions.account_id', $accountIds);
         }
 
-        $rows = $query->get();
+        $rows = $query->toBase()->get();
 
         // Group rows by normalized merchant
         $groupedByMerchant = $rows->groupBy('normalized_merchant');
@@ -118,6 +118,9 @@ class RecurringDetectionService
      * Filter month rows to those with amounts within 20% of the median.
      * Outlier months (prorations, price changes) are discarded rather than
      * rejecting the entire merchant.
+     *
+     * @param  Collection<int, \stdClass>  $singleTxMonths
+     * @return Collection<int, \stdClass>
      */
     private function filterConsistentMonths(Collection $singleTxMonths): Collection
     {
@@ -133,6 +136,9 @@ class RecurringDetectionService
         );
     }
 
+    /**
+     * @param  Collection<array-key, int<0, max>>  $values
+     */
     private function median(Collection $values): float
     {
         $sorted = $values->sort()->values();
@@ -177,6 +183,10 @@ class RecurringDetectionService
         return $maxRun;
     }
 
+    /**
+     * @param  Collection<int, string>  $normalizedNames
+     * @return Collection<int, Transaction>
+     */
     private function fetchTransactionHistory(Collection $normalizedNames, ?array $accountIds): Collection
     {
         $placeholders = $normalizedNames->map(fn () => '?')->implode(',');
@@ -209,6 +219,9 @@ class RecurringDetectionService
             ->get();
     }
 
+    /**
+     * @param  Collection<int, Transaction>  $allTransactions
+     */
     private function buildResult(array $recurringMerchants, Collection $allTransactions): array
     {
         $transactionsByMerchant = $allTransactions->groupBy('normalized_merchant');

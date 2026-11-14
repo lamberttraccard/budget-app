@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Import extends Model
 {
+    /** @use HasFactory<\Database\Factories\ImportFactory> */
     use HasFactory;
 
     protected $fillable = ['file_name', 'bank', 'status', 'batch_id', 'transaction_count', 'date_from', 'date_to', 'imported_at'];
@@ -22,6 +23,7 @@ class Import extends Model
         ];
     }
 
+    /** @return HasMany<Transaction, $this> */
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);

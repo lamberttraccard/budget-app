@@ -28,7 +28,7 @@ class ImportController extends Controller
         ]);
 
         $file = $request->file('csv_file');
-        $content = $file->get();
+        $content = $file->getContent();
         $filename = $file->getClientOriginalName();
 
         try {
@@ -60,7 +60,7 @@ class ImportController extends Controller
         ]);
 
         $file = $request->file('csv_file');
-        $content = $file->get();
+        $content = $file->getContent();
         $filename = $file->getClientOriginalName();
 
         try {
@@ -70,7 +70,7 @@ class ImportController extends Controller
         }
 
         if ($request->filled('account_id')) {
-            $account = Account::findOrFail($request->input('account_id'));
+            $account = Account::findOrFail($request->integer('account_id'));
         } else {
             $account = Account::create([
                 'name' => $request->input('new_account_name'),

@@ -19,7 +19,7 @@ sail bun run dev                  # Vite dev server only
 
 ### Testing
 ```bash
-sail composer test                # PHP: clears config, lint check (Pint), then PHPUnit
+sail composer test                # PHP: clears config, lint check (Pint), PHPStan, then PHPUnit
 sail artisan test                 # PHPUnit only
 sail bun run test                 # Vitest (frontend, single run)
 ```

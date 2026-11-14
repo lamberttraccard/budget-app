@@ -31,11 +31,7 @@ class TransactionFactory extends Factory
                 return;
             }
 
-            $date = $transaction->date instanceof \DateTimeInterface
-                ? $transaction->date->format('Y-m-d')
-                : $transaction->date;
-
-            $transaction->dedup_hash = hash('sha256', "{$date}|{$transaction->amount_cents}|{$transaction->description}|{$transaction->account_id}");
+            $transaction->dedup_hash = hash('sha256', "{$transaction->date->format('Y-m-d')}|{$transaction->amount_cents}|{$transaction->description}|{$transaction->account_id}");
         });
     }
 

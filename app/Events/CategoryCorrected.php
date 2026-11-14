@@ -12,7 +12,7 @@ class CategoryCorrected
 
     public function __construct(
         public Transaction $transaction,
-        public int $oldCategoryId,
+        public ?int $oldCategoryId,
         public int $newCategoryId,
     ) {}
 }

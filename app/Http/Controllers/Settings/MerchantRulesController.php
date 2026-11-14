@@ -24,7 +24,7 @@ class MerchantRulesController extends Controller
                 'categoryName' => $rule->category->name,
                 'categoryColor' => $rule->category->color,
                 'categoryIcon' => $rule->category->icon,
-                'matchCount' => (int) $rule->match_count,
+                'matchCount' => (int) $rule->getAttribute('match_count'),
             ]);
 
         return Inertia::render('settings/merchant-rules', [

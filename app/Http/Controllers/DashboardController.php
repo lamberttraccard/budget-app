@@ -66,7 +66,7 @@ class DashboardController extends Controller
                 'dateTo' => $import->date_to?->toDateString(),
                 'importedAt' => $import->imported_at?->toDateString(),
                 'status' => $import->status,
-                'uncategorizedCount' => $import->uncategorized_count,
+                'uncategorizedCount' => $import->getAttribute('uncategorized_count'),
                 'batchId' => $import->batch_id,
             ])
             ->toArray();

@@ -10,11 +10,11 @@ trait ParsesAccountIds
     {
         $param = $request->query('accounts');
 
-        if ($param === null || $param === '') {
+        if (! is_string($param) || $param === '') {
             $param = $request->cookie('selectedAccounts');
         }
 
-        if ($param === null || $param === '') {
+        if (! is_string($param) || $param === '') {
             return null;
         }
 

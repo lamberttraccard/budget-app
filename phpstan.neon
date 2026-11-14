@@ -1,0 +1,16 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 7
+    paths:
+        - app
+        - bootstrap/app.php
+        - config
+        - database
+        - routes
+    # Models declare casts in a casts() method, which Larastan only reads with this enabled.
+    parseModelCastsMethod: true
+    ignoreErrors:
+        # Plain `array` types (mostly Inertia props and query results) are not documented with value types yet.
+        - identifier: missingType.iterableValue

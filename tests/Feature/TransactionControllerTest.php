@@ -51,6 +51,32 @@ class TransactionControllerTest extends TestCase
         ]);
     }
 
+    public function test_can_categorize_uncategorized_transaction(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::where('slug', 'restaurants')->first();
+
+        $transaction = Transaction::factory()->create([
+            'category_id' => null,
+            'description' => 'LE PETIT BISTROT',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->patch("/transactions/{$transaction->id}", [
+                'category_id' => $category->id,
+            ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('transactions', [
+            'id' => $transaction->id,
+            'category_id' => $category->id,
+        ]);
+        $this->assertDatabaseHas('merchant_rules', [
+            'merchant_pattern' => 'le petit bistrot',
+            'category_id' => $category->id,
+        ]);
+    }
+
     public function test_update_requires_valid_category(): void
     {
         $user = User::factory()->create();

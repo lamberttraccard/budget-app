@@ -75,7 +75,10 @@ class CategorizationService
         }
     }
 
-    /** @return array<int, int> transactionId => categoryId */
+    /**
+     * @param  Collection<int, Transaction>  $uncategorized
+     * @return array<int, int> transactionId => categoryId
+     */
     private function applyBankHints(Collection $uncategorized): array
     {
         $transferCategory = Category::where('slug', 'transfer')->first();

@@ -61,7 +61,7 @@ class BanquePopulaireParser implements CsvParserInterface
 
         $headerLine = array_shift($lines);
 
-        if ($headerLine === null || trim($headerLine) === '') {
+        if (trim($headerLine) === '') {
             throw new CsvParseException('CSV content is empty.');
         }
 

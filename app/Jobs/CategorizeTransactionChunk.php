@@ -13,6 +13,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Laravel\Ai\Responses\StructuredAgentResponse;
 
 class CategorizeTransactionChunk implements ShouldQueue
 {
@@ -65,9 +66,12 @@ class CategorizeTransactionChunk implements ShouldQueue
                 $prompt .= "{$index}. \"{$transaction->description}\" ({$transaction->amount_cents} cents, {$transaction->date->format('Y-m-d')}){$hint}\n";
             }
 
+            /** @var StructuredAgentResponse $response Agents with structured output always return one. */
             $response = (new TransactionCategorizer)->prompt($prompt);
 
-            $resultsByIndex = collect($response['results'])->keyBy('index');
+            /** @var list<array{index: int, description: string, category_slug: string, confidence: float}> $results */
+            $results = $response['results'];
+            $resultsByIndex = collect($results)->keyBy('index');
 
             $otherCategoryId = $slugToId->get('other');
 

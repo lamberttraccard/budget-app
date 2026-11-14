@@ -56,6 +56,12 @@ jobs:
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
+      - name: Pint
+        run: composer test:lint
+
+      - name: PHPStan
+        run: composer test:types
+
       - name: Copy Environment File
         run: cp .env.example .env
 

@@ -404,6 +404,29 @@ class CategoryControllerTest extends TestCase
             );
     }
 
+    public function test_monthly_totals_window_starts_on_short_month_at_end_of_month(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $this->travelTo('2026-03-31 12:00:00');
+        $user = User::factory()->create();
+        $category = Category::where('slug', 'food')->first();
+
+        // April has 30 days: the window starting at 2025-04 must not roll over into May.
+        Transaction::factory()->create([
+            'category_id' => $category->id,
+            'date' => '2025-04-10',
+            'amount_cents' => -2000,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('categories.show', ['category' => $category->id, 'month' => '2026-03']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('monthlyTotals', 1)
+                ->where('monthlyTotals.0.month', '2025-04')
+            );
+    }
+
     public function test_monthly_totals_respects_account_filter(): void
     {
         $this->seed(CategorySeeder::class);

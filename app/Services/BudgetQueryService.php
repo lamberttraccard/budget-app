@@ -16,6 +16,13 @@ class BudgetQueryService
         return "'".implode("','", self::EXCLUDED_SLUGS)."'";
     }
 
+    /**
+     * @return array{
+     *     categoryTotals: array<int, array{id: int, name: string, slug: string, color: string, icon: string|null, amountCents: int, transactionCount: int}>,
+     *     incomeCents: int,
+     *     expensesCents: int,
+     * }
+     */
     public function getMonthlyData(int $year, int $month, ?array $accountIds = null): array
     {
         $query = Transaction::query()
@@ -45,7 +52,7 @@ class BudgetQueryService
             $query->whereIn('transactions.account_id', $accountIds);
         }
 
-        $rows = $query->get();
+        $rows = $query->toBase()->get();
 
         $categoryTotals = $rows->map(fn ($row) => [
             'id' => (int) $row->id,
@@ -55,7 +62,7 @@ class BudgetQueryService
             'icon' => $row->icon,
             'amountCents' => (int) $row->total_amount,
             'transactionCount' => (int) $row->transaction_count,
-        ])->values()->toArray();
+        ])->values()->all();
 
         $incomeRow = $rows->firstWhere('slug', 'income');
         $incomeCents = $incomeRow ? (int) $incomeRow->total_amount : 0;
@@ -114,9 +121,10 @@ class BudgetQueryService
             $subcategories = $query
                 ->groupBy('categories.id', 'categories.name')
                 ->orderByRaw('ABS(SUM(transactions.amount_cents)) DESC')
+                ->toBase()
                 ->get()
                 ->map(fn ($row) => [
-                    'id' => $row->id,
+                    'id' => (int) $row->id,
                     'name' => $row->name,
                     'amountCents' => (int) $row->total_amount,
                     'transactionCount' => (int) $row->transaction_count,
@@ -216,7 +224,7 @@ class BudgetQueryService
                 'categoryId' => $row->category_id,
                 'categoryName' => $row->category_name ?? 'Uncategorized',
                 'categoryColor' => $row->category_color ?? '#6B7280',
-                'accountName' => $row->account_name,
+                'accountName' => $row->getAttribute('account_name'),
             ])
             ->values()
             ->toArray();
@@ -247,7 +255,7 @@ class BudgetQueryService
             $query->whereIn('transactions.account_id', $accountIds);
         }
 
-        $rows = $query->get();
+        $rows = $query->toBase()->get();
 
         $completeMonthCount = (int) Transaction::query()
             ->when($accountIds !== null, fn ($q) => $q
@@ -315,7 +323,7 @@ class BudgetQueryService
             $query->whereIn('transactions.account_id', $accountIds);
         }
 
-        $rows = $query->get();
+        $rows = $query->toBase()->get();
 
         // Keep only the most recent 12 months (query orders ascending, so slice from the end)
         if ($rows->count() > 12) {
@@ -376,7 +384,7 @@ class BudgetQueryService
                 'id' => $id,
                 'name' => $reference['name'],
                 'slug' => $reference['slug'],
-                'color' => $reference['color'] ?? null,
+                'color' => $reference['color'],
                 'icon' => $reference['icon'] ?? null,
                 'baseAmountCents' => $baseAmount,
                 'compareAmountCents' => $compareAmount,
@@ -460,8 +468,9 @@ class BudgetQueryService
                 DB::raw('SUM(transactions.amount_cents) as total_amount'),
             ])
             ->whereIn('transactions.category_id', $allCategoryIds)
-            ->where('transactions.date', '>=', Carbon::createFromFormat('Y-m', $fromMonth)->startOfMonth())
-            ->where('transactions.date', '<=', Carbon::createFromFormat('Y-m', $toMonth)->endOfMonth())
+            // "!" resets the fields missing from the format; without it, the current day overflows short months.
+            ->where('transactions.date', '>=', Carbon::createFromFormat('!Y-m', $fromMonth)->startOfMonth())
+            ->where('transactions.date', '<=', Carbon::createFromFormat('!Y-m', $toMonth)->endOfMonth())
             ->groupBy(DB::raw("TO_CHAR(transactions.date, 'YYYY-MM')"))
             ->orderBy('month');
 
@@ -469,7 +478,7 @@ class BudgetQueryService
             $query->whereIn('transactions.account_id', $accountIds);
         }
 
-        return $query->get()
+        return $query->toBase()->get()
             ->map(fn ($row) => [
                 'month' => $row->month,
                 'amountCents' => (int) $row->total_amount,

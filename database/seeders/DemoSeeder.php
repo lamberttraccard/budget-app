@@ -110,7 +110,7 @@ class DemoSeeder extends Seeder
 
     private function bpMonth(string $month): array
     {
-        $d = fn (int $day) => "{$month}-".str_pad($day, 2, '0', STR_PAD_LEFT);
+        $d = fn (int $day) => "{$month}-".str_pad((string) $day, 2, '0', STR_PAD_LEFT);
         $v = $this->variation($month);
 
         $base = [
@@ -227,7 +227,7 @@ class DemoSeeder extends Seeder
 
     private function revolutPersonalMonth(string $month): array
     {
-        $d = fn (int $day) => "{$month}-".str_pad($day, 2, '0', STR_PAD_LEFT);
+        $d = fn (int $day) => "{$month}-".str_pad((string) $day, 2, '0', STR_PAD_LEFT);
         $v = $this->variation($month);
 
         $base = [
@@ -283,7 +283,7 @@ class DemoSeeder extends Seeder
 
     private function revolutBusinessMonth(string $month): array
     {
-        $d = fn (int $day) => "{$month}-".str_pad($day, 2, '0', STR_PAD_LEFT);
+        $d = fn (int $day) => "{$month}-".str_pad((string) $day, 2, '0', STR_PAD_LEFT);
         $v = $this->variation($month);
 
         $base = [
