@@ -7,25 +7,30 @@ export default function BottomDock() {
     const items = useNavItems(selectedAccountIds ?? []);
 
     return (
-        <nav
-            aria-label="Bottom navigation"
-            className="fixed bottom-0 inset-x-0 z-50 bg-background/80 backdrop-blur-lg border-t border-white/5 pb-[env(safe-area-inset-bottom)] lg:hidden"
-        >
-            <div className="flex items-center justify-around h-14">
+        <>
+            <div
+                className="pointer-events-none fixed inset-x-0 bottom-0 z-40 h-28 bg-gradient-to-t from-background via-background/80 to-transparent"
+                aria-hidden="true"
+            />
+            <nav
+                aria-label="Bottom navigation"
+                className="glass fixed left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full bg-[#1E2028]/60 p-1.5 bottom-[calc(env(safe-area-inset-bottom)+1rem)]"
+            >
                 {items.map((item) => (
                     <Link
                         key={item.label}
                         href={item.href}
                         aria-current={item.isActive ? 'page' : undefined}
-                        className={`flex flex-col items-center justify-center gap-1 min-w-[64px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none focus-visible:rounded-lg transition-colors ${
-                            item.isActive ? 'text-white' : 'text-text-tertiary'
+                        title={item.label}
+                        className={`flex h-11 min-w-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
+                            item.isActive ? 'bg-foreground text-background' : 'text-white/55 hover:text-white'
                         }`}
                     >
                         <item.icon className="size-5" />
-                        <span className="text-[10px] font-medium">{item.label}</span>
+                        <span className="sr-only lg:not-sr-only">{item.label}</span>
                     </Link>
                 ))}
-            </div>
-        </nav>
+            </nav>
+        </>
     );
 }

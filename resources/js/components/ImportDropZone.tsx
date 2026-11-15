@@ -18,13 +18,13 @@ export default function ImportDropZone({ visible }: Props) {
                     transition={{ duration: 0.2 }}
                 >
                     <motion.div
-                        className="rounded-2xl border-2 border-dashed border-zinc-500 px-12 py-10 text-center"
+                        className="glass rounded-panel border-2 border-dashed border-white/20 px-12 py-10 text-center"
                         initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
                     >
-                        <p className="text-lg font-semibold text-white">Drop CSV to import</p>
+                        <p className="text-lg font-medium text-white">Drop CSV to import</p>
                         <p className="mt-1 text-sm text-text-secondary">
                             Banque Populaire or Revolut export
                         </p>

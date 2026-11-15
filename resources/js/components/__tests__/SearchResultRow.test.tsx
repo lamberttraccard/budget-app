@@ -19,7 +19,7 @@ describe('SearchResultRow', () => {
         render(<SearchResultRow {...defaultProps} />);
         expect(screen.getByText('CARREFOUR CITY PARIS')).toBeInTheDocument();
         // formatAbsAmount(-5000) renders in French locale EUR
-        expect(screen.getByText(/50,00/)).toBeInTheDocument();
+        expect(screen.getByRole('button')).toHaveTextContent(/50,00/);
     });
 
     it('renders category color dot with correct background color', () => {

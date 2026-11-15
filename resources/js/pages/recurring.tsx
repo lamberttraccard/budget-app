@@ -1,6 +1,6 @@
 import { Deferred, Head, router } from '@inertiajs/react';
 import { useCallback, useMemo, useState } from 'react';
-import AmbientCircle from '@/components/AmbientCircle';
+import Amount from '@/components/Amount';
 import RecurringMerchantCard from '@/components/RecurringMerchantCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import AppLayout from '@/layouts/app-layout';
@@ -22,7 +22,7 @@ function RecurringPageSkeleton() {
             {Array.from({ length: 4 }).map((_, i) => (
                 <div
                     key={i}
-                    className="bg-surface/80 backdrop-blur-2xl border border-white/[0.06] rounded-xl p-4 flex items-center gap-3"
+                    className="glass rounded-panel p-4 flex items-center gap-3"
                 >
                     <Skeleton className="size-2 rounded-full shrink-0" />
                     <div className="flex-1 min-w-0 space-y-2">
@@ -90,13 +90,11 @@ export default function RecurringPage({
         <AppLayout onAccountsChange={handleAccountsChange}>
             <Head title="Recurring" />
 
-            <AmbientCircle />
-
-            <div className="relative py-6 space-y-4">
+            <div className="pt-4 pb-6 space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between gap-3">
-                    <h1 className="text-lg font-semibold text-white">Recurring</h1>
-                    <div role="radiogroup" aria-label="Filter by status" className="flex rounded-lg bg-surface-elevated/60 p-0.5">
+                    <h1 className="text-3xl font-light tracking-tight text-white">Recurring</h1>
+                    <div role="radiogroup" aria-label="Filter by status" className="glass flex rounded-full p-1">
                         {filterOptions.map((option) => (
                             <button
                                 key={option.value}
@@ -104,10 +102,10 @@ export default function RecurringPage({
                                 role="radio"
                                 aria-checked={statusFilter === option.value}
                                 onClick={() => setStatusFilter(option.value)}
-                                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                                className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
                                     statusFilter === option.value
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-text-tertiary hover:text-text-secondary'
+                                        ? 'bg-foreground text-background'
+                                        : 'text-white/55 hover:text-white'
                                 }`}
                             >
                                 {option.label}
@@ -117,24 +115,26 @@ export default function RecurringPage({
                 </div>
 
                 {/* Monthly totals */}
-                <Deferred data="recurringMerchants" fallback={<div className="flex gap-3"><Skeleton className="h-[88px] flex-1 rounded-xl" /><Skeleton className="h-[88px] flex-1 rounded-xl" /></div>}>
+                <Deferred data="recurringMerchants" fallback={<div className="flex gap-3"><Skeleton className="h-[96px] flex-1 rounded-panel" /><Skeleton className="h-[96px] flex-1 rounded-panel" /></div>}>
                     {filteredMerchants.length > 0 && (
                         <div className="flex gap-3">
-                            <div className="relative flex-1 overflow-hidden rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
-                                <p className="text-xs text-text-secondary mb-1">Income</p>
-                                <p className="text-lg font-semibold tabular-nums text-[#10B981]">
-                                    {formatAbsAmount(incomeCents)}
+                            <div className="glass flex-1 min-w-0 rounded-panel p-4">
+                                <p className="flex items-center gap-2 text-xs text-white/60">
+                                    <span className="size-1.5 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]" />
+                                    Income
                                 </p>
-                                <p className="text-xs text-text-tertiary mt-1">
+                                <Amount cents={incomeCents} className="mt-1.5 block text-2xl font-light tracking-tight text-white" />
+                                <p className="text-xs text-white/50 mt-1">
                                     {incomeCount} recurring
                                 </p>
                             </div>
-                            <div className="relative flex-1 overflow-hidden rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
-                                <p className="text-xs text-text-secondary mb-1">Fixed charges</p>
-                                <p className="text-lg font-semibold tabular-nums text-[#FB7185]">
-                                    {formatAbsAmount(expensesCents)}
+                            <div className="glass flex-1 min-w-0 rounded-panel p-4">
+                                <p className="flex items-center gap-2 text-xs text-white/60">
+                                    <span className="size-1.5 rounded-full bg-[#FB7185] shadow-[0_0_8px_#FB7185]" />
+                                    Fixed charges
                                 </p>
-                                <p className="text-xs text-text-tertiary mt-1">
+                                <Amount cents={expensesCents} className="mt-1.5 block text-2xl font-light tracking-tight text-white" />
+                                <p className="text-xs text-white/50 mt-1">
                                     {expensesCount} recurring
                                 </p>
                             </div>
@@ -151,16 +151,16 @@ export default function RecurringPage({
                                     <div className="flex items-center justify-between px-1">
                                         <div className="flex items-center gap-2">
                                             <span
-                                                className="size-2 rounded-full"
-                                                style={{ backgroundColor: group.color }}
+                                                className="size-1.5 rounded-full"
+                                                style={{ backgroundColor: group.color, boxShadow: `0 0 8px ${group.color}` }}
                                             />
-                                            <span className="text-sm font-medium text-text-secondary">{group.name}</span>
+                                            <span className="text-xs text-white/60">{group.name}</span>
                                         </div>
-                                        <span className="text-sm font-medium tabular-nums text-text-secondary">
+                                        <span className="text-xs tabular-nums text-white/60">
                                             {formatAbsAmount(group.totalCents)}
                                         </span>
                                     </div>
-                                    <div className="space-y-2">
+                                    <div className="glass divide-y divide-white/[0.06] overflow-hidden rounded-panel">
                                         {group.merchants.map((merchant) => (
                                             <RecurringMerchantCard
                                                 key={merchant.merchantName}

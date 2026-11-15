@@ -1,6 +1,5 @@
 import { Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
-import AmbientCircle from '@/components/AmbientCircle';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -44,9 +43,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     }
 
     return (
-        <>
-        <AmbientCircle />
-        <div className="px-4 py-6">
+        <div className="pt-4 pb-6">
             <Heading
                 title="Settings"
                 description="Manage your profile and account settings"
@@ -64,8 +61,8 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                 size="sm"
                                 variant="ghost"
                                 asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': isCurrentUrl(item.href),
+                                className={cn('w-full justify-start rounded-full px-4 text-white/60 hover:bg-white/[0.06] hover:text-white', {
+                                    'glass text-white': isCurrentUrl(item.href),
                                 })}
                             >
                                 <Link href={item.href}>
@@ -88,6 +85,5 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 </div>
             </div>
         </div>
-        </>
     );
 }

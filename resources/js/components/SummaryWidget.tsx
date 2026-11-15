@@ -1,78 +1,91 @@
 import { AnimatedNumber } from '@/components/AnimatedNumber';
 import MiniSparkline from '@/components/MiniSparkline';
-import { formatAmount, formatAbsAmount } from '@/lib/formatAmount';
+import { formatAbsAmount } from '@/lib/formatAmount';
 
-import type { SparklineData } from '@/types';
+import type { CategoryTotal } from '@/types';
 
 type Props = {
     incomeCents: number;
     expensesCents: number;
-    avgIncomeCents?: number;
     avgExpensesCents?: number;
     showDashes?: boolean;
-    sparklineData?: SparklineData;
+    /** Spending categories, drawn as the split bar. */
+    spending: CategoryTotal[];
+    /** Monthly expense totals, drawn as a faint trend behind the split bar. */
+    expenseTrend: number[];
 };
 
-function DeltaIndicator({ deltaCents }: { deltaCents: number }) {
-    if (deltaCents === 0) return <p className="text-xs mt-0.5 invisible">&nbsp;</p>;
+function formatSigned(cents: number): string {
+    const sign = cents > 0 ? '+' : cents < 0 ? '\u2212' : '';
+    return `${sign}${formatAbsAmount(cents)}`;
+}
 
-    const arrow = deltaCents > 0 ? '\u2191' : '\u2193';
-
+function Chip({ label, cents, color, showDashes }: { label: string; cents: number; color: string; showDashes: boolean }) {
     return (
-        <p className="text-xs text-text-tertiary tabular-nums mt-0.5">
-            {arrow}&thinsp;{formatAbsAmount(deltaCents)}
-        </p>
+        <span className="glass inline-flex h-7 items-center gap-2 rounded-full px-3 text-xs text-white/85">
+            <span className="size-1.5 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }} />
+            {label} <span className="tabular-nums">{showDashes ? '\u2014' : formatAbsAmount(cents)}</span>
+        </span>
     );
 }
 
-export default function SummaryWidget({ incomeCents, expensesCents, avgIncomeCents, avgExpensesCents, showDashes = false, sparklineData }: Props) {
-    const incomeAvgLine = avgIncomeCents !== undefined;
-    const expenseAvgLine = avgExpensesCents !== undefined;
-    const incomeValues = sparklineData?.monthlyIncomeTotals.map((d) => d.amountCents) ?? [];
-    const expenseValues = sparklineData?.monthlyExpenseTotals.map((d) => d.amountCents) ?? [];
+function AverageComparison({ expensesCents, avgExpensesCents }: { expensesCents: number; avgExpensesCents: number }) {
+    const diff = avgExpensesCents - expensesCents;
+    if (diff === 0) return <span className="text-white/60">On average</span>;
 
+    return diff > 0 ? (
+        <span className="text-emerald-300 tabular-nums">{formatAbsAmount(diff)} under average</span>
+    ) : (
+        <span className="text-rose-300 tabular-nums">{formatAbsAmount(diff)} over average</span>
+    );
+}
+
+export default function SummaryWidget({ incomeCents, expensesCents, avgExpensesCents, showDashes = false, spending, expenseTrend }: Props) {
     return (
-        <div className="flex gap-3">
-            <div className="relative flex-1 overflow-hidden rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
-                <p className="text-xs text-text-secondary mb-1">Income</p>
+        <div className="space-y-4">
+            <div>
+                <p className="text-sm text-white/60">Net this month</p>
                 {showDashes ? (
-                    <p className="text-lg font-semibold tabular-nums text-[#10B981]">{'\u2014'}</p>
+                    <p className="mt-1.5 text-5xl font-light">{'\u2014'}</p>
                 ) : (
                     <AnimatedNumber
-                        value={incomeCents}
-                        formatter={formatAmount}
-                        className="text-lg font-semibold tabular-nums text-[#10B981]"
+                        value={incomeCents - expensesCents}
+                        formatter={formatSigned}
+                        className="mt-1.5 block text-5xl font-light tracking-[-0.04em] tabular-nums"
+                        decimalsClassName="ml-0.5 text-[0.45em] tracking-normal text-white/50"
                     />
                 )}
-                {!showDashes && (
-                    incomeAvgLine ? (
-                        <DeltaIndicator deltaCents={incomeCents - avgIncomeCents} />
-                    ) : (
-                        <p className="text-xs mt-0.5 invisible">&nbsp;</p>
-                    )
-                )}
-                <MiniSparkline values={incomeValues} color="#10B981" />
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                    <Chip label="In" cents={incomeCents} color="#34D399" showDashes={showDashes} />
+                    <Chip label="Out" cents={expensesCents} color="#FB7185" showDashes={showDashes} />
+                </div>
             </div>
-            <div className="relative flex-1 overflow-hidden rounded-xl p-4 bg-surface/60 backdrop-blur-2xl border border-white/[0.06]">
-                <p className="text-xs text-text-secondary mb-1">Expenses</p>
-                {showDashes ? (
-                    <p className="text-lg font-semibold tabular-nums text-[#FB7185]">{'\u2014'}</p>
-                ) : (
-                    <AnimatedNumber
-                        value={expensesCents}
-                        formatter={formatAbsAmount}
-                        className="text-lg font-semibold tabular-nums text-[#FB7185]"
-                    />
-                )}
-                {!showDashes && (
-                    expenseAvgLine ? (
-                        <DeltaIndicator deltaCents={expensesCents - avgExpensesCents} />
-                    ) : (
-                        <p className="text-xs mt-0.5 invisible">&nbsp;</p>
-                    )
-                )}
-                <MiniSparkline values={expenseValues} color="#FB7185" />
-            </div>
+
+            {!showDashes && spending.length > 0 && (
+                <div className="glass relative overflow-hidden rounded-panel px-4 pt-3 pb-6">
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                        <span className="text-white/60">Spent</span>
+                        {avgExpensesCents !== undefined && (
+                            <AverageComparison expensesCents={expensesCents} avgExpensesCents={avgExpensesCents} />
+                        )}
+                    </div>
+                    <div className="mt-2.5 flex h-2 gap-[3px]" role="img" aria-label="Spending split by category">
+                        {spending.map((cat) => (
+                            <span
+                                key={cat.id}
+                                title={cat.name}
+                                className="min-w-1 rounded-full"
+                                style={{
+                                    flexGrow: Math.abs(cat.amountCents),
+                                    backgroundColor: cat.color,
+                                    boxShadow: `0 0 10px ${cat.color}66`,
+                                }}
+                            />
+                        ))}
+                    </div>
+                    <MiniSparkline values={expenseTrend} color="#FB7185" />
+                </div>
+            )}
         </div>
     );
 }

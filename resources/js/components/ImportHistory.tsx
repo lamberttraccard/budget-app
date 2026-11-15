@@ -51,17 +51,17 @@ export default function ImportHistory({ imports }: { imports: ImportRecord[] }) 
 
     return (
         <>
-            <div className="mt-6 rounded-xl bg-surface/80 backdrop-blur-2xl border border-white/[0.06] p-4">
+            <div className="glass rounded-panel px-4 py-3">
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
                     className="flex w-full items-center justify-between"
                 >
-                    <span className="text-sm font-medium text-[#A1A1AA]">Import History</span>
+                    <span className="text-sm text-white/60">Import History</span>
                     {isOpen ? (
-                        <ChevronUp className="size-4 text-[#A1A1AA]" />
+                        <ChevronUp className="size-4 text-white/60" />
                     ) : (
-                        <ChevronDown className="size-4 text-[#A1A1AA]" />
+                        <ChevronDown className="size-4 text-white/60" />
                     )}
                 </button>
 
@@ -71,12 +71,12 @@ export default function ImportHistory({ imports }: { imports: ImportRecord[] }) 
                             <div
                                 key={imp.id}
                                 className={`flex items-center justify-between py-3 ${
-                                    index < imports.length - 1 ? 'border-b border-[#2C2C2E]' : ''
+                                    index < imports.length - 1 ? 'border-b border-white/[0.06]' : ''
                                 }`}
                             >
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-medium text-white">{imp.bank}</p>
-                                    <p className="text-xs text-[#A1A1AA]">
+                                    <p className="text-sm text-white">{imp.bank}</p>
+                                    <p className="text-xs text-white/50">
                                         {imp.transactionCount} transactions
                                         {imp.dateFrom && imp.dateTo && (
                                             <> &middot; {formatRange(imp.dateFrom, imp.dateTo)}</>
@@ -88,7 +88,7 @@ export default function ImportHistory({ imports }: { imports: ImportRecord[] }) 
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => setDeletingImportId(imp.id)}
-                                    className="ml-2 text-[#71717A] hover:text-[#EF4444]"
+                                    className="ml-2 rounded-full text-white/40 hover:text-[#EF4444]"
                                 >
                                     <Trash2 className="size-4" />
                                 </Button>

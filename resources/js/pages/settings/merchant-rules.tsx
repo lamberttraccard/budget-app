@@ -68,6 +68,7 @@ export default function MerchantRules({ rules }: MerchantRulesProps) {
             <SettingsLayout>
                 <div className="space-y-6">
                     <Heading
+                        variant="small"
                         title="Merchant Rules"
                         description="Auto-categorization rules created when you recategorize transactions."
                     />
@@ -79,11 +80,11 @@ export default function MerchantRules({ rules }: MerchantRulesProps) {
                             </p>
                         </div>
                     ) : (
-                        <div className="space-y-1">
+                        <div className="glass divide-y divide-white/[0.06] overflow-hidden rounded-panel">
                             {rules.map((rule) => (
                                 <div
                                     key={rule.id}
-                                    className="flex items-center gap-3 rounded-lg border border-border/50 px-3 py-2.5"
+                                    className="flex items-center gap-3 px-4 py-3"
                                 >
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm text-foreground truncate" title={rule.merchantPattern}>

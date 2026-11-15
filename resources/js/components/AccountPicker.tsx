@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from 'lucide-react';
+import { UsersIcon } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -8,13 +8,9 @@ type Props = {
     selectedAccountIds: number[];
     accountContexts: AccountContext[];
     onAccountsChange: (accountIds: number[]) => void;
-    dark?: boolean;
 };
 
-export default function AccountPicker({ selectedAccountIds, accountContexts, onAccountsChange, dark }: Props) {
-    const textClass = dark ? 'text-black/70' : 'text-text-secondary';
-    const hoverClass = dark ? 'hover:text-black/90' : 'hover:text-white';
-
+export default function AccountPicker({ selectedAccountIds, accountContexts, onAccountsChange }: Props) {
     const allIds = useMemo(() => accountContexts.map(a => a.id), [accountContexts]);
 
     // Empty array = "all accounts"
@@ -52,7 +48,7 @@ export default function AccountPicker({ selectedAccountIds, accountContexts, onA
 
     if (accountContexts.length <= 1) {
         return (
-            <span className={`text-sm font-medium ${textClass}`}>
+            <span className="text-sm font-medium text-text-secondary">
                 {accountContexts[0]?.name ?? 'All accounts'}
             </span>
         );
@@ -60,11 +56,20 @@ export default function AccountPicker({ selectedAccountIds, accountContexts, onA
 
     return (
         <Popover>
-            <PopoverTrigger className={`flex items-center gap-1 text-sm font-medium ${textClass} ${hoverClass} transition-colors outline-none`}>
-                {label}
-                <ChevronDownIcon className="size-4" />
+            <PopoverTrigger
+                aria-label={label}
+                title={label}
+                className="glass relative flex size-9 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            >
+                <UsersIcon className="size-4" />
+                {!isAllSelected && (
+                    <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-background tabular-nums">
+                        {selectedAccountIds.length}
+                    </span>
+                )}
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-56 p-2">
+            <PopoverContent align="end" className="w-56 rounded-2xl p-2">
+                <p className="px-2 pb-1 pt-0.5 text-xs text-text-secondary">{label}</p>
                 {accountContexts.map(account => (
                     <label
                         key={account.id}

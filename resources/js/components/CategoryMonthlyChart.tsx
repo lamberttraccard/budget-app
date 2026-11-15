@@ -14,7 +14,7 @@ type Props = {
 };
 
 const PADDING = { top: 14, right: 16, bottom: 20, left: 16 };
-const CHART_HEIGHT = 56;
+const CHART_HEIGHT = 72;
 const SVG_WIDTH_DESKTOP = 800;
 const SVG_WIDTH_MOBILE = 400;
 
@@ -130,7 +130,7 @@ export default function CategoryMonthlyChart({
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
         >
-            <div className="rounded-xl bg-surface/80 backdrop-blur-2xl p-4">
+            <div className="-mx-2">
                 <svg
                     viewBox={`0 0 ${svgWidth} ${svgHeight}`}
                     className="w-full"
@@ -141,7 +141,7 @@ export default function CategoryMonthlyChart({
                     <title>Monthly spending trend for this category</title>
                     <defs>
                         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={accentColor} stopOpacity={0.15} />
+                            <stop offset="0%" stopColor={accentColor} stopOpacity={0.32} />
                             <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
                         </linearGradient>
                     </defs>
@@ -157,8 +157,9 @@ export default function CategoryMonthlyChart({
                         d={linePath}
                         fill="none"
                         stroke={accentColor}
-                        strokeWidth={2.5}
+                        strokeWidth={2}
                         strokeLinecap="round"
+                        style={{ filter: `drop-shadow(0 0 6px ${accentColor}AA)` }}
                     />
 
                     {/* Data points */}
@@ -166,25 +167,13 @@ export default function CategoryMonthlyChart({
                         const isCurrent = p.month === currentMonth;
                         return (
                             <g key={p.month}>
-                                {/* Soft glow */}
+                                {/* Current month: white dot in a soft halo */}
                                 {isCurrent && (
-                                    <circle
-                                        cx={p.x}
-                                        cy={p.y}
-                                        r={11}
-                                        fill={accentColor}
-                                        opacity={0.25}
-                                    />
+                                    <>
+                                        <circle cx={p.x} cy={p.y} r={10} fill={accentColor} opacity={0.25} />
+                                        <circle cx={p.x} cy={p.y} r={4} fill="#FFFFFF" />
+                                    </>
                                 )}
-                                {/* Visible dot */}
-                                <circle
-                                    cx={p.x}
-                                    cy={p.y}
-                                    r={isCurrent ? 4 : 3}
-                                    fill="var(--color-surface, #1a1a2e)"
-                                    stroke={accentColor}
-                                    strokeWidth={isCurrent ? 2 : 1.5}
-                                />
                                 {/* Tap target */}
                                 <circle
                                     cx={p.x}
@@ -214,9 +203,8 @@ export default function CategoryMonthlyChart({
                                 x={p.x}
                                 y={svgHeight - 2}
                                 textAnchor="middle"
-                                fill="rgba(255,255,255,0.4)"
+                                fill={p.month === currentMonth ? '#FFFFFF' : 'rgba(255,255,255,0.4)'}
                                 fontSize={11}
-                                fontWeight={p.month === currentMonth ? 600 : 400}
                             >
                                 {formatMonthLabel(p.month)}
                             </text>

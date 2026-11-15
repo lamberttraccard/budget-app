@@ -3,12 +3,11 @@ import { UploadIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import AmbientCircle from '@/components/AmbientCircle';
-import CategoryCard from '@/components/CategoryCard';
+import CategoryRow from '@/components/CategoryRow';
 import EmptyState from '@/components/EmptyState';
 import ImportDropZone from '@/components/ImportDropZone';
 import ImportHistory from '@/components/ImportHistory';
-import MonthStrip from '@/components/MonthStrip';
+import MonthPicker from '@/components/MonthPicker';
 import SummaryWidget from '@/components/SummaryWidget';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,6 +40,9 @@ function formatDateRange(from: string, to: string): string {
     const toDate = new Date(to + 'T00:00:00');
     return `${fromDate.toLocaleDateString('en-US', opts)} – ${toDate.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
 }
+
+/** Categories that are not spending: they appear in their own section, outside the spending split. */
+const NOT_SPENDING_SLUGS = ['income', 'transfer'];
 
 const containerVariants = {
     hidden: {},
@@ -264,8 +266,58 @@ export default function Dashboard({
         }
     }, [handleFileSelect]);
 
+    const spending = categoryTotals.filter((cat) => !NOT_SPENDING_SLUGS.includes(cat.slug));
+    const notSpending = categoryTotals.filter((cat) => NOT_SPENDING_SLUGS.includes(cat.slug));
+
+    const renderRows = (categories: CategoryTotal[], subtitle: (cat: CategoryTotal) => string) => (
+        <motion.div
+            className="glass divide-y divide-white/[0.06] rounded-panel px-4 py-1"
+            variants={containerVariants}
+            initial={shouldCascade && !shouldReduceMotion ? 'hidden' : false}
+            animate="visible"
+            onAnimationComplete={() => setShouldCascade(false)}
+        >
+            {categories.map((cat) => (
+                <motion.div key={cat.id} variants={cardVariants}>
+                    <CategoryRow
+                        id={cat.id}
+                        name={cat.name}
+                        color={cat.color}
+                        icon={cat.icon}
+                        amountCents={cat.amountCents}
+                        subtitle={subtitle(cat)}
+                        avgAmountCents={averageData?.categoryAverages[cat.slug]?.avgAmountCents}
+                        currentMonth={currentMonth}
+                        selectedAccountIds={selectedAccountIds}
+                    />
+                </motion.div>
+            ))}
+        </motion.div>
+    );
+
+    const importButton = (
+        <button
+            type="button"
+            onClick={triggerFileInput}
+            disabled={isUploading}
+            className="glass inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
+        >
+            <UploadIcon className="size-4" />
+            {isUploading ? 'Uploading...' : 'Import CSV'}
+        </button>
+    );
+
     return (
-        <AppLayout onAccountsChange={handleAccountsChange}>
+        <AppLayout
+            onAccountsChange={handleAccountsChange}
+            headerCenter={hasAnyData ? (
+                <MonthPicker
+                    currentMonth={currentMonth}
+                    availableMonths={availableMonths}
+                    onMonthChange={handleMonthChange}
+                />
+            ) : undefined}
+        >
             <Head title="Budget" />
 
             {/* Hidden file input */}
@@ -277,11 +329,9 @@ export default function Dashboard({
                 onChange={handleInputChange}
             />
 
-            <AmbientCircle />
-
             {/* Drag-and-drop zone wraps the entire page content */}
             <div
-                className="relative py-6 space-y-5"
+                className="relative pt-4 pb-6 space-y-5"
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
@@ -289,26 +339,18 @@ export default function Dashboard({
             >
                 {/* Import error display */}
                 {errors.csv_file && (
-                    <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4">
+                    <div className="rounded-2xl bg-red-500/10 border border-red-500/20 p-4">
                         <p className="text-sm text-red-400">{errors.csv_file}</p>
                     </div>
-                )}
-
-                {hasAnyData && (
-                    <MonthStrip
-                        currentMonth={currentMonth}
-                        availableMonths={availableMonths}
-                        onMonthChange={handleMonthChange}
-                    />
                 )}
 
                 <SummaryWidget
                     incomeCents={incomeCents}
                     expensesCents={expensesCents}
-                    avgIncomeCents={averageData?.avgIncomeCents}
                     avgExpensesCents={averageData?.avgExpensesCents}
                     showDashes={isEmptyMonth}
-                    sparklineData={sparklineData}
+                    spending={spending}
+                    expenseTrend={sparklineData?.monthlyExpenseTotals.map((d) => d.amountCents) ?? []}
                 />
 
                 {isEmptyMonth ? (
@@ -316,15 +358,7 @@ export default function Dashboard({
                         <p className="text-sm text-text-tertiary">
                             No transactions for {formatMonthLabel(currentMonth)}
                         </p>
-                        <button
-                            type="button"
-                            onClick={triggerFileInput}
-                            disabled={isUploading}
-                            className="inline-flex items-center gap-2 rounded-xl bg-surface/80 backdrop-blur-2xl px-4 py-2.5 text-sm text-text-secondary transition-colors hover:bg-surface-elevated/80 hover:text-white disabled:opacity-50"
-                        >
-                            <UploadIcon className="size-4" />
-                            {isUploading ? 'Uploading...' : 'Import CSV'}
-                        </button>
+                        {importButton}
                     </div>
                 ) : (
                     <AnimatePresence mode="wait">
@@ -337,59 +371,28 @@ export default function Dashboard({
                                 <EmptyState onImportClick={triggerFileInput} disabled={isUploading} />
                             </motion.div>
                         ) : (
-                            <div key="categories">
-                                {shouldReduceMotion ? (
-                                    <div className="space-y-3">
-                                        {categoryTotals.map((cat: CategoryTotal) => (
-                                            <CategoryCard
-                                                key={cat.id}
-                                                id={cat.id}
-                                                name={cat.name}
-                                                color={cat.color}
-                                                icon={cat.icon}
-                                                amountCents={cat.amountCents}
-                                                avgAmountCents={averageData?.categoryAverages[cat.slug]?.avgAmountCents}
-                                                currentMonth={currentMonth}
-                                                selectedAccountIds={selectedAccountIds}
-                                            />
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <motion.div
-                                        className="space-y-3"
-                                        variants={containerVariants}
-                                        initial={shouldCascade ? 'hidden' : false}
-                                        animate="visible"
-                                        onAnimationComplete={() => setShouldCascade(false)}
-                                    >
-                                        {categoryTotals.map((cat: CategoryTotal) => (
-                                            <motion.div key={cat.id} variants={cardVariants}>
-                                                <CategoryCard
-                                                    id={cat.id}
-                                                    name={cat.name}
-                                                    color={cat.color}
-                                                    icon={cat.icon}
-                                                    amountCents={cat.amountCents}
-                                                    avgAmountCents={averageData?.categoryAverages[cat.slug]?.avgAmountCents}
-                                                    currentMonth={currentMonth}
-                                                    selectedAccountIds={selectedAccountIds}
-                                                />
-                                            </motion.div>
-                                        ))}
-                                    </motion.div>
+                            <div key="categories" className="space-y-5">
+                                {spending.length > 0 && (
+                                    <section className="space-y-2">
+                                        <h2 className="px-1 text-xs text-white/50">Spending</h2>
+                                        {renderRows(spending, (cat) => expensesCents > 0
+                                            ? `${Math.round((Math.abs(cat.amountCents) / expensesCents) * 100)} % of spending`
+                                            : '')}
+                                    </section>
+                                )}
+
+                                {notSpending.length > 0 && (
+                                    <section className="space-y-2">
+                                        <h2 className="px-1 text-xs text-white/50">
+                                            {notSpending.some((cat) => cat.slug !== 'income') ? 'Income & transfers' : 'Income'}
+                                        </h2>
+                                        {renderRows(notSpending, (cat) => `${cat.transactionCount} transaction${cat.transactionCount !== 1 ? 's' : ''}`)}
+                                    </section>
                                 )}
 
                                 {/* Inline import button for subsequent imports */}
-                                <div className="mt-5 flex justify-center">
-                                <button
-                                    type="button"
-                                    onClick={triggerFileInput}
-                                    disabled={isUploading}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-surface/80 backdrop-blur-2xl px-4 py-2.5 text-sm text-text-secondary transition-colors hover:bg-surface-elevated/80 hover:text-white disabled:opacity-50"
-                                >
-                                    <UploadIcon className="size-4" />
-                                    {isUploading ? 'Uploading...' : 'Import CSV'}
-                                </button>
+                                <div className="flex justify-center">
+                                    {importButton}
                                 </div>
                             </div>
                         )}

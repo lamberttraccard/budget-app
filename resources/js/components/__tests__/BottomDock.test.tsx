@@ -31,7 +31,6 @@ describe('BottomDock', () => {
         render(<BottomDock />);
         const dashboardLink = screen.getByText('Dashboard').closest('a');
         expect(dashboardLink).toHaveAttribute('aria-current', 'page');
-        expect(dashboardLink).toHaveClass('text-white');
     });
 
     it('highlights Dashboard when on /categories/5 (drill-down)', () => {
@@ -46,7 +45,6 @@ describe('BottomDock', () => {
         render(<BottomDock />);
         const recurringLink = screen.getByText('Recurring').closest('a');
         expect(recurringLink).toHaveAttribute('aria-current', 'page');
-        expect(recurringLink).toHaveClass('text-white');
     });
 
     it('highlights Search when on /search', () => {
@@ -54,7 +52,6 @@ describe('BottomDock', () => {
         render(<BottomDock />);
         const searchLink = screen.getByText('Search').closest('a');
         expect(searchLink).toHaveAttribute('aria-current', 'page');
-        expect(searchLink).toHaveClass('text-white');
     });
 
     it('appends accounts query param to all links when selectedAccountIds is set', () => {
@@ -93,11 +90,5 @@ describe('BottomDock', () => {
         render(<BottomDock />);
         const nav = screen.getByRole('navigation', { name: 'Bottom navigation' });
         expect(nav).toBeInTheDocument();
-    });
-
-    it('has lg:hidden class for desktop hiding', () => {
-        render(<BottomDock />);
-        const nav = screen.getByRole('navigation', { name: 'Bottom navigation' });
-        expect(nav).toHaveClass('lg:hidden');
     });
 });

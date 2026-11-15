@@ -1,17 +1,24 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import { ChevronLeft } from 'lucide-react';
 import { useCallback } from 'react';
 import { Toaster } from 'sonner';
 import AccountPicker from '@/components/AccountPicker';
 import AppLogoIcon from '@/components/app-logo-icon';
 import BottomDock from '@/components/BottomDock';
-import { useNavItems } from '@/hooks/use-nav-items';
 import type { AppLayoutProps, SharedProps } from '@/types';
 
-export default function AppLayout({ children, onAccountsChange, accentColor }: AppLayoutProps) {
+/** Aurora glow behind the top of the page: the category color on category pages, teal and indigo elsewhere. */
+function auroraBackground(accentColor?: string): string {
+    if (accentColor) {
+        return `radial-gradient(85% 60% at 50% -10%, ${accentColor}6B, transparent 72%)`;
+    }
+    return 'radial-gradient(70% 55% at 10% -8%, rgba(45,212,191,0.30), transparent 70%), radial-gradient(60% 50% at 100% 0%, rgba(129,140,248,0.28), transparent 70%)';
+}
+
+export default function AppLayout({ children, onAccountsChange, accentColor, backHref, headerCenter }: AppLayoutProps) {
     const { accountContexts, selectedAccountIds: sharedAccountIds } = usePage<SharedProps>().props;
 
     const selectedAccountIds = sharedAccountIds ?? [];
-    const navItems = useNavItems(selectedAccountIds);
 
     const defaultAccountsChange = useCallback((accountIds: number[]) => {
         const params: Record<string, string> = {};
@@ -25,48 +32,45 @@ export default function AppLayout({ children, onAccountsChange, accentColor }: A
     const handleAccountsChange = onAccountsChange ?? defaultAccountsChange;
 
     return (
-        <div className="min-h-screen bg-background overflow-x-hidden">
+        <div className="relative min-h-screen bg-background overflow-x-hidden">
+            <div
+                className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+                style={{ background: auroraBackground(accentColor) }}
+                aria-hidden="true"
+            />
+
             <header className="relative z-20 px-4 sm:px-8 py-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
-                <div className="max-w-[480px] lg:max-w-[960px] mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link href="/" aria-label="Go to dashboard">
-                            <AppLogoIcon className="size-8 rounded-lg" />
-                        </Link>
-                        <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
-                            {navItems.map((item) => (
-                                <Link
-                                    key={item.label}
-                                    href={item.href}
-                                    aria-current={item.isActive ? 'page' : undefined}
-                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none backdrop-blur-2xl ${
-                                        item.isActive
-                                            ? accentColor
-                                                ? 'bg-black/65'
-                                                : 'bg-surface/80'
-                                            : accentColor
-                                                ? 'text-black/70 hover:text-black/90'
-                                                : 'text-text-tertiary hover:text-white'
-                                    }`}
-                                    style={item.isActive && accentColor ? { color: accentColor } : undefined}
-                                >
-                                    {item.label}
-                                </Link>
-                            ))}
-                        </nav>
+                <div className="max-w-[480px] lg:max-w-[720px] mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                    <div className="justify-self-start">
+                        {backHref ? (
+                            <Link
+                                href={backHref}
+                                aria-label="Back to dashboard"
+                                className="glass flex size-9 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10"
+                            >
+                                <ChevronLeft className="size-4" />
+                            </Link>
+                        ) : (
+                            <Link href="/" aria-label="Go to dashboard">
+                                <AppLogoIcon className="size-9 rounded-full" />
+                            </Link>
+                        )}
                     </div>
-                    {accountContexts?.length > 1 && (
-                        <AccountPicker
-                            selectedAccountIds={selectedAccountIds}
-                            accountContexts={accountContexts}
-                            onAccountsChange={handleAccountsChange}
-                            dark={!!accentColor}
-                        />
-                    )}
+                    <div className="min-w-0">{headerCenter}</div>
+                    <div className="justify-self-end">
+                        {accountContexts?.length > 1 && (
+                            <AccountPicker
+                                selectedAccountIds={selectedAccountIds}
+                                accountContexts={accountContexts}
+                                onAccountsChange={handleAccountsChange}
+                            />
+                        )}
+                    </div>
                 </div>
             </header>
 
-            <main className="px-4 sm:px-8 pb-20 lg:pb-0">
-                <div className="max-w-[480px] lg:max-w-[960px] mx-auto">
+            <main className="relative z-10 px-4 sm:px-8 pb-32">
+                <div className="max-w-[480px] lg:max-w-[720px] mx-auto">
                     {children}
                 </div>
             </main>

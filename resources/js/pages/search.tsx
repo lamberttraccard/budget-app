@@ -2,7 +2,6 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import AmbientCircle from '@/components/AmbientCircle';
 import ApplyRuleConfirmDialog from '@/components/ApplyRuleConfirmDialog';
 import CategoryPicker from '@/components/CategoryPicker';
 import SearchResultRow from '@/components/SearchResultRow';
@@ -216,13 +215,13 @@ export default function SearchPage({
         <AppLayout onAccountsChange={handleAccountsChange}>
             <Head title="Search" />
 
-            <AmbientCircle />
+            <div className="pt-4 pb-6 space-y-4">
+                <h1 className="text-3xl font-light tracking-tight text-white">Search</h1>
 
-            <div className="relative py-6 space-y-4">
                 {/* Search header */}
                 <div>
                     <div className="relative w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-text-tertiary pointer-events-none" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-white/50 pointer-events-none" />
                         <input
                             ref={inputRef}
                             type="text"
@@ -230,13 +229,14 @@ export default function SearchPage({
                             onChange={handleInputChange}
                             placeholder="Search transactions..."
                             autoFocus
-                            className="w-full rounded-xl bg-surface/80 backdrop-blur-2xl border border-zinc-800 pl-10 pr-10 py-2.5 text-base md:text-sm text-white placeholder:text-text-tertiary focus:outline-none focus:border-zinc-600 transition-colors"
+                            className="glass w-full rounded-full pl-11 pr-11 py-3 text-base md:text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 transition-shadow"
                         />
                         {localQuery && (
                             <button
                                 type="button"
                                 onClick={handleClear}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-white transition-colors"
+                                aria-label="Clear search"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
                             >
                                 <X className="size-4" />
                             </button>
@@ -246,7 +246,7 @@ export default function SearchPage({
 
                 {/* Results info */}
                 {localQuery.length >= 2 && totalCount > 0 && (
-                    <p className="text-xs text-text-secondary px-1">
+                    <p className="text-xs text-white/50 px-1">
                         {`${totalCount} transaction${totalCount === 1 ? '' : 's'} found`}
                     </p>
                 )}
@@ -267,11 +267,11 @@ export default function SearchPage({
 
                 {/* Results list */}
                 {results.length > 0 && (
-                    <div className="bg-surface/80 backdrop-blur-2xl border border-white/[0.06] rounded-xl overflow-hidden">
+                    <div className="glass rounded-panel overflow-hidden">
                         {results.map((result, index) => (
                             <div key={result.id}>
                                 {index > 0 && (
-                                    <div className="mx-4 border-t border-white/5" />
+                                    <div className="mx-4 border-t border-white/[0.06]" />
                                 )}
                                 <SearchResultRow
                                     id={result.id}

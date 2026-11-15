@@ -3,9 +3,9 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import ApplyRuleConfirmDialog from '@/components/ApplyRuleConfirmDialog';
+import CategoryHero from '@/components/CategoryHero';
 import CategoryMonthlyChart from '@/components/CategoryMonthlyChart';
 import CategoryPicker from '@/components/CategoryPicker';
-import ColorHeader from '@/components/ColorHeader';
 import SubcategoryRow from '@/components/SubcategoryRow';
 import TransactionRow from '@/components/TransactionRow';
 import type { TransactionTapData } from '@/components/TransactionRow';
@@ -13,15 +13,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import AppLayout from '@/layouts/app-layout';
 import type { CategoryShowProps, SharedProps, TransactionItem } from '@/types';
 
+function formatMonthLabel(month: string): string {
+    const [year, m] = month.split('-');
+    return new Date(Number(year), Number(m) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
 
 function TransactionListSkeleton() {
     return (
-        <div className="rounded-xl overflow-hidden bg-surface/80 backdrop-blur-2xl">
+        <div className="glass rounded-panel overflow-hidden">
             {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i}>
-                    {i > 0 && <div className="mx-4 border-t border-white/5" />}
+                    {i > 0 && <div className="mx-4 border-t border-white/[0.06]" />}
                     <div className="flex items-center gap-3 px-4 py-3">
-                        <Skeleton className="h-3 w-16 shrink-0" />
+                        <Skeleton className="size-10 rounded-xl shrink-0" />
                         <Skeleton className="h-3 flex-1" />
                         <Skeleton className="h-3 w-20 shrink-0" />
                     </div>
@@ -187,16 +192,20 @@ export default function CategoryShow({
         : transactions;
 
     return (
-        <AppLayout onAccountsChange={handleAccountsChange} accentColor={category.color}>
+        <AppLayout
+            onAccountsChange={handleAccountsChange}
+            accentColor={category.color}
+            backHref={`/?month=${currentMonth}${selectedAccountIds.length > 0 ? `&accounts=${selectedAccountIds.join(',')}` : ''}`}
+            headerCenter={<p className="text-center text-sm text-white/70">{formatMonthLabel(currentMonth)}</p>}
+        >
             <Head title={category.name} />
 
             <motion.div
-                className="sticky top-0 z-0"
                 initial={shouldReduceMotion ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
             >
-                <ColorHeader
+                <CategoryHero
                     name={category.name}
                     color={category.color}
                     icon={category.icon}
@@ -206,7 +215,7 @@ export default function CategoryShow({
             </motion.div>
 
             <motion.div
-                className="relative z-10 py-5 space-y-4"
+                className="pt-6 pb-6 space-y-4"
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, ease: 'easeOut', delay: 0.15 }}
@@ -221,11 +230,11 @@ export default function CategoryShow({
                 />
 
                 {subcategories.length > 0 && (
-                    <div className="rounded-xl overflow-hidden bg-surface/80 backdrop-blur-2xl">
+                    <div className="glass rounded-panel overflow-hidden">
                         {subcategories.map((sub, index) => (
                             <div key={sub.id}>
                                 {index > 0 && (
-                                    <div className="mx-4 border-t border-white/5" />
+                                    <div className="mx-4 border-t border-white/[0.06]" />
                                 )}
                                 <SubcategoryRow
                                     name={sub.name}
@@ -241,11 +250,11 @@ export default function CategoryShow({
 
                 <Deferred data="transactions" fallback={<TransactionListSkeleton />}>
                     {visibleTransactions.length > 0 ? (
-                        <div className="rounded-xl overflow-hidden bg-surface/80 backdrop-blur-2xl">
+                        <div className="glass rounded-panel overflow-hidden">
                             {visibleTransactions.map((t, index) => (
                                 <div key={t.id}>
                                     {index > 0 && (
-                                        <div className="mx-4 border-t border-white/5" />
+                                        <div className="mx-4 border-t border-white/[0.06]" />
                                     )}
                                     <TransactionRow
                                         id={t.id}
