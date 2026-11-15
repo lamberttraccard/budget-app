@@ -65,8 +65,8 @@ Route::get('manifest.webmanifest', function (): JsonResponse {
         'scope' => '/',
         'display' => 'standalone',
         'orientation' => 'any',
-        'background_color' => '#111113',
-        'theme_color' => '#111113',
+        'background_color' => '#07080C',
+        'theme_color' => '#07080C',
         'icons' => [
             ['src' => "/icons/icon-192x192.png?v={$iconVersion}", 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
             ['src' => "/icons/icon-192x192.png?v={$iconVersion}", 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
