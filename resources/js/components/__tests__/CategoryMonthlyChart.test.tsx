@@ -12,15 +12,18 @@ vi.mock('motion/react', async () => {
     return {
         motion: {
             div: React.forwardRef(
-                (props: Record<string, unknown>, ref: React.Ref<HTMLDivElement>) =>
-                    React.createElement('div', { ...props, ref }),
+                (
+                    props: Record<string, unknown>,
+                    ref: React.Ref<HTMLDivElement>,
+                ) => React.createElement('div', { ...props, ref }),
             ),
         },
         useReducedMotion: () => false,
     };
 });
 
-const { default: CategoryMonthlyChart } = await import('../CategoryMonthlyChart');
+const { default: CategoryMonthlyChart } =
+    await import('../CategoryMonthlyChart');
 
 const defaultProps = {
     currentMonth: '2026-02',
@@ -40,7 +43,10 @@ function makeTotals(count: number): MonthlyTotal[] {
 describe('CategoryMonthlyChart', () => {
     it('renders nothing when monthlyTotals has fewer than 2 entries', () => {
         const { container } = render(
-            <CategoryMonthlyChart monthlyTotals={makeTotals(1)} {...defaultProps} />,
+            <CategoryMonthlyChart
+                monthlyTotals={makeTotals(1)}
+                {...defaultProps}
+            />,
         );
         expect(container.innerHTML).toBe('');
     });
@@ -54,15 +60,23 @@ describe('CategoryMonthlyChart', () => {
 
     it('renders SVG when monthlyTotals has 2+ entries', () => {
         render(
-            <CategoryMonthlyChart monthlyTotals={makeTotals(3)} {...defaultProps} />,
+            <CategoryMonthlyChart
+                monthlyTotals={makeTotals(3)}
+                {...defaultProps}
+            />,
         );
-        const svg = screen.getByRole('img', { name: /monthly spending trend/i });
+        const svg = screen.getByRole('img', {
+            name: /monthly spending trend/i,
+        });
         expect(svg).toBeInTheDocument();
     });
 
     it('renders correct number of interactive data points', () => {
         render(
-            <CategoryMonthlyChart monthlyTotals={makeTotals(4)} {...defaultProps} />,
+            <CategoryMonthlyChart
+                monthlyTotals={makeTotals(4)}
+                {...defaultProps}
+            />,
         );
         const buttons = screen.getAllByRole('button');
         expect(buttons).toHaveLength(4);
@@ -70,11 +84,20 @@ describe('CategoryMonthlyChart', () => {
 
     it('has aria-labels on data points with month name', () => {
         render(
-            <CategoryMonthlyChart monthlyTotals={makeTotals(2)} {...defaultProps} />,
+            <CategoryMonthlyChart
+                monthlyTotals={makeTotals(2)}
+                {...defaultProps}
+            />,
         );
         const buttons = screen.getAllByRole('button');
-        expect(buttons[0]).toHaveAttribute('aria-label', expect.stringContaining('Jan'));
-        expect(buttons[1]).toHaveAttribute('aria-label', expect.stringContaining('Feb'));
+        expect(buttons[0]).toHaveAttribute(
+            'aria-label',
+            expect.stringContaining('Jan'),
+        );
+        expect(buttons[1]).toHaveAttribute(
+            'aria-label',
+            expect.stringContaining('Feb'),
+        );
     });
 
     it('calls router.get when clicking a non-current month point', async () => {
@@ -98,7 +121,11 @@ describe('CategoryMonthlyChart', () => {
             expect.objectContaining({
                 preserveState: true,
                 preserveScroll: true,
-                only: expect.arrayContaining(['monthlyTotals', 'chartMonth', 'transactions']),
+                only: expect.arrayContaining([
+                    'monthlyTotals',
+                    'chartMonth',
+                    'transactions',
+                ]),
             }),
         );
     });

@@ -1,4 +1,10 @@
-import { motion, useMotionValue, useTransform, animate, useReducedMotion } from 'motion/react';
+import {
+    motion,
+    useMotionValue,
+    useTransform,
+    animate,
+    useReducedMotion,
+} from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { formatAbsAmount, splitDecimals } from '@/lib/formatAmount';
 
@@ -21,8 +27,14 @@ export function AnimatedNumber({
     const shouldReduceMotion = useReducedMotion();
     const motionValue = useMotionValue(value);
     const display = useTransform(motionValue, (v) => formatter(Math.round(v)));
-    const whole = useTransform(motionValue, (v) => splitDecimals(formatter(Math.round(v)))[0]);
-    const decimals = useTransform(motionValue, (v) => splitDecimals(formatter(Math.round(v)))[1]);
+    const whole = useTransform(
+        motionValue,
+        (v) => splitDecimals(formatter(Math.round(v)))[0],
+    );
+    const decimals = useTransform(
+        motionValue,
+        (v) => splitDecimals(formatter(Math.round(v)))[1],
+    );
     const isInitialMount = useRef(true);
 
     useEffect(() => {
@@ -50,7 +62,9 @@ export function AnimatedNumber({
             {decimalsClassName ? (
                 <>
                     <motion.span>{whole}</motion.span>
-                    <motion.span className={decimalsClassName}>{decimals}</motion.span>
+                    <motion.span className={decimalsClassName}>
+                        {decimals}
+                    </motion.span>
                 </>
             ) : (
                 display

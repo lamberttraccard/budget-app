@@ -7,9 +7,22 @@ let mockUrl = '/';
 let mockSelectedAccountIds: number[] = [];
 
 vi.mock('@inertiajs/react', () => ({
-    usePage: () => ({ url: mockUrl, props: { selectedAccountIds: mockSelectedAccountIds } }),
-    Link: ({ href, children, ...props }: { href: string; children: ReactNode; [key: string]: unknown }) => (
-        <a href={href} {...props}>{children}</a>
+    usePage: () => ({
+        url: mockUrl,
+        props: { selectedAccountIds: mockSelectedAccountIds },
+    }),
+    Link: ({
+        href,
+        children,
+        ...props
+    }: {
+        href: string;
+        children: ReactNode;
+        [key: string]: unknown;
+    }) => (
+        <a href={href} {...props}>
+            {children}
+        </a>
     ),
 }));
 
@@ -61,7 +74,10 @@ describe('BottomDock', () => {
         const recurringLink = screen.getByText('Recurring').closest('a');
         const searchLink = screen.getByText('Search').closest('a');
         expect(dashboardLink).toHaveAttribute('href', '/?accounts=1,2');
-        expect(recurringLink).toHaveAttribute('href', '/recurring?accounts=1,2');
+        expect(recurringLink).toHaveAttribute(
+            'href',
+            '/recurring?accounts=1,2',
+        );
         expect(searchLink).toHaveAttribute('href', '/search?accounts=1,2');
     });
 
@@ -88,7 +104,9 @@ describe('BottomDock', () => {
 
     it('is wrapped in a nav element with proper aria-label', () => {
         render(<BottomDock />);
-        const nav = screen.getByRole('navigation', { name: 'Bottom navigation' });
+        const nav = screen.getByRole('navigation', {
+            name: 'Bottom navigation',
+        });
         expect(nav).toBeInTheDocument();
     });
 });

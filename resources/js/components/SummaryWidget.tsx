@@ -20,27 +20,63 @@ function formatSigned(cents: number): string {
     return `${sign}${formatAbsAmount(cents)}`;
 }
 
-function Chip({ label, cents, color, showDashes }: { label: string; cents: number; color: string; showDashes: boolean }) {
+function Chip({
+    label,
+    cents,
+    color,
+    showDashes,
+}: {
+    label: string;
+    cents: number;
+    color: string;
+    showDashes: boolean;
+}) {
     return (
-        <span className="glass inline-flex h-7 items-center gap-2 rounded-full px-3 text-xs text-white/85">
-            <span className="size-1.5 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }} />
-            {label} <span className="tabular-nums">{showDashes ? '\u2014' : formatAbsAmount(cents)}</span>
+        <span className="inline-flex h-7 items-center gap-2 rounded-full glass px-3 text-xs text-white/85">
+            <span
+                className="size-1.5 rounded-full"
+                style={{
+                    backgroundColor: color,
+                    boxShadow: `0 0 8px ${color}`,
+                }}
+            />
+            {label}{' '}
+            <span className="tabular-nums">
+                {showDashes ? '\u2014' : formatAbsAmount(cents)}
+            </span>
         </span>
     );
 }
 
-function AverageComparison({ expensesCents, avgExpensesCents }: { expensesCents: number; avgExpensesCents: number }) {
+function AverageComparison({
+    expensesCents,
+    avgExpensesCents,
+}: {
+    expensesCents: number;
+    avgExpensesCents: number;
+}) {
     const diff = avgExpensesCents - expensesCents;
     if (diff === 0) return <span className="text-white/60">On average</span>;
 
     return diff > 0 ? (
-        <span className="text-emerald-300 tabular-nums">{formatAbsAmount(diff)} under average</span>
+        <span className="text-emerald-300 tabular-nums">
+            {formatAbsAmount(diff)} under average
+        </span>
     ) : (
-        <span className="text-rose-300 tabular-nums">{formatAbsAmount(diff)} over average</span>
+        <span className="text-rose-300 tabular-nums">
+            {formatAbsAmount(diff)} over average
+        </span>
     );
 }
 
-export default function SummaryWidget({ incomeCents, expensesCents, avgExpensesCents, showDashes = false, spending, expenseTrend }: Props) {
+export default function SummaryWidget({
+    incomeCents,
+    expensesCents,
+    avgExpensesCents,
+    showDashes = false,
+    spending,
+    expenseTrend,
+}: Props) {
     return (
         <div className="space-y-4">
             <div>
@@ -56,20 +92,37 @@ export default function SummaryWidget({ incomeCents, expensesCents, avgExpensesC
                     />
                 )}
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                    <Chip label="In" cents={incomeCents} color="#34D399" showDashes={showDashes} />
-                    <Chip label="Out" cents={expensesCents} color="#FB7185" showDashes={showDashes} />
+                    <Chip
+                        label="In"
+                        cents={incomeCents}
+                        color="#34D399"
+                        showDashes={showDashes}
+                    />
+                    <Chip
+                        label="Out"
+                        cents={expensesCents}
+                        color="#FB7185"
+                        showDashes={showDashes}
+                    />
                 </div>
             </div>
 
             {!showDashes && spending.length > 0 && (
-                <div className="glass relative overflow-hidden rounded-panel px-4 pt-3 pb-6">
+                <div className="relative overflow-hidden rounded-panel glass px-4 pt-3 pb-6">
                     <div className="flex items-center justify-between gap-3 text-xs">
                         <span className="text-white/60">Spent</span>
                         {avgExpensesCents !== undefined && (
-                            <AverageComparison expensesCents={expensesCents} avgExpensesCents={avgExpensesCents} />
+                            <AverageComparison
+                                expensesCents={expensesCents}
+                                avgExpensesCents={avgExpensesCents}
+                            />
                         )}
                     </div>
-                    <div className="mt-2.5 flex h-2 gap-[3px]" role="img" aria-label="Spending split by category">
+                    <div
+                        className="mt-2.5 flex h-2 gap-[3px]"
+                        role="img"
+                        aria-label="Spending split by category"
+                    >
                         {spending.map((cat) => (
                             <span
                                 key={cat.id}

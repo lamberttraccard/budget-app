@@ -24,7 +24,11 @@ type Props = {
     triggerRef?: RefObject<HTMLSpanElement | null>;
 };
 
-function CategoryItem({ category, isCurrent, onSelect }: {
+function CategoryItem({
+    category,
+    isCurrent,
+    onSelect,
+}: {
     category: CategoryOption;
     isCurrent: boolean;
     onSelect: (categoryId: number) => void;
@@ -34,19 +38,22 @@ function CategoryItem({ category, isCurrent, onSelect }: {
             type="button"
             onClick={() => !isCurrent && onSelect(category.id)}
             disabled={isCurrent}
-            className={`flex items-center gap-3 w-full px-4 py-3 min-h-[44px] rounded-lg transition-colors text-left ${
+            className={`flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 py-3 text-left transition-colors ${
                 isCurrent
-                    ? 'opacity-40 cursor-default'
-                    : 'hover:bg-white/5 cursor-pointer'
+                    ? 'cursor-default opacity-40'
+                    : 'cursor-pointer hover:bg-white/5'
             }`}
         >
             <span
-                className="size-7 rounded-lg shrink-0 flex items-center justify-center"
+                className="flex size-7 shrink-0 items-center justify-center rounded-lg"
                 style={{ backgroundColor: category.color }}
             >
-                <CategoryIcon name={category.icon} className="size-4 text-black/60" />
+                <CategoryIcon
+                    name={category.icon}
+                    className="size-4 text-black/60"
+                />
             </span>
-            <span className="text-sm text-white flex-1">{category.name}</span>
+            <span className="flex-1 text-sm text-white">{category.name}</span>
             {isCurrent && (
                 <span className="text-xs text-text-tertiary">(current)</span>
             )}
@@ -77,7 +84,7 @@ export default function CategoryPicker({
                     }}
                 >
                     <SheetHeader>
-                        <SheetTitle className="text-white text-base">
+                        <SheetTitle className="text-base text-white">
                             Choose Category
                         </SheetTitle>
                     </SheetHeader>
@@ -101,13 +108,13 @@ export default function CategoryPicker({
             <DropdownMenuTrigger asChild>
                 <span
                     ref={triggerRef}
-                    className="fixed pointer-events-none opacity-0"
+                    className="pointer-events-none fixed opacity-0"
                     aria-hidden="true"
                 />
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 align="end"
-                className="w-64 max-h-[400px] overflow-y-auto border-white/10"
+                className="max-h-[400px] w-64 overflow-y-auto border-white/10"
                 style={{
                     backgroundColor: 'rgba(28, 28, 30, 0.75)',
                     backdropFilter: 'blur(40px)',
@@ -121,19 +128,24 @@ export default function CategoryPicker({
                             key={cat.id}
                             onClick={() => !isCurrent && onSelect(cat.id)}
                             disabled={isCurrent}
-                            className={`flex items-center gap-3 min-h-[36px] focus:bg-white/5 focus:text-white ${
+                            className={`flex min-h-[36px] items-center gap-3 focus:bg-white/5 focus:text-white ${
                                 isCurrent ? 'opacity-40' : ''
                             }`}
                         >
                             <span
-                                className="size-6 rounded-md shrink-0 flex items-center justify-center"
+                                className="flex size-6 shrink-0 items-center justify-center rounded-md"
                                 style={{ backgroundColor: cat.color }}
                             >
-                                <CategoryIcon name={cat.icon} className="size-3.5 text-black/60" />
+                                <CategoryIcon
+                                    name={cat.icon}
+                                    className="size-3.5 text-black/60"
+                                />
                             </span>
                             <span className="flex-1">{cat.name}</span>
                             {isCurrent && (
-                                <span className="text-xs text-text-tertiary">(current)</span>
+                                <span className="text-xs text-text-tertiary">
+                                    (current)
+                                </span>
                             )}
                         </DropdownMenuItem>
                     );

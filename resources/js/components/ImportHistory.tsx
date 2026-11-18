@@ -1,5 +1,11 @@
 import { router } from '@inertiajs/react';
-import { Trash2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import {
+    Trash2,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    ChevronUp,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -17,9 +23,17 @@ import type { ImportRecord } from '@/types';
 
 const PAGE_SIZE = 5;
 
-export default function ImportHistory({ imports }: { imports: ImportRecord[] }) {
-    const [isOpen, setIsOpen] = useState(() => imports.some((i) => i.status === 'categorizing'));
-    const [deletingImportId, setDeletingImportId] = useState<number | null>(null);
+export default function ImportHistory({
+    imports,
+}: {
+    imports: ImportRecord[];
+}) {
+    const [isOpen, setIsOpen] = useState(() =>
+        imports.some((i) => i.status === 'categorizing'),
+    );
+    const [deletingImportId, setDeletingImportId] = useState<number | null>(
+        null,
+    );
     const [isDeleting, setIsDeleting] = useState(false);
     const [page, setPage] = useState(1);
 
@@ -50,9 +64,15 @@ export default function ImportHistory({ imports }: { imports: ImportRecord[] }) 
         });
     }
 
-    function formatRange(dateFrom: string | null, dateTo: string | null): string {
+    function formatRange(
+        dateFrom: string | null,
+        dateTo: string | null,
+    ): string {
         if (!dateFrom || !dateTo) return '';
-        const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+        const opts: Intl.DateTimeFormatOptions = {
+            month: 'short',
+            day: 'numeric',
+        };
         const from = new Date(dateFrom + 'T00:00:00');
         const to = new Date(dateTo + 'T00:00:00');
         return `${from.toLocaleDateString('en-US', opts)} – ${to.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
@@ -60,13 +80,15 @@ export default function ImportHistory({ imports }: { imports: ImportRecord[] }) 
 
     return (
         <>
-            <div className="glass rounded-panel px-4 py-3">
+            <div className="rounded-panel glass px-4 py-3">
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
                     className="flex w-full items-center justify-between"
                 >
-                    <span className="text-sm text-white/60">Import History</span>
+                    <span className="text-sm text-white/60">
+                        Import History
+                    </span>
                     {isOpen ? (
                         <ChevronUp className="size-4 text-white/60" />
                     ) : (
@@ -80,15 +102,26 @@ export default function ImportHistory({ imports }: { imports: ImportRecord[] }) 
                             <div
                                 key={imp.id}
                                 className={`flex items-center justify-between py-3 ${
-                                    index < pageImports.length - 1 ? 'border-b border-white/[0.06]' : ''
+                                    index < pageImports.length - 1
+                                        ? 'border-b border-white/[0.06]'
+                                        : ''
                                 }`}
                             >
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-sm text-white">{imp.bank}</p>
+                                    <p className="text-sm text-white">
+                                        {imp.bank}
+                                    </p>
                                     <p className="text-xs text-white/50">
                                         {imp.transactionCount} transactions
                                         {imp.dateFrom && imp.dateTo && (
-                                            <> &middot; {formatRange(imp.dateFrom, imp.dateTo)}</>
+                                            <>
+                                                {' '}
+                                                &middot;{' '}
+                                                {formatRange(
+                                                    imp.dateFrom,
+                                                    imp.dateTo,
+                                                )}
+                                            </>
                                         )}
                                     </p>
                                     <CategorizationProgress import={imp} />
@@ -107,7 +140,9 @@ export default function ImportHistory({ imports }: { imports: ImportRecord[] }) 
                         {pageCount > 1 && (
                             <div className="flex items-center justify-between border-t border-white/[0.06] pt-3">
                                 <span className="text-xs text-white/50">
-                                    {pageStart + 1}–{pageStart + pageImports.length} of {imports.length}
+                                    {pageStart + 1}–
+                                    {pageStart + pageImports.length} of{' '}
+                                    {imports.length}
                                 </span>
                                 <div className="flex items-center gap-1">
                                     <Button
@@ -150,18 +185,35 @@ export default function ImportHistory({ imports }: { imports: ImportRecord[] }) 
                     <DialogHeader>
                         <DialogTitle>Delete this import?</DialogTitle>
                         <DialogDescription>
-                            {selectedImport?.transactionCount} transactions from {selectedImport?.bank}
-                            {selectedImport?.dateFrom && selectedImport?.dateTo && (
-                                <> ({formatRange(selectedImport.dateFrom, selectedImport.dateTo)})</>
-                            )}{' '}
+                            {selectedImport?.transactionCount} transactions from{' '}
+                            {selectedImport?.bank}
+                            {selectedImport?.dateFrom &&
+                                selectedImport?.dateTo && (
+                                    <>
+                                        {' '}
+                                        (
+                                        {formatRange(
+                                            selectedImport.dateFrom,
+                                            selectedImport.dateTo,
+                                        )}
+                                        )
+                                    </>
+                                )}{' '}
                             will be removed.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeletingImportId(null)}>
+                        <Button
+                            variant="outline"
+                            onClick={() => setDeletingImportId(null)}
+                        >
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                        >
                             {isDeleting ? 'Deleting...' : 'Delete'}
                         </Button>
                     </DialogFooter>

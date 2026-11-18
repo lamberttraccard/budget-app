@@ -15,8 +15,15 @@ function auroraBackground(accentColor?: string): string {
     return 'radial-gradient(70% 55% at 10% -8%, rgba(45,212,191,0.30), transparent 70%), radial-gradient(60% 50% at 100% 0%, rgba(129,140,248,0.28), transparent 70%)';
 }
 
-export default function AppLayout({ children, onAccountsChange, accentColor, backHref, headerCenter }: AppLayoutProps) {
-    const { accountContexts, selectedAccountIds: sharedAccountIds } = usePage<SharedProps>().props;
+export default function AppLayout({
+    children,
+    onAccountsChange,
+    accentColor,
+    backHref,
+    headerCenter,
+}: AppLayoutProps) {
+    const { accountContexts, selectedAccountIds: sharedAccountIds } =
+        usePage<SharedProps>().props;
 
     const selectedAccountIds = sharedAccountIds ?? [];
 
@@ -32,21 +39,21 @@ export default function AppLayout({ children, onAccountsChange, accentColor, bac
     const handleAccountsChange = onAccountsChange ?? defaultAccountsChange;
 
     return (
-        <div className="relative min-h-screen bg-background overflow-x-hidden">
+        <div className="relative min-h-screen overflow-x-hidden bg-background">
             <div
                 className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
                 style={{ background: auroraBackground(accentColor) }}
                 aria-hidden="true"
             />
 
-            <header className="relative z-20 px-4 sm:px-8 py-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
-                <div className="max-w-[480px] lg:max-w-[720px] mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <header className="relative z-20 px-4 py-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-8">
+                <div className="mx-auto grid max-w-[480px] grid-cols-[1fr_auto_1fr] items-center gap-3 lg:max-w-[720px]">
                     <div className="justify-self-start">
                         {backHref ? (
                             <Link
                                 href={backHref}
                                 aria-label="Back to dashboard"
-                                className="glass flex size-9 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10"
+                                className="flex size-9 items-center justify-center rounded-full glass text-white transition-colors hover:bg-white/10"
                             >
                                 <ChevronLeft className="size-4" />
                             </Link>
@@ -69,17 +76,13 @@ export default function AppLayout({ children, onAccountsChange, accentColor, bac
                 </div>
             </header>
 
-            <main className="relative z-10 px-4 sm:px-8 pb-32">
-                <div className="max-w-[480px] lg:max-w-[720px] mx-auto">
+            <main className="relative z-10 px-4 pb-32 sm:px-8">
+                <div className="mx-auto max-w-[480px] lg:max-w-[720px]">
                     {children}
                 </div>
             </main>
 
-            <Toaster
-                theme="dark"
-                position="top-center"
-                duration={2000}
-            />
+            <Toaster theme="dark" position="top-center" duration={2000} />
 
             <BottomDock />
         </div>

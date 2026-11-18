@@ -9,8 +9,10 @@ import type { TransactionTapData } from '@/components/TransactionRow';
 import AppLayout from '@/layouts/app-layout';
 import type { SearchProps, SharedProps } from '@/types';
 
-
-function buildSearchParams(q: string | null, accountIds: number[]): Record<string, string> {
+function buildSearchParams(
+    q: string | null,
+    accountIds: number[],
+): Record<string, string> {
     const params: Record<string, string> = {};
     if (q) params.q = q;
     if (accountIds.length > 0) params.accounts = accountIds.join(',');
@@ -27,10 +29,17 @@ export default function SearchPage({
     const [localQuery, setLocalQuery] = useState(initialQuery);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
-    const [selectedTransactionCategoryId, setSelectedTransactionCategoryId] = useState<number | null>(null);
-    const [selectedDescription, setSelectedDescription] = useState<string | null>(null);
-    const [pendingCategoryId, setPendingCategoryId] = useState<number | null>(null);
+    const [selectedTransactionId, setSelectedTransactionId] = useState<
+        number | null
+    >(null);
+    const [selectedTransactionCategoryId, setSelectedTransactionCategoryId] =
+        useState<number | null>(null);
+    const [selectedDescription, setSelectedDescription] = useState<
+        string | null
+    >(null);
+    const [pendingCategoryId, setPendingCategoryId] = useState<number | null>(
+        null,
+    );
     const [matchCount, setMatchCount] = useState<number | null>(null);
     const [isPatching, setIsPatching] = useState(false);
     const pickerTriggerRef = useRef<HTMLSpanElement>(null);
@@ -83,16 +92,21 @@ export default function SearchPage({
     const handleClear = useCallback(() => {
         setLocalQuery('');
         inputRef.current?.focus();
-        router.get(
-            '/search',
-            buildSearchParams(null, selectedAccountIds),
-            { preserveState: true, replace: true },
-        );
+        router.get('/search', buildSearchParams(null, selectedAccountIds), {
+            preserveState: true,
+            replace: true,
+        });
     }, [selectedAccountIds]);
 
-    const handleAccountsChange = useCallback((accountIds: number[]) => {
-        router.get('/search', buildSearchParams(localQuery, accountIds), { preserveState: true, replace: true });
-    }, [localQuery]);
+    const handleAccountsChange = useCallback(
+        (accountIds: number[]) => {
+            router.get('/search', buildSearchParams(localQuery, accountIds), {
+                preserveState: true,
+                replace: true,
+            });
+        },
+        [localQuery],
+    );
 
     const clearState = useCallback(() => {
         setSelectedTransactionId(null);
@@ -123,29 +137,38 @@ export default function SearchPage({
         [isPatching],
     );
 
-    const patchTransaction = useCallback((applyToAll: boolean) => {
-        if (selectedTransactionId === null || pendingCategoryId === null) return;
-        setIsPatching(true);
+    const patchTransaction = useCallback(
+        (applyToAll: boolean) => {
+            if (selectedTransactionId === null || pendingCategoryId === null)
+                return;
+            setIsPatching(true);
 
-        const data = applyToAll
-            ? { category_id: pendingCategoryId, apply_to_all: true as const }
-            : { category_id: pendingCategoryId };
+            const data = applyToAll
+                ? {
+                      category_id: pendingCategoryId,
+                      apply_to_all: true as const,
+                  }
+                : { category_id: pendingCategoryId };
 
-        router.patch(`/transactions/${selectedTransactionId}`, data, {
-            preserveScroll: true,
-            onSuccess: (page) => {
-                clearState();
-                if (applyToAll) {
-                    const props = page.props as unknown as { flash?: { updated_count?: number } };
-                    const count = props.flash?.updated_count;
-                    toast(`Updated ${count ?? 0} transactions`);
-                } else {
-                    toast("Got it, I'll remember");
-                }
-            },
-            onFinish: () => setIsPatching(false),
-        });
-    }, [selectedTransactionId, pendingCategoryId, clearState]);
+            router.patch(`/transactions/${selectedTransactionId}`, data, {
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    clearState();
+                    if (applyToAll) {
+                        const props = page.props as unknown as {
+                            flash?: { updated_count?: number };
+                        };
+                        const count = props.flash?.updated_count;
+                        toast(`Updated ${count ?? 0} transactions`);
+                    } else {
+                        toast("Got it, I'll remember");
+                    }
+                },
+                onFinish: () => setIsPatching(false),
+            });
+        },
+        [selectedTransactionId, pendingCategoryId, clearState],
+    );
 
     const handleCategorySelect = useCallback(
         (categoryId: number) => {
@@ -160,7 +183,9 @@ export default function SearchPage({
             setPendingCategoryId(categoryId);
 
             // Fetch match count
-            fetch(`/transactions/match-count?description=${encodeURIComponent(selectedDescription ?? '')}`)
+            fetch(
+                `/transactions/match-count?description=${encodeURIComponent(selectedDescription ?? '')}`,
+            )
                 .then((response) => {
                     if (!response.ok) {
                         toast.error('Failed to check matching transactions');
@@ -179,16 +204,20 @@ export default function SearchPage({
                     if (data.count <= 1) {
                         // Single match — apply immediately (no dialog)
                         setIsPatching(true);
-                        router.patch(`/transactions/${currentId}`, {
-                            category_id: categoryId,
-                        }, {
-                            preserveScroll: true,
-                            onSuccess: () => {
-                                clearState();
-                                toast("Got it, I'll remember");
+                        router.patch(
+                            `/transactions/${currentId}`,
+                            {
+                                category_id: categoryId,
                             },
-                            onFinish: () => setIsPatching(false),
-                        });
+                            {
+                                preserveScroll: true,
+                                onSuccess: () => {
+                                    clearState();
+                                    toast("Got it, I'll remember");
+                                },
+                                onFinish: () => setIsPatching(false),
+                            },
+                        );
                     } else {
                         // Multiple matches — show dialog
                         setMatchCount(data.count);
@@ -199,7 +228,13 @@ export default function SearchPage({
                     clearState();
                 });
         },
-        [selectedTransactionId, selectedTransactionCategoryId, selectedDescription, isPatching, clearState],
+        [
+            selectedTransactionId,
+            selectedTransactionCategoryId,
+            selectedDescription,
+            isPatching,
+            clearState,
+        ],
     );
 
     const handlePickerClose = useCallback(() => {
@@ -209,19 +244,23 @@ export default function SearchPage({
         }
     }, [pendingCategoryId, clearState]);
 
-    const pendingCategory = allCategories.find((c) => c.id === pendingCategoryId);
+    const pendingCategory = allCategories.find(
+        (c) => c.id === pendingCategoryId,
+    );
 
     return (
         <AppLayout onAccountsChange={handleAccountsChange}>
             <Head title="Search" />
 
-            <div className="pt-4 pb-6 space-y-4">
-                <h1 className="text-3xl font-light tracking-tight text-white">Search</h1>
+            <div className="space-y-4 pt-4 pb-6">
+                <h1 className="text-3xl font-light tracking-tight text-white">
+                    Search
+                </h1>
 
                 {/* Search header */}
                 <div>
                     <div className="relative w-full">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-white/50 pointer-events-none" />
+                        <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-white/50" />
                         <input
                             ref={inputRef}
                             type="text"
@@ -229,14 +268,14 @@ export default function SearchPage({
                             onChange={handleInputChange}
                             placeholder="Search transactions..."
                             autoFocus
-                            className="glass w-full rounded-full pl-11 pr-11 py-3 text-base md:text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 transition-shadow"
+                            className="w-full rounded-full glass py-3 pr-11 pl-11 text-base text-white transition-shadow placeholder:text-white/40 focus:ring-2 focus:ring-white/20 focus:outline-none md:text-sm"
                         />
                         {localQuery && (
                             <button
                                 type="button"
                                 onClick={handleClear}
                                 aria-label="Clear search"
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+                                className="absolute top-1/2 right-4 -translate-y-1/2 text-white/50 transition-colors hover:text-white"
                             >
                                 <X className="size-4" />
                             </button>
@@ -246,28 +285,28 @@ export default function SearchPage({
 
                 {/* Results info */}
                 {localQuery.length >= 2 && totalCount > 0 && (
-                    <p className="text-xs text-white/50 px-1">
+                    <p className="px-1 text-xs text-white/50">
                         {`${totalCount} transaction${totalCount === 1 ? '' : 's'} found`}
                     </p>
                 )}
 
                 {/* Hint text */}
                 {localQuery.length > 0 && localQuery.length < 2 && (
-                    <p className="text-xs text-text-tertiary text-center py-8">
+                    <p className="py-8 text-center text-xs text-text-tertiary">
                         Type at least 2 characters to search
                     </p>
                 )}
 
                 {/* Empty state for no query */}
                 {localQuery.length === 0 && (
-                    <p className="text-xs text-text-tertiary text-center py-8">
+                    <p className="py-8 text-center text-xs text-text-tertiary">
                         Search by merchant name or description
                     </p>
                 )}
 
                 {/* Results list */}
                 {results.length > 0 && (
-                    <div className="glass rounded-panel overflow-hidden">
+                    <div className="overflow-hidden rounded-panel glass">
                         {results.map((result, index) => (
                             <div key={result.id}>
                                 {index > 0 && (
@@ -290,26 +329,34 @@ export default function SearchPage({
                 )}
 
                 {/* No results */}
-                {localQuery.length >= 2 && results.length === 0 && totalCount === 0 && (
-                    <div className="py-8 text-center">
-                        <p className="text-sm text-text-tertiary">
-                            No transactions found
-                        </p>
-                    </div>
-                )}
+                {localQuery.length >= 2 &&
+                    results.length === 0 &&
+                    totalCount === 0 && (
+                        <div className="py-8 text-center">
+                            <p className="text-sm text-text-tertiary">
+                                No transactions found
+                            </p>
+                        </div>
+                    )}
             </div>
 
             <CategoryPicker
                 categories={allCategories}
                 currentCategoryId={selectedTransactionCategoryId ?? 0}
-                isOpen={selectedTransactionId !== null && pendingCategoryId === null}
+                isOpen={
+                    selectedTransactionId !== null && pendingCategoryId === null
+                }
                 onClose={handlePickerClose}
                 onSelect={handleCategorySelect}
                 triggerRef={pickerTriggerRef}
             />
 
             <ApplyRuleConfirmDialog
-                isOpen={matchCount !== null && matchCount > 1 && pendingCategoryId !== null}
+                isOpen={
+                    matchCount !== null &&
+                    matchCount > 1 &&
+                    pendingCategoryId !== null
+                }
                 description={selectedDescription ?? ''}
                 categoryName={pendingCategory?.name ?? ''}
                 categoryColor={pendingCategory?.color ?? ''}

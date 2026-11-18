@@ -16,8 +16,18 @@ const defaultProps = {
     minAmountCents: -1599,
     maxAmountCents: -1599,
     transactions: [
-        { id: 1, date: '2026-02-15', amountCents: -1599, accountName: 'Personal' },
-        { id: 2, date: '2026-01-15', amountCents: -1599, accountName: 'Personal' },
+        {
+            id: 1,
+            date: '2026-02-15',
+            amountCents: -1599,
+            accountName: 'Personal',
+        },
+        {
+            id: 2,
+            date: '2026-01-15',
+            amountCents: -1599,
+            accountName: 'Personal',
+        },
     ],
     isExpanded: false,
     onToggle: vi.fn(),
@@ -57,15 +67,21 @@ describe('RecurringMerchantCard', () => {
             />,
         );
         // Range should display low to high: 45,00 € – 62,00 €
-        const rangeEl = document.querySelector('.text-\\[10px\\].text-text-secondary');
+        const rangeEl = document.querySelector(
+            '.text-\\[10px\\].text-text-secondary',
+        );
         expect(rangeEl).toBeInTheDocument();
         expect(rangeEl?.textContent).toMatch(/45,00.*–.*62,00/);
     });
 
     it('hides range when amountVaries is false', () => {
-        const { container } = render(<RecurringMerchantCard {...defaultProps} amountVaries={false} />);
+        const { container } = render(
+            <RecurringMerchantCard {...defaultProps} amountVaries={false} />,
+        );
         // The range indicator text should not be present (only one amount shown)
-        const rangeElements = container.querySelectorAll('.text-\\[10px\\].text-text-secondary');
+        const rangeElements = container.querySelectorAll(
+            '.text-\\[10px\\].text-text-secondary',
+        );
         expect(rangeElements.length).toBe(0);
     });
 });

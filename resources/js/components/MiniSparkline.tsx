@@ -43,7 +43,10 @@ export default function MiniSparkline({ values, color }: Props) {
     const fillPath = `${linePath} L ${points[points.length - 1].x},${VIEW_H} L ${points[0].x},${VIEW_H} Z`;
 
     return (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: 20 }}>
+        <div
+            className="pointer-events-none absolute inset-x-0 bottom-0"
+            style={{ height: 20 }}
+        >
             <svg
                 viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
                 preserveAspectRatio="none"
@@ -51,7 +54,11 @@ export default function MiniSparkline({ values, color }: Props) {
             >
                 <defs>
                     <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={color} stopOpacity={0.08} />
+                        <stop
+                            offset="0%"
+                            stopColor={color}
+                            stopOpacity={0.08}
+                        />
                         <stop offset="100%" stopColor={color} stopOpacity={0} />
                     </linearGradient>
                 </defs>

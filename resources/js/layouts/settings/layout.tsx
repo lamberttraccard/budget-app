@@ -61,9 +61,14 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                 size="sm"
                                 variant="ghost"
                                 asChild
-                                className={cn('w-full justify-start rounded-full px-4 text-white/60 hover:bg-white/[0.06] hover:text-white', {
-                                    'glass text-white': isCurrentUrl(item.href),
-                                })}
+                                className={cn(
+                                    'w-full justify-start rounded-full px-4 text-white/60 hover:bg-white/[0.06] hover:text-white',
+                                    {
+                                        'glass text-white': isCurrentUrl(
+                                            item.href,
+                                        ),
+                                    },
+                                )}
                             >
                                 <Link href={item.href}>
                                     {item.icon && (

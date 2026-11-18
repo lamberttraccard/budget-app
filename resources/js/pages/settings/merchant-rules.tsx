@@ -20,8 +20,12 @@ import type { MerchantRuleItem, MerchantRulesProps } from '@/types';
 
 export default function MerchantRules({ rules }: MerchantRulesProps) {
     const [isProcessing, setIsProcessing] = useState(false);
-    const [applyingRule, setApplyingRule] = useState<MerchantRuleItem | null>(null);
-    const [deletingRule, setDeletingRule] = useState<MerchantRuleItem | null>(null);
+    const [applyingRule, setApplyingRule] = useState<MerchantRuleItem | null>(
+        null,
+    );
+    const [deletingRule, setDeletingRule] = useState<MerchantRuleItem | null>(
+        null,
+    );
 
     const handleApply = useCallback((rule: MerchantRuleItem) => {
         setApplyingRule(rule);
@@ -30,16 +34,22 @@ export default function MerchantRules({ rules }: MerchantRulesProps) {
     const confirmApply = useCallback(() => {
         if (!applyingRule) return;
         setIsProcessing(true);
-        router.post(apply.url(applyingRule.id), {}, {
-            preserveScroll: true,
-            onSuccess: (page) => {
-                const props = page.props as unknown as { flash?: { updated_count?: number } };
-                const count = props.flash?.updated_count;
-                toast(`Updated ${count ?? 0} transactions`);
-                setApplyingRule(null);
+        router.post(
+            apply.url(applyingRule.id),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    const props = page.props as unknown as {
+                        flash?: { updated_count?: number };
+                    };
+                    const count = props.flash?.updated_count;
+                    toast(`Updated ${count ?? 0} transactions`);
+                    setApplyingRule(null);
+                },
+                onFinish: () => setIsProcessing(false),
             },
-            onFinish: () => setIsProcessing(false),
-        });
+        );
     }, [applyingRule]);
 
     const handleDelete = useCallback((rule: MerchantRuleItem) => {
@@ -76,43 +86,60 @@ export default function MerchantRules({ rules }: MerchantRulesProps) {
                     {rules.length === 0 ? (
                         <div className="py-8 text-center">
                             <p className="text-sm text-muted-foreground">
-                                No merchant rules yet. Rules are created automatically when you recategorize a transaction.
+                                No merchant rules yet. Rules are created
+                                automatically when you recategorize a
+                                transaction.
                             </p>
                         </div>
                     ) : (
-                        <div className="glass divide-y divide-white/[0.06] overflow-hidden rounded-panel">
+                        <div className="divide-y divide-white/[0.06] overflow-hidden rounded-panel glass">
                             {rules.map((rule) => (
                                 <div
                                     key={rule.id}
                                     className="flex items-center gap-3 px-4 py-3"
                                 >
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm text-foreground truncate" title={rule.merchantPattern}>
+                                    <div className="min-w-0 flex-1">
+                                        <p
+                                            className="truncate text-sm text-foreground"
+                                            title={rule.merchantPattern}
+                                        >
                                             {rule.merchantPattern}
                                         </p>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                        <div className="mt-0.5 flex items-center gap-1.5">
                                             <span
-                                                className="inline-block size-2 rounded-full shrink-0"
-                                                style={{ backgroundColor: rule.categoryColor }}
+                                                className="inline-block size-2 shrink-0 rounded-full"
+                                                style={{
+                                                    backgroundColor:
+                                                        rule.categoryColor,
+                                                }}
                                             />
-                                            <span className="text-xs text-muted-foreground truncate">
+                                            <span className="truncate text-xs text-muted-foreground">
                                                 {rule.categoryName}
                                             </span>
-                                            <span className="text-xs text-muted-foreground/60 shrink-0">
-                                                &middot; {rule.matchCount} transaction{rule.matchCount === 1 ? '' : 's'}
+                                            <span className="shrink-0 text-xs text-muted-foreground/60">
+                                                &middot; {rule.matchCount}{' '}
+                                                transaction
+                                                {rule.matchCount === 1
+                                                    ? ''
+                                                    : 's'}
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-1 shrink-0">
+                                    <div className="flex shrink-0 items-center gap-1">
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => handleApply(rule)}
-                                            disabled={isProcessing || rule.matchCount === 0}
+                                            disabled={
+                                                isProcessing ||
+                                                rule.matchCount === 0
+                                            }
                                             title="Apply rule to all matching transactions"
                                         >
                                             <Play className="size-3.5" />
-                                            <span className="sr-only sm:not-sr-only sm:ml-1">Apply</span>
+                                            <span className="sr-only sm:not-sr-only sm:ml-1">
+                                                Apply
+                                            </span>
                                         </Button>
                                         <Button
                                             variant="ghost"
@@ -132,30 +159,45 @@ export default function MerchantRules({ rules }: MerchantRulesProps) {
                 </div>
             </SettingsLayout>
 
-            <Dialog open={applyingRule !== null} onOpenChange={(open) => !open && setApplyingRule(null)}>
+            <Dialog
+                open={applyingRule !== null}
+                onOpenChange={(open) => !open && setApplyingRule(null)}
+            >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Apply rule?</DialogTitle>
                         <DialogDescription asChild>
                             <div className="space-y-2">
                                 <p>
-                                    Apply rule to {applyingRule?.matchCount ?? 0} transactions matching
-                                    &ldquo;{applyingRule?.merchantPattern}&rdquo;?
+                                    Apply rule to{' '}
+                                    {applyingRule?.matchCount ?? 0} transactions
+                                    matching &ldquo;
+                                    {applyingRule?.merchantPattern}&rdquo;?
                                 </p>
                                 <p>
-                                    All matching transactions will be recategorized to{' '}
+                                    All matching transactions will be
+                                    recategorized to{' '}
                                     <span
                                         className="inline-block size-2 rounded-full align-middle"
-                                        style={{ backgroundColor: applyingRule?.categoryColor }}
+                                        style={{
+                                            backgroundColor:
+                                                applyingRule?.categoryColor,
+                                        }}
                                     />{' '}
-                                    <span className="font-medium text-foreground">{applyingRule?.categoryName}</span>,
-                                    including any previously categorized.
+                                    <span className="font-medium text-foreground">
+                                        {applyingRule?.categoryName}
+                                    </span>
+                                    , including any previously categorized.
                                 </p>
                             </div>
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="secondary" onClick={() => setApplyingRule(null)} disabled={isProcessing}>
+                        <Button
+                            variant="secondary"
+                            onClick={() => setApplyingRule(null)}
+                            disabled={isProcessing}
+                        >
                             Cancel
                         </Button>
                         <Button onClick={confirmApply} disabled={isProcessing}>
@@ -165,20 +207,33 @@ export default function MerchantRules({ rules }: MerchantRulesProps) {
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={deletingRule !== null} onOpenChange={(open) => !open && setDeletingRule(null)}>
+            <Dialog
+                open={deletingRule !== null}
+                onOpenChange={(open) => !open && setDeletingRule(null)}
+            >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Delete rule?</DialogTitle>
                         <DialogDescription>
-                            Delete the rule for &ldquo;{deletingRule?.merchantPattern}&rdquo;?
-                            Future imports will no longer auto-categorize these transactions.
+                            Delete the rule for &ldquo;
+                            {deletingRule?.merchantPattern}&rdquo;? Future
+                            imports will no longer auto-categorize these
+                            transactions.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="secondary" onClick={() => setDeletingRule(null)} disabled={isProcessing}>
+                        <Button
+                            variant="secondary"
+                            onClick={() => setDeletingRule(null)}
+                            disabled={isProcessing}
+                        >
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={confirmDelete} disabled={isProcessing}>
+                        <Button
+                            variant="destructive"
+                            onClick={confirmDelete}
+                            disabled={isProcessing}
+                        >
                             Delete
                         </Button>
                     </DialogFooter>

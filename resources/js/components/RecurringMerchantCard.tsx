@@ -11,7 +11,10 @@ type Props = RecurringMerchant & {
 function formatMonth(yearMonth: string): string {
     const [year, month] = yearMonth.split('-');
     const date = new Date(Number(year), Number(month) - 1);
-    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
+    });
 }
 
 export default function RecurringMerchantCard({
@@ -31,29 +34,32 @@ export default function RecurringMerchantCard({
             <button
                 type="button"
                 onClick={onToggle}
-                className="flex w-full items-center gap-3 px-4 py-3 min-h-[44px] text-left cursor-pointer transition-colors hover:bg-white/[0.04]"
+                className="flex min-h-[44px] w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[0.04]"
             >
-                <span className="flex-1 min-w-0">
-                    <span className="block text-[15px] text-white truncate">
+                <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] text-white">
                         {merchantName}
                     </span>
                 </span>
-                <span className="text-right shrink-0">
-                    <span className="block text-sm font-medium tabular-nums text-white">
+                <span className="shrink-0 text-right">
+                    <span className="block text-sm font-medium text-white tabular-nums">
                         {formatAbsAmount(typicalAmountCents)}
                     </span>
                     {amountVaries && (
                         <span className="block text-[10px] text-text-secondary tabular-nums">
-                            {formatAbsAmount(maxAmountCents)} – {formatAbsAmount(minAmountCents)}
+                            {formatAbsAmount(maxAmountCents)} –{' '}
+                            {formatAbsAmount(minAmountCents)}
                         </span>
                     )}
                 </span>
-                <span className="flex flex-col items-end shrink-0 ml-1">
+                <span className="ml-1 flex shrink-0 flex-col items-end">
                     <span className="text-xs text-white/60">{frequency}</span>
-                    <span className="text-[10px] text-white/40">{formatMonth(lastSeenMonth)}</span>
+                    <span className="text-[10px] text-white/40">
+                        {formatMonth(lastSeenMonth)}
+                    </span>
                 </span>
                 <ChevronDown
-                    className={`size-4 text-white/40 shrink-0 transition-transform duration-200 ${
+                    className={`size-4 shrink-0 text-white/40 transition-transform duration-200 ${
                         isExpanded ? 'rotate-180' : ''
                     }`}
                 />
@@ -64,19 +70,19 @@ export default function RecurringMerchantCard({
                     {transactions.map((tx) => (
                         <div
                             key={tx.id}
-                            className="flex items-center gap-3 py-2 min-h-[36px]"
+                            className="flex min-h-[36px] items-center gap-3 py-2"
                         >
-                            <span className="text-xs text-text-tertiary w-16 shrink-0">
+                            <span className="w-16 shrink-0 text-xs text-text-tertiary">
                                 {formatDate(tx.date)}
                             </span>
-                            <span className="flex-1 min-w-0">
+                            <span className="min-w-0 flex-1">
                                 {tx.accountName && (
-                                    <span className="text-[10px] text-white/60 bg-white/[0.07] rounded-full px-2 py-0.5">
+                                    <span className="rounded-full bg-white/[0.07] px-2 py-0.5 text-[10px] text-white/60">
                                         {tx.accountName}
                                     </span>
                                 )}
                             </span>
-                            <span className="text-xs font-medium tabular-nums text-white shrink-0">
+                            <span className="shrink-0 text-xs font-medium text-white tabular-nums">
                                 {formatAbsAmount(tx.amountCents)}
                             </span>
                         </div>

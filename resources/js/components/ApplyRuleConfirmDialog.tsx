@@ -45,7 +45,7 @@ export default function ApplyRuleConfirmDialog({
                     </DialogTitle>
                     <DialogDescription asChild>
                         <div className="space-y-2">
-                            <p className="text-muted-foreground font-medium">
+                            <p className="font-medium text-muted-foreground">
                                 &ldquo;{description}&rdquo;
                             </p>
                             <p>

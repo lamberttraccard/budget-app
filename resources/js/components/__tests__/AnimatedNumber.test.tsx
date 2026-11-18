@@ -11,15 +11,28 @@ vi.mock('motion/react', async () => {
         useReducedMotion: () => reducedMotion,
         useMotionValue: (initial: number) => ({
             current: initial,
-            get() { return this.current; },
-            set(v: number) { this.current = v; },
+            get() {
+                return this.current;
+            },
+            set(v: number) {
+                this.current = v;
+            },
         }),
-        useTransform: (mv: { get: () => number }, fn: (v: number) => string) => fn(mv.get()),
-        animate: (...args: Parameters<typeof animateSpy>) => animateSpy(...args),
+        useTransform: (mv: { get: () => number }, fn: (v: number) => string) =>
+            fn(mv.get()),
+        animate: (...args: Parameters<typeof animateSpy>) =>
+            animateSpy(...args),
         motion: {
             span: React.forwardRef(
-                (props: Record<string, unknown>, ref: React.Ref<HTMLSpanElement>) =>
-                    React.createElement('span', { ...props, ref, 'data-testid': 'animated-number' }),
+                (
+                    props: Record<string, unknown>,
+                    ref: React.Ref<HTMLSpanElement>,
+                ) =>
+                    React.createElement('span', {
+                        ...props,
+                        ref,
+                        'data-testid': 'animated-number',
+                    }),
             ),
         },
     };
@@ -76,14 +89,30 @@ describe('AnimatedNumber', () => {
 
     it('applies className prop to the span', () => {
         reducedMotion = false;
-        render(<AnimatedNumber value={1000} className="text-2xl font-semibold tabular-nums" />);
-        expect(screen.getByTestId('animated-number')).toHaveClass('text-2xl', 'font-semibold', 'tabular-nums');
+        render(
+            <AnimatedNumber
+                value={1000}
+                className="text-2xl font-semibold tabular-nums"
+            />,
+        );
+        expect(screen.getByTestId('animated-number')).toHaveClass(
+            'text-2xl',
+            'font-semibold',
+            'tabular-nums',
+        );
     });
 
     it('applies style prop to the span', () => {
         reducedMotion = false;
-        render(<AnimatedNumber value={1000} style={{ color: 'rgb(255, 87, 51)' }} />);
-        expect(screen.getByTestId('animated-number')).toHaveStyle({ color: 'rgb(255, 87, 51)' });
+        render(
+            <AnimatedNumber
+                value={1000}
+                style={{ color: 'rgb(255, 87, 51)' }}
+            />,
+        );
+        expect(screen.getByTestId('animated-number')).toHaveStyle({
+            color: 'rgb(255, 87, 51)',
+        });
     });
 
     it('renders final value immediately when reduced motion is enabled', () => {

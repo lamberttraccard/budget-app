@@ -9,7 +9,13 @@ type Props = {
     transactionCount: number;
 };
 
-export default function CategoryHero({ name, color, icon, totalAmountCents, transactionCount }: Props) {
+export default function CategoryHero({
+    name,
+    color,
+    icon,
+    totalAmountCents,
+    transactionCount,
+}: Props) {
     return (
         <div className="pt-2">
             <div className="flex items-center gap-3">
@@ -27,14 +33,15 @@ export default function CategoryHero({ name, color, icon, totalAmountCents, tran
                 <div>
                     <h1 className="text-base text-white">{name}</h1>
                     <p className="text-xs text-white/55">
-                        {transactionCount} transaction{transactionCount !== 1 ? 's' : ''}
+                        {transactionCount} transaction
+                        {transactionCount !== 1 ? 's' : ''}
                     </p>
                 </div>
             </div>
 
             <AnimatedNumber
                 value={totalAmountCents}
-                className="mt-4 block text-5xl font-light tracking-[-0.04em] tabular-nums text-white"
+                className="mt-4 block text-5xl font-light tracking-[-0.04em] text-white tabular-nums"
                 decimalsClassName="ml-0.5 text-[0.45em] tracking-normal text-white/50"
             />
         </div>

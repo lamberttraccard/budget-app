@@ -24,7 +24,8 @@ export function useNavItems(selectedAccountIds?: number[]): DockNavItem[] {
             label: 'Dashboard',
             href: buildHref('/'),
             icon: LayoutGrid,
-            isActive: currentUrl === '/' || currentUrl.startsWith('/categories'),
+            isActive:
+                currentUrl === '/' || currentUrl.startsWith('/categories'),
         },
         {
             label: 'Recurring',

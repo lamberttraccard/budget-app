@@ -48,7 +48,9 @@ describe('MiniSparkline', () => {
             <MiniSparkline values={[100, 200]} color="#FB7185" />,
         );
         const paths = container.querySelectorAll('path');
-        const linePath = Array.from(paths).find((p) => p.getAttribute('stroke'));
+        const linePath = Array.from(paths).find((p) =>
+            p.getAttribute('stroke'),
+        );
         expect(linePath?.getAttribute('stroke')).toBe('#FB7185');
     });
 });

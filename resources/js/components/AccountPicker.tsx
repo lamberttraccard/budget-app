@@ -1,7 +1,11 @@
 import { UsersIcon } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import type { AccountContext } from '@/types';
 
 type Props = {
@@ -10,41 +14,59 @@ type Props = {
     onAccountsChange: (accountIds: number[]) => void;
 };
 
-export default function AccountPicker({ selectedAccountIds, accountContexts, onAccountsChange }: Props) {
-    const allIds = useMemo(() => accountContexts.map(a => a.id), [accountContexts]);
+export default function AccountPicker({
+    selectedAccountIds,
+    accountContexts,
+    onAccountsChange,
+}: Props) {
+    const allIds = useMemo(
+        () => accountContexts.map((a) => a.id),
+        [accountContexts],
+    );
 
     // Empty array = "all accounts"
-    const isAllSelected = selectedAccountIds.length === 0 || selectedAccountIds.length === allIds.length;
+    const isAllSelected =
+        selectedAccountIds.length === 0 ||
+        selectedAccountIds.length === allIds.length;
 
     const effectiveIds = isAllSelected ? allIds : selectedAccountIds;
 
     const label = useMemo(() => {
         if (isAllSelected) return 'All accounts';
         if (selectedAccountIds.length === 1) {
-            return accountContexts.find(a => a.id === selectedAccountIds[0])?.name ?? 'All accounts';
+            return (
+                accountContexts.find((a) => a.id === selectedAccountIds[0])
+                    ?.name ?? 'All accounts'
+            );
         }
         return `${selectedAccountIds.length} accounts`;
     }, [isAllSelected, selectedAccountIds, accountContexts]);
 
-    const persistAndChange = useCallback((ids: number[]) => {
-        document.cookie = `selectedAccounts=${ids.join(',')};path=/;max-age=31536000;SameSite=Lax`;
-        onAccountsChange(ids);
-    }, [onAccountsChange]);
+    const persistAndChange = useCallback(
+        (ids: number[]) => {
+            document.cookie = `selectedAccounts=${ids.join(',')};path=/;max-age=31536000;SameSite=Lax`;
+            onAccountsChange(ids);
+        },
+        [onAccountsChange],
+    );
 
-    const toggleAccount = useCallback((id: number) => {
-        if (isAllSelected) {
-            // Uncheck this one from "all"
-            persistAndChange(allIds.filter(i => i !== id));
-        } else if (effectiveIds.includes(id)) {
-            const next = effectiveIds.filter(i => i !== id);
-            // If none left, go back to "all"
-            persistAndChange(next.length === 0 ? [] : next);
-        } else {
-            const next = [...effectiveIds, id];
-            // If all selected now, store as empty = "all"
-            persistAndChange(next.length === allIds.length ? [] : next);
-        }
-    }, [isAllSelected, effectiveIds, allIds, persistAndChange]);
+    const toggleAccount = useCallback(
+        (id: number) => {
+            if (isAllSelected) {
+                // Uncheck this one from "all"
+                persistAndChange(allIds.filter((i) => i !== id));
+            } else if (effectiveIds.includes(id)) {
+                const next = effectiveIds.filter((i) => i !== id);
+                // If none left, go back to "all"
+                persistAndChange(next.length === 0 ? [] : next);
+            } else {
+                const next = [...effectiveIds, id];
+                // If all selected now, store as empty = "all"
+                persistAndChange(next.length === allIds.length ? [] : next);
+            }
+        },
+        [isAllSelected, effectiveIds, allIds, persistAndChange],
+    );
 
     if (accountContexts.length <= 1) {
         return (
@@ -59,21 +81,23 @@ export default function AccountPicker({ selectedAccountIds, accountContexts, onA
             <PopoverTrigger
                 aria-label={label}
                 title={label}
-                className="glass relative flex size-9 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                className="relative flex size-9 items-center justify-center rounded-full glass text-white transition-colors outline-none hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/50"
             >
                 <UsersIcon className="size-4" />
                 {!isAllSelected && (
-                    <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-background tabular-nums">
+                    <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-background tabular-nums">
                         {selectedAccountIds.length}
                     </span>
                 )}
             </PopoverTrigger>
             <PopoverContent align="end" className="w-56 rounded-2xl p-2">
-                <p className="px-2 pb-1 pt-0.5 text-xs text-text-secondary">{label}</p>
-                {accountContexts.map(account => (
+                <p className="px-2 pt-0.5 pb-1 text-xs text-text-secondary">
+                    {label}
+                </p>
+                {accountContexts.map((account) => (
                     <label
                         key={account.id}
-                        className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-accent cursor-pointer"
+                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-accent"
                     >
                         <Checkbox
                             checked={effectiveIds.includes(account.id)}

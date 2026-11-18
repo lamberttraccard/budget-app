@@ -39,7 +39,8 @@ export default function CategoryMonthlyChart({
     useEffect(() => {
         if (typeof window.matchMedia !== 'function') return;
         const mq = window.matchMedia('(max-width: 1024px)');
-        const update = () => setSvgWidth(mq.matches ? SVG_WIDTH_MOBILE : SVG_WIDTH_DESKTOP);
+        const update = () =>
+            setSvgWidth(mq.matches ? SVG_WIDTH_MOBILE : SVG_WIDTH_DESKTOP);
         update();
         mq.addEventListener('change', update);
         return () => mq.removeEventListener('change', update);
@@ -61,12 +62,14 @@ export default function CategoryMonthlyChart({
             const x =
                 monthlyTotals.length === 1
                     ? PADDING.left + chartWidth / 2
-                    : PADDING.left + (i / (monthlyTotals.length - 1)) * chartWidth;
+                    : PADDING.left +
+                      (i / (monthlyTotals.length - 1)) * chartWidth;
             const absVal = Math.abs(d.amountCents);
             const y =
                 range === 0
                     ? PADDING.top + CHART_HEIGHT / 2
-                    : PADDING.top + (1 - (absVal - yMin) / (yMax - yMin)) * CHART_HEIGHT;
+                    : PADDING.top +
+                      (1 - (absVal - yMin) / (yMax - yMin)) * CHART_HEIGHT;
             return { x, y, month: d.month, amountCents: d.amountCents };
         });
     }, [monthlyTotals, chartWidth]);
@@ -77,15 +80,38 @@ export default function CategoryMonthlyChart({
             if (month === currentMonth) return;
             router.get(
                 `/categories/${categoryId}`,
-                { month, accounts: selectedAccountIds.length > 0 ? selectedAccountIds.join(',') : undefined, chart_month: chartMonth },
+                {
+                    month,
+                    accounts:
+                        selectedAccountIds.length > 0
+                            ? selectedAccountIds.join(',')
+                            : undefined,
+                    chart_month: chartMonth,
+                },
                 {
                     preserveState: true,
                     preserveScroll: true,
-                    only: ['category', 'subcategories', 'totalAmountCents', 'transactionCount', 'currentMonth', 'selectedAccountIds', 'monthlyTotals', 'chartMonth', 'transactions'],
+                    only: [
+                        'category',
+                        'subcategories',
+                        'totalAmountCents',
+                        'transactionCount',
+                        'currentMonth',
+                        'selectedAccountIds',
+                        'monthlyTotals',
+                        'chartMonth',
+                        'transactions',
+                    ],
                 },
             );
         },
-        [monthlyTotals, currentMonth, categoryId, selectedAccountIds, chartMonth],
+        [
+            monthlyTotals,
+            currentMonth,
+            categoryId,
+            selectedAccountIds,
+            chartMonth,
+        ],
     );
 
     const handleKeyDown = useCallback(
@@ -140,17 +166,28 @@ export default function CategoryMonthlyChart({
                 >
                     <title>Monthly spending trend for this category</title>
                     <defs>
-                        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={accentColor} stopOpacity={0.32} />
-                            <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
+                        <linearGradient
+                            id={gradientId}
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                        >
+                            <stop
+                                offset="0%"
+                                stopColor={accentColor}
+                                stopOpacity={0.32}
+                            />
+                            <stop
+                                offset="100%"
+                                stopColor={accentColor}
+                                stopOpacity={0}
+                            />
                         </linearGradient>
                     </defs>
 
                     {/* Gradient fill area */}
-                    <path
-                        d={fillPath}
-                        fill={`url(#${gradientId})`}
-                    />
+                    <path d={fillPath} fill={`url(#${gradientId})`} />
 
                     {/* Line */}
                     <path
@@ -159,7 +196,9 @@ export default function CategoryMonthlyChart({
                         stroke={accentColor}
                         strokeWidth={2}
                         strokeLinecap="round"
-                        style={{ filter: `drop-shadow(0 0 6px ${accentColor}AA)` }}
+                        style={{
+                            filter: `drop-shadow(0 0 6px ${accentColor}AA)`,
+                        }}
                     />
 
                     {/* Data points */}
@@ -170,8 +209,19 @@ export default function CategoryMonthlyChart({
                                 {/* Current month: white dot in a soft halo */}
                                 {isCurrent && (
                                     <>
-                                        <circle cx={p.x} cy={p.y} r={10} fill={accentColor} opacity={0.25} />
-                                        <circle cx={p.x} cy={p.y} r={4} fill="#FFFFFF" />
+                                        <circle
+                                            cx={p.x}
+                                            cy={p.y}
+                                            r={10}
+                                            fill={accentColor}
+                                            opacity={0.25}
+                                        />
+                                        <circle
+                                            cx={p.x}
+                                            cy={p.y}
+                                            r={4}
+                                            fill="#FFFFFF"
+                                        />
                                     </>
                                 )}
                                 {/* Tap target */}
@@ -194,7 +244,12 @@ export default function CategoryMonthlyChart({
 
                     {/* X-axis labels */}
                     {points.map((p, i) => {
-                        if (showEveryOther && i % 2 !== 0 && i !== points.length - 1 && p.month !== currentMonth) {
+                        if (
+                            showEveryOther &&
+                            i % 2 !== 0 &&
+                            i !== points.length - 1 &&
+                            p.month !== currentMonth
+                        ) {
                             return null;
                         }
                         return (
@@ -203,7 +258,11 @@ export default function CategoryMonthlyChart({
                                 x={p.x}
                                 y={svgHeight - 2}
                                 textAnchor="middle"
-                                fill={p.month === currentMonth ? '#FFFFFF' : 'rgba(255,255,255,0.4)'}
+                                fill={
+                                    p.month === currentMonth
+                                        ? '#FFFFFF'
+                                        : 'rgba(255,255,255,0.4)'
+                                }
                                 fontSize={11}
                             >
                                 {formatMonthLabel(p.month)}

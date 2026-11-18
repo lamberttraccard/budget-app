@@ -16,7 +16,17 @@ type Props = {
     selectedAccountIds: number[];
 };
 
-export default function CategoryRow({ id, name, color, icon, amountCents, subtitle, avgAmountCents, currentMonth, selectedAccountIds }: Props) {
+export default function CategoryRow({
+    id,
+    name,
+    color,
+    icon,
+    amountCents,
+    subtitle,
+    avgAmountCents,
+    currentMonth,
+    selectedAccountIds,
+}: Props) {
     let deltaNode = null;
     if (avgAmountCents !== undefined) {
         const deltaCents = amountCents - avgAmountCents;
@@ -24,11 +34,18 @@ export default function CategoryRow({ id, name, color, icon, amountCents, subtit
             const isExpense = amountCents < 0;
             // Arrow: for expenses, invert direction (positive delta = spending ↓)
             const arrow = isExpense
-                ? (deltaCents > 0 ? '\u2193' : '\u2191')
-                : (deltaCents > 0 ? '\u2191' : '\u2193');
+                ? deltaCents > 0
+                    ? '\u2193'
+                    : '\u2191'
+                : deltaCents > 0
+                  ? '\u2191'
+                  : '\u2193';
 
             deltaNode = (
-                <p className="text-xs text-white/40 tabular-nums" title="Compared with your monthly average">
+                <p
+                    className="text-xs text-white/40 tabular-nums"
+                    title="Compared with your monthly average"
+                >
                     {arrow}&thinsp;{formatAbsAmount(deltaCents)}
                 </p>
             );
@@ -58,7 +75,7 @@ export default function CategoryRow({ id, name, color, icon, amountCents, subtit
             <div className="ml-auto flex flex-col items-end">
                 <AnimatedNumber
                     value={amountCents}
-                    className="text-base font-medium tabular-nums text-white"
+                    className="text-base font-medium text-white tabular-nums"
                     decimalsClassName="text-[0.8em] font-normal text-white/45"
                 />
                 {deltaNode}
