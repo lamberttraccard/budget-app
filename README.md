@@ -2,6 +2,8 @@
 
 A personal budget management app built with **Laravel 12**, **React 19**, and **Inertia.js 2**. Import your bank CSV statements, automatically categorize transactions with AI (Google Gemini), and visualize your spending by category and month.
 
+**Live:** https://budget.lamberttraccard.dev (Laravel Cloud, deployed on every push to `main`; see [Deployment](#deployment)).
+
 <p align="center">
   <img src="dashboard.png" alt="Dashboard" width="260" />
   <img src="category.png" alt="Category detail" width="260" />
@@ -29,14 +31,14 @@ A personal budget management app built with **Laravel 12**, **React 19**, and **
 | **Docker Desktop** | Latest | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) |
 | **Gemini API Key** | — | Free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) (required for AI categorization) |
 
-That's it. Docker handles the rest (PHP, PostgreSQL, Redis, Node.js, Bun).
+That's it. Docker handles the rest (PHP 8.5, PostgreSQL 18 with pgvector, Mailpit, Node.js, Bun).
 
 ## Installation
 
 ### 1. Clone the project
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/lamberttraccard/budget-app.git
 cd budget-app
 ```
 
@@ -86,10 +88,12 @@ Edit the `.env` file and add your API key:
 GEMINI_API_KEY=your_key_here
 ```
 
-### 6. Seed default categories
+### 6. Seed the database
 
 ```bash
-sail artisan db:seed --class=CategorySeeder
+sail artisan db:seed --class=CategorySeeder   # default categories only
+# or
+sail artisan db:seed                          # categories + demo data (user test@example.com / password)
 ```
 
 ### 7. Start the application
@@ -231,10 +235,10 @@ To configure an MCP client (e.g. Claude Desktop), point it to your application's
 
 | Layer | Technologies |
 |-------|-------------|
-| **Backend** | PHP 8.5, Laravel 12, PostgreSQL 16+ (pgvector) |
+| **Backend** | PHP 8.5, Laravel 12, PostgreSQL 17+ (pgvector) |
 | **Frontend** | React 19, TypeScript, Inertia.js 2, Tailwind CSS 4, shadcn/ui |
 | **AI** | Google Gemini via Laravel AI |
-| **Infrastructure** | Docker (Laravel Sail), Redis, Bun |
+| **Infrastructure** | Laravel Cloud (production), Docker / Laravel Sail (local), Bun |
 | **Testing** | PHPUnit (backend), Vitest + Testing Library (frontend) |
 
 ## Useful Commands
@@ -246,7 +250,7 @@ sail composer dev                 # Run everything (server + queue + logs + Vite
 sail down                         # Stop containers
 
 # Testing
-sail composer test                # PHP: lint + PHPUnit
+sail composer test                # PHP: Pint check + PHPStan + PHPUnit
 sail artisan test                 # PHPUnit only
 sail bun run test                 # Vitest (frontend)
 
@@ -294,68 +298,33 @@ budget-app/
 └── tests/                    # PHPUnit tests
 ```
 
-## Hosting in Production
+## Deployment
 
-### Option 1: Laravel Cloud (recommended)
+Production runs on **[Laravel Cloud](https://cloud.laravel.com)** (organization `lambert`, application `budget-app`, region `eu-central-1`):
 
-[Laravel Cloud](https://cloud.laravel.com) is the simplest option:
+| | |
+|---|---|
+| **URL** | https://budget.lamberttraccard.dev (also reachable at https://budget-app-main-vmht7y.laravel.cloud) |
+| **Environment** | `main` (the only one: no staging or preview environments) |
+| **Deploys** | Automatically on every push to `main` (push-to-deploy) |
+| **Build** | `composer install --no-dev --optimize-autoloader`, then `bun install && bun run build` |
+| **Deploy command** | `php artisan migrate --force` |
+| **Database** | Neon serverless PostgreSQL (`budget-app` cluster) |
+| **Queue** | Laravel Cloud managed queue (`QUEUE_CONNECTION=cloud`), 0–3 workers |
+| **Monitoring** | Laravel Nightwatch |
 
-1. Connect your GitHub repo
-2. Set environment variables in the dashboard:
-   - `APP_KEY` (generate one with `php artisan key:generate --show`)
-   - `GEMINI_API_KEY`
-3. PostgreSQL is provisioned automatically
-4. Deploy
+The build and deploy commands, environment variables, and infrastructure live in the Laravel Cloud dashboard, not in this repository. GitHub Actions (`tests` and `linter` workflows) run on pushes and pull requests but do not gate the deploy.
 
-On first deployment, run the category seeder via the Cloud console:
-```bash
-php artisan db:seed --class=CategorySeeder --force
-```
-
-### Option 2: VPS / Dedicated Server
-
-**Server requirements:**
-- PHP 8.5+ with extensions: pdo_pgsql, mbstring, openssl, tokenizer, xml, ctype, json, bcmath, intl
-- PostgreSQL 16+ with the `pgvector` extension
-- Redis
-- Bun (for the frontend build)
-
-**Deployment:**
+To inspect production from a terminal, use the Laravel Cloud CLI installed as a dev dependency, authenticated with a `LARAVEL_CLOUD_TOKEN`:
 
 ```bash
-# Clone and install
-git clone <url> /var/www/budget-app
-cd /var/www/budget-app
-composer install --no-dev --optimize-autoloader
-bun install
-bun run build
-
-# Configure
-cp .env.example .env
-# Edit .env with your production settings (DB, APP_URL, GEMINI_API_KEY, etc.)
-php artisan key:generate
-php artisan migrate --force
-php artisan db:seed --class=CategorySeeder --force
-
-# Optimize
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-
-# Queue worker (via supervisor or systemd)
-php artisan queue:work --tries=3 --timeout=120
+./vendor/bin/cloud deployment:list <environment-id>    # recent deploys
+./vendor/bin/cloud command:run <environment-id> --cmd='php artisan about'
 ```
 
-Configure your web server (Nginx or Caddy) to point to `/var/www/budget-app/public`.
+### Self-hosting
 
-### Option 3: Docker in Production
-
-You can reuse Sail or create your own `docker-compose.prod.yml`. The essentials are:
-- A PHP-FPM container
-- PostgreSQL 16+ with pgvector
-- Redis
-- A reverse proxy (Nginx/Caddy)
-- A queue worker
+To run your own instance elsewhere you need PHP 8.5 (pdo_pgsql, mbstring, intl, bcmath, …), PostgreSQL 17+ with `pgvector`, Bun for the asset build, and a queue worker (`php artisan queue:work`). Run `php artisan migrate --force` and `php artisan db:seed --class=CategorySeeder --force` on first deploy, and point the web server at `public/`.
 
 ## Environment Variables
 
@@ -365,7 +334,7 @@ You can reuse Sail or create your own `docker-compose.prod.yml`. The essentials 
 | `APP_URL` | Application URL | Yes |
 | `DB_*` | PostgreSQL connection | Yes |
 | `GEMINI_API_KEY` | Google Gemini API key | Yes (for AI categorization) |
-| `QUEUE_CONNECTION` | Queue driver (`database` or `redis`) | No (default: `database`) |
+| `QUEUE_CONNECTION` | Queue driver (`database` locally, `cloud` on Laravel Cloud) | No (default: `database`) |
 | `CACHE_STORE` | Cache driver | No (default: `file`) |
 | `MAIL_*` | Email configuration | No (Mailpit in local) |
 
