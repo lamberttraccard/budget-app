@@ -304,7 +304,7 @@ Production runs on **[Laravel Cloud](https://cloud.laravel.com)** (organization 
 
 | | |
 |---|---|
-| **URL** | https://budget.lamberttraccard.dev (also reachable at https://budget-app-main-vmht7y.laravel.cloud) |
+| **URL** | https://budget.lamberttraccard.dev (the only production URL; the Laravel Cloud address is disabled) |
 | **Environment** | `main` (the only one: no staging or preview environments) |
 | **Deploys** | Automatically on every push to `main` (push-to-deploy) |
 | **Build** | `composer install --no-dev --optimize-autoloader`, then `bun install && bun run build` |

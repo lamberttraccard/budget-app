@@ -22,7 +22,7 @@ class ProductionReadinessTest extends TestCase
     {
         $request = Request::create('/dashboard', 'GET', [], [], [], [
             'HTTP_X_FORWARDED_PROTO' => 'https',
-            'HTTP_X_FORWARDED_HOST' => 'budget-app.laravel.cloud',
+            'HTTP_X_FORWARDED_HOST' => 'budget.lamberttraccard.dev',
             'HTTP_X_FORWARDED_PORT' => '443',
             'REMOTE_ADDR' => '127.0.0.1',
         ]);

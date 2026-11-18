@@ -22,7 +22,7 @@ so that I can access it securely from anywhere and detect issues early.
 
 - [x] Task 1: Configure TrustProxies for Laravel Cloud (AC: 2)
   - [x] 1.1: In `bootstrap/app.php`, add `trustProxies(at: '*')` with full header trust (`HEADER_X_FORWARDED_FOR | HEADER_X_FORWARDED_HOST | HEADER_X_FORWARDED_PORT | HEADER_X_FORWARDED_PROTO`). This ensures `$request->secure()` returns `true` behind Cloudflare's TLS termination, and all URL helpers generate `https://` links.
-  - [x] 1.2: Verify `APP_URL` in `.env.example` documents the HTTPS requirement with a comment: `# Production: set to https://your-domain.laravel.cloud in Laravel Cloud dashboard`
+  - [x] 1.2: Verify `APP_URL` in `.env.example` documents the HTTPS requirement with a comment: `# Production (Laravel Cloud): https://budget.lamberttraccard.dev`
 
 - [x] Task 2: Configure Nightwatch for production readiness (AC: 3)
   - [x] 2.1: Update `.env.example` with complete Nightwatch configuration variables:
@@ -42,7 +42,7 @@ so that I can access it securely from anywhere and detect issues early.
 
 - [x] Task 3: Configure production environment variables documentation (AC: 4)
   - [x] 3.1: Add a `docs/deployment.md` section OR comprehensive comments in `.env.example` documenting all Laravel Cloud environment variables that must be set in the dashboard:
-    - `APP_URL=https://budget-app.laravel.cloud` (or custom domain)
+    - `APP_URL=https://budget.lamberttraccard.dev`
     - `APP_ENV=production`
     - `APP_DEBUG=false`
     - `APP_KEY` (generate with `php artisan key:generate --show`)
@@ -115,7 +115,7 @@ Laravel Cloud terminates TLS at the Cloudflare edge. Requests reach the app over
 
 **DO NOT** create a custom `ForceHttps` middleware. The architecture doc mentions `app/Http/Middleware/ForceHttps.php` in the project structure, but this is unnecessary — TrustProxies handles everything correctly. The platform itself enforces HTTPS at the edge.
 
-Setting `APP_URL=https://budget-app.laravel.cloud` in the Cloud dashboard ensures all generated URLs use HTTPS.
+Setting `APP_URL=https://budget.lamberttraccard.dev` in the Cloud dashboard ensures all generated URLs use HTTPS.
 
 [Source: _bmad-output/planning-artifacts/architecture.md#Authentication & Security]
 [Source: Laravel docs — laravel.com/docs/requests#trusting-all-proxies]
@@ -172,7 +172,7 @@ The queue worker processes `CategorizeTransactions` jobs (AI categorization via 
 
 ### What This Story Does NOT Include
 
-- **Custom domain setup** — Uses the default `*.laravel.cloud` subdomain for now. Custom domain can be added later via Cloud dashboard.
+- **Custom domain setup** — Done later: production is served only at https://budget.lamberttraccard.dev; the Laravel Cloud address is disabled.
 - **CI/CD pipeline** — No GitHub Actions. Laravel Cloud's auto-deploy on push is sufficient for MVP.
 - **Redis** — Not needed. Database driver handles sessions, cache, and queues.
 - **Laravel Forge alternative** — This story is specifically for Laravel Cloud as decided in the architecture.
@@ -185,7 +185,7 @@ These steps are performed in the Laravel Cloud web dashboard, not in code:
 1. **Create environment** — Connect GitHub repo, select `main` branch
 2. **Attach PostgreSQL** — Creates managed database, auto-injects `DB_*` vars
 3. **Set environment variables:**
-   - `APP_URL=https://budget-app.laravel.cloud`
+   - `APP_URL=https://budget.lamberttraccard.dev`
    - `APP_ENV=production`
    - `APP_DEBUG=false`
    - `APP_KEY=` (generate with `php artisan key:generate --show`)
@@ -198,7 +198,7 @@ These steps are performed in the Laravel Cloud web dashboard, not in code:
 7. **Add background process** — `php artisan queue:work --tries=3 --timeout=120`
 8. **Deploy** — Push to main or trigger manually
 9. **Run initial seeder** — One-time: add `php artisan db:seed --class=CategorySeeder --force` to deploy commands, then remove after first deploy
-10. **Verify** — Navigate to `https://budget-app.laravel.cloud`, confirm login works, dark theme renders, HTTPS is active
+10. **Verify** — Navigate to `https://budget.lamberttraccard.dev`, confirm login works, dark theme renders, HTTPS is active
 
 ### Project Structure Notes
 

@@ -5,7 +5,7 @@ See [CLAUDE.md](CLAUDE.md) for the architecture and code conventions, and [READM
 ## Deployment
 
 - Platform: **Laravel Cloud** (organization `lambert`, application `budget-app`, region `eu-central-1`). Not Forge, not Cloudflare Workers.
-- Production URL: https://budget.lamberttraccard.dev (custom domain, `APP_URL` in production). The Cloud vanity URL https://budget-app-main-vmht7y.laravel.cloud serves the same environment. Health check: `/up`.
+- Production URL: https://budget.lamberttraccard.dev (custom domain, `APP_URL` in production). It is the only production URL: the Laravel Cloud address is disabled. Health check: `/up`.
 - Environments: only `main` (ID `env-a1229a44-445d-42c1-ab09-f53511f80cc5`). There is no staging or preview environment.
 - Deploys: push-to-deploy. Every push to `main` on `lamberttraccard/budget-app` starts a deploy. GitHub shows nothing about it, so follow the deploy with `./vendor/bin/cloud deployment:list <env-id> --json -n` until its status is `deployment.succeeded` or `deployment.failed`.
 - Build command (set in the Cloud dashboard, not in the repo): `composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader`, `npm install -g bun`, `bun install`, `bun run build`. Deploy command: `php artisan migrate --force`. Migrations therefore run on every deploy.
