@@ -1,11 +1,30 @@
 # AGENTS.md
 
-See [CLAUDE.md](CLAUDE.md) for the architecture and code conventions, and [README.md](README.md) for features and local setup with Sail.
+Personal budget management app built with **Laravel 12 + React 19 + Inertia.js 2**: CSV transaction imports with AI categorization (Gemini via Laravel AI), multi-account support, and an MCP server. Database: PostgreSQL with pgvector. See [README.md](README.md) for features and local setup with Sail.
+
+## Architecture
+
+- Request flow: Laravel routes → controllers → `Inertia::render()` → React page components receive props. No client-side router; Inertia handles navigation with server-side routing.
+- Data model: User → Accounts (1:N) → Transactions (1:N). Categories and Subcategories are shared. Transactions belong to Categories and optionally to Imports.
+- `app/Services/`: core business logic (`BudgetQueryService`, `CsvImportService`, `CategorizationService`, `DeduplicationService`, `MerchantMatchingService`, `RecurringDetectionService`).
+- `app/Parsers/`: bank-specific CSV parsers (Revolut, Banque Populaire) behind `CsvParserFactory`.
+- `app/Mcp/`: MCP server and tools.
+- `routes/web.php`: main web routes.
+- `resources/js/pages/`: Inertia pages. `resources/js/components/ui/`: shadcn/ui components (Radix + Tailwind). `resources/js/types/budget.ts`: shared budget domain types. `resources/js/lib/`: helpers such as `formatAmount` and `formatDate`.
+
+## Conventions
+
+- Money: amounts are stored as **integer cents** (`amount_cents` in the database, `amountCents` in TypeScript). `formatAmount()` renders French-locale EUR, such as `1 500,00 €`.
+- TypeScript: strict mode; `@/` maps to `resources/js/`; type imports go in separate statements (`import type { Foo } from 'module'`); imports are ordered builtin → external → internal → parent → sibling → index, alphabetized. ESLint enforces both.
+- Frontend: Tailwind CSS 4 with shadcn/ui, animation with `motion/react`, icons from `lucide-react`.
+- PHP: Laravel Pint style, constructor injection for services, events and listeners for decoupled side effects (such as `TransactionCorrected`), queued jobs for async work (CSV imports, AI categorization).
+- Tests: frontend with Vitest, Testing Library, and jsdom (setup in `resources/js/test/setup.ts`); backend with PHPUnit and Mockery, factories in `database/factories/`.
 
 ## Deployment
 
 - Platform: **Laravel Cloud** (organization `lambert`, application `budget-app`, region `eu-central-1`). Not Forge, not Cloudflare Workers.
 - Production URL: https://budget.lamberttraccard.dev (custom domain, `APP_URL` in production). It is the only production URL: the Laravel Cloud address is disabled. Health check: `/up`.
+- Checking production from an orb: a Cloudflare WAF rule on `lamberttraccard.dev` allows only France, so requests from an orb get a 403 unless they send the `X-Amp-Orb-Check` header with the `ORB_PROD_CHECK_TOKEN` Amp secret, for example `curl -H "X-Amp-Orb-Check: $ORB_PROD_CHECK_TOKEN" https://budget.lamberttraccard.dev/up`. Orbs receive the secret at startup; an orb that was already running must run `amp orb restart-processes` to load it.
 - Environments: only `main` (ID `env-a1229a44-445d-42c1-ab09-f53511f80cc5`). There is no staging or preview environment.
 - Deploys: push-to-deploy. Every push to `main` on `lamberttraccard/budget-app` starts a deploy. GitHub shows nothing about it, so follow the deploy with `./vendor/bin/cloud deployment:list <env-id> --json -n` until its status is `deployment.succeeded` or `deployment.failed`.
 - Build command (set in the Cloud dashboard, not in the repo): `composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader`, `npm install -g bun`, `bun install`, `bun run build`. Deploy command: `php artisan migrate --force`. Migrations therefore run on every deploy.
@@ -29,7 +48,7 @@ Never pass `--show-sensitive`, and never print raw API responses: environment pa
 
 ## Commands
 
-The README and CLAUDE.md prefix commands with `./vendor/bin/sail` for Docker. In an Amp orb, PHP, Composer, Bun, and PostgreSQL run natively, so drop the prefix.
+The README prefixes commands with `./vendor/bin/sail` for Docker. In an Amp orb, PHP, Composer, Bun, and PostgreSQL run natively, so drop the prefix.
 
 | Purpose | Command |
 |---|---|
@@ -38,15 +57,16 @@ The README and CLAUDE.md prefix commands with `./vendor/bin/sail` for Docker. In
 | Frontend tests | `bun run test` (Vitest) |
 | TypeScript | `bun run types` |
 | PHP style fix | `composer lint` (Pint) |
-| Frontend lint and format (rewrite files) | `bun run lint` (ESLint `--fix`), `bun run format` (Prettier) |
+| Frontend lint and format checks (what CI runs) | `bun run lint:check` (ESLint), `bun run format:check` (Prettier on `resources/`) |
+| Frontend lint and format fixes (rewrite files) | `bun run lint` (ESLint `--fix`), `bun run format` (Prettier) |
 | Build assets | `bun run build` (also generates the gitignored Wayfinder files in `resources/js/{actions,routes,wayfinder}`) |
 | Dev server | `composer dev` (server, queue, Pail, Vite) |
 
 CI (`.github/workflows/`) runs on pushes and pull requests to `main`, `develop`, `master`, and `workos`:
 - `tests.yml`: Pint, PHPStan, asset build, PHPUnit against `pgvector/pgvector:pg17`.
-- `lint.yml` (workflow `linter`): `composer lint`, `bun run format`, `bun run lint`. They rewrite files instead of failing on fixable style issues (only unfixable ESLint errors fail), and nothing commits the fixes.
+- `lint.yml` (workflow `linter`): `composer test:lint`, `bun run format:check`, then `php artisan wayfinder:generate --with-form` and `bun run lint:check`. Each step fails on any issue and fixes nothing; run `composer lint`, `bun run format`, and `bun run lint` locally to fix.
 
-Known state: `bun run format:check` reports about 39 unformatted files, and `bunx eslint .` without `--fix` flags import order in the generated Wayfinder files. Neither runs in CI.
+ESLint needs the generated Wayfinder files (`resources/js/{actions,routes,wayfinder}`) to classify `@/actions` and `@/routes` imports, and ignores the files themselves. Generate them with `bun run build` or `php artisan wayfinder:generate --with-form` before linting.
 
 Package manager: Bun only (`bun.lock`); do not use npm or yarn.
 
